@@ -17,7 +17,8 @@ pub struct DecodedLog {
 
 /// Contract event.
 pub struct Event {
-	interface: EventInterface,
+	/// spec::Event
+	pub interface: EventInterface,
 }
 
 impl Event {
