@@ -100,4 +100,29 @@ mod tests {
 			outputs: vec![]
 		}));
 	}
+
+	#[test]
+	fn deserialize_sanitize_function_name() {
+		fn test_sanitize_function_name(name: &str, expected: &str) {
+			let s = format!(r#"{{
+				"type":"function",
+				"inputs": [{{
+					"name":"a",
+					"type":"address"
+				}}],
+				"name":"{}",
+				"outputs": []
+			}}"#, name);
+
+			let deserialized: Operation = serde_json::from_str(&s).unwrap();
+			let function = deserialized.function().unwrap();
+
+			assert_eq!(function.name, expected);
+		}
+
+		test_sanitize_function_name("foo", "foo");
+		test_sanitize_function_name("foo()", "foo");
+		test_sanitize_function_name("()", "");
+		test_sanitize_function_name("", "");
+	}
 }
