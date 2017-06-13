@@ -16,6 +16,7 @@ pub struct DecodedLog {
 }
 
 /// Contract event.
+#[derive(Clone, Debug)]
 pub struct Event {
 	interface: EventInterface,
 }

@@ -6,6 +6,7 @@ use error::Error;
 use encoder::Encoder;
 
 /// Contract constructor call builder.
+#[derive(Clone, Debug)]
 pub struct Constructor {
 	_interface: ConstructorInterface,
 }

@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use spec::{Interface, Operation};
 use function::Function;
 use constructor::Constructor;
@@ -7,49 +8,66 @@ use error::Error;
 /// API building calls to contracts ABI.
 #[derive(Clone, Debug)]
 pub struct Contract {
-	interface: Interface,
+    constructor: Option<Constructor>,
+    functions: HashMap<String, Function>,
+    events: HashMap<String, Event>,
 }
 
 impl Contract {
-	/// Initializes contract with ABI specification.
-	pub fn new(interface: Interface) -> Self {
-		Contract {
-			interface: interface
-		}
-	}
+    /// Initializes contract with ABI specification.
+    pub fn new(interface: Interface) -> Self {
+        let constructor = interface
+            .operations()
+            .filter_map(Operation::constructor)
+            .cloned()
+            .map(Constructor::new)
+            .next();
 
-	/// Creates constructor call builder.
-	pub fn constructor(&self) -> Option<Constructor> {
-		self.interface.constructor().map(Constructor::new)
-	}
+        let functions = interface
+            .operations()
+            .filter_map(Operation::function)
+            .cloned()
+            .map(|f| (f.name.clone(), Function::new(f)))
+            .collect();
 
-	/// Creates function call builder.
-	pub fn function(&self, name: String) -> Result<Function, Error> {
-		self.interface.function(name).map(Function::new).ok_or(Error::InvalidName)
-	}
+        let events = interface
+            .operations()
+            .filter_map(Operation::event)
+            .cloned()
+            .map(|e| (e.name.clone(), Event::new(e)))
+            .collect();
 
-	/// Creates event decoder.
-	pub fn event(&self, name: String) -> Result<Event, Error> {
-		self.interface.event(name).map(Event::new).ok_or(Error::InvalidName)
-	}
+        Contract {
+            constructor,
+            events,
+            functions,
+        }
+    }
 
-	/// Iterate over all functions of the contract in arbitrary order.
-	pub fn functions<'a>(&'a self) -> Box<Iterator<Item=Function> + 'a> {
-		let iter = self.interface.operations()
-			.filter_map(Operation::function)
-			.cloned()
-			.map(Function::new);
+    /// Creates constructor call builder.
+    pub fn constructor(&self) -> Option<Constructor> {
+        self.constructor.clone()
+    }
 
-		Box::new(iter)
-	}
+    /// Creates function call builder.
+    pub fn function(&self, name: String) -> Result<Function, Error> {
+        self.functions.get(&name).cloned().ok_or(Error::InvalidName)
+    }
 
-	/// Iterate over all events of the contract in arbitrary order.
-	pub fn events<'a>(&'a self) -> Box<Iterator<Item=Event> + 'a> {
-		let iter = self.interface.operations()
-			.filter_map(Operation::event)
-			.cloned()
-			.map(Event::new);
+    /// Creates event decoder.
+    pub fn event(&self, name: String) -> Result<Event, Error> {
+        self.events.get(&name).cloned().ok_or(Error::InvalidName)
+    }
 
-		Box::new(iter)
-	}
+    /// Iterate over all functions of the contract in arbitrary order.
+    pub fn functions<'a>(&'a self) -> Box<Iterator<Item = Function> + 'a> {
+        let iter = self.functions.values().cloned();
+        Box::new(iter)
+    }
+
+    /// Iterate over all events of the contract in arbitrary order.
+    pub fn events<'a>(&'a self) -> Box<Iterator<Item = Event> + 'a> {
+        let iter = self.events.values().cloned();
+        Box::new(iter)
+    }
 }
