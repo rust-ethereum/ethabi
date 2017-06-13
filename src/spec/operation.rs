@@ -27,7 +27,14 @@ impl<'a> Deserialize<'a> for Operation {
 		let s = try!(map.get("type").and_then(Value::as_str).ok_or_else(|| SerdeError::custom("Invalid operation type")));
 		let result = match s {
 			"constructor" => from_value(v).map(Operation::Constructor),
-			"function" => from_value(v).map(Operation::Function),
+			"function" => from_value(v).map(|mut f: Function| {
+				// This is a workaround to support non-spec compliant function names,
+				// see: https://github.com/paritytech/parity/issues/4122
+				if let Some(i) = f.name.find('(') {
+					f.name.truncate(i);
+				}
+				Operation::Function(f)
+			}),
 			"event" => from_value(v).map(Operation::Event),
 			"fallback" => Ok(Operation::Fallback),
 			_ => Err(SerdeError::custom("Invalid operation type.")),
