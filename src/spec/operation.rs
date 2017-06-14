@@ -133,4 +133,31 @@ mod tests {
 		test_sanitize_function_name("()", "");
 		test_sanitize_function_name("", "");
 	}
+
+	#[test]
+	fn deserialize_sanitize_event_name() {
+		fn test_sanitize_event_name(name: &str, expected: &str) {
+			let s = format!(r#"{{
+				"type":"event",
+					"inputs": [{{
+						"name":"a",
+						"type":"address",
+						"indexed":true
+					}}],
+					"name":"{}",
+					"outputs": [],
+					"anonymous": false
+			}}"#, name);
+
+			let deserialized: Operation = serde_json::from_str(&s).unwrap();
+			let event = deserialized.event().unwrap();
+
+			assert_eq!(event.name, expected);
+		}
+
+		test_sanitize_event_name("foo", "foo");
+		test_sanitize_event_name("foo()", "foo");
+		test_sanitize_event_name("()", "");
+		test_sanitize_event_name("", "");
+	}
 }
