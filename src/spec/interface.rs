@@ -14,6 +14,9 @@ impl Interface {
 	}
 
 	/// Returns contract constructor specification.
+	// TODO: these methods can be removed in a future major version as they are
+	//       currently unused and the same functionality can be achieved with
+	//       Contract
 	pub fn constructor(&self) -> Option<Constructor> {
 		self.0.iter()
 			.filter_map(Operation::constructor)
