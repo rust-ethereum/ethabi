@@ -34,9 +34,13 @@ impl Function {
 	/// Prepares ABI function call with given input params.
 	pub fn encode_call(&self, tokens: Vec<Token>) -> Result<Vec<u8>, Error> {
 		let params = self.interface.input_param_types();
+
+		if !type_check(&tokens, &params) {
+			return Err(Error::InvalidData);
+		}
+
 		let signed = signature(&self.interface.name, &params);
 		let encoded = Encoder::encode(tokens);
-		// TODO: validate tokens with interface
 		Ok(signed.into_iter().chain(encoded.into_iter()).collect())
 	}
 
@@ -48,6 +52,16 @@ impl Function {
 	/// Get the name of the function.
 	pub fn name(&self) -> &str {
 		&self.interface.name
+	}
+}
+
+/// Check if all the types of the tokens match the given parameter types.
+pub fn type_check(tokens: &[Token], param_types: &[ParamType]) -> bool {
+	param_types.len() == tokens.len() && {
+		param_types.iter().zip(tokens).all(|e| {
+			let (param_type, token) = e;
+			token.type_check(param_type)
+		})
 	}
 }
 
@@ -80,4 +94,3 @@ mod tests {
 		assert_eq!(encoded, expected);
 	}
 }
-
