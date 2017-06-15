@@ -18,7 +18,7 @@ pub struct DecodedLog {
 /// Contract event.
 pub struct Event {
 	/// spec::Event
-	pub interface: EventInterface,
+	interface: EventInterface,
 }
 
 impl Event {
@@ -98,6 +98,11 @@ impl Event {
 	/// Return the name of the event.
 	pub fn name(&self) -> &str {
 		&self.interface.name
+	}
+
+	/// EventInterface getter
+	pub fn interface(&self) -> &EventInterface {
+		&self.interface
 	}
 }
 
