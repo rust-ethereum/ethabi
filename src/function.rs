@@ -8,6 +8,7 @@ use signature::signature;
 use error::Error;
 
 /// Contract function call builder.
+#[derive(Clone, Debug)]
 pub struct Function {
 	interface: FunctionInterface,
 }
