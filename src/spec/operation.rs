@@ -25,10 +25,25 @@ impl<'a> Deserialize<'a> for Operation {
 		let cloned = v.clone();
 		let map = try!(cloned.as_object().ok_or_else(|| SerdeError::custom("Invalid operation")));
 		let s = try!(map.get("type").and_then(Value::as_str).ok_or_else(|| SerdeError::custom("Invalid operation type")));
+
+		// This is a workaround to support non-spec compliant function and event names,
+		// see: https://github.com/paritytech/parity/issues/4122
+		fn sanitize_name(name: &mut String) {
+			if let Some(i) = name.find('(') {
+				name.truncate(i);
+			}
+		}
+
 		let result = match s {
 			"constructor" => from_value(v).map(Operation::Constructor),
-			"function" => from_value(v).map(Operation::Function),
-			"event" => from_value(v).map(Operation::Event),
+			"function" => from_value(v).map(|mut f: Function| {
+				sanitize_name(&mut f.name);
+				Operation::Function(f)
+			}),
+			"event" => from_value(v).map(|mut e: Event| {
+				sanitize_name(&mut e.name);
+				Operation::Event(e)
+			}),
 			"fallback" => Ok(Operation::Fallback),
 			_ => Err(SerdeError::custom("Invalid operation type.")),
 		};
@@ -92,5 +107,57 @@ mod tests {
 			],
 			outputs: vec![]
 		}));
+	}
+
+	#[test]
+	fn deserialize_sanitize_function_name() {
+		fn test_sanitize_function_name(name: &str, expected: &str) {
+			let s = format!(r#"{{
+				"type":"function",
+				"inputs": [{{
+					"name":"a",
+					"type":"address"
+				}}],
+				"name":"{}",
+				"outputs": []
+			}}"#, name);
+
+			let deserialized: Operation = serde_json::from_str(&s).unwrap();
+			let function = deserialized.function().unwrap();
+
+			assert_eq!(function.name, expected);
+		}
+
+		test_sanitize_function_name("foo", "foo");
+		test_sanitize_function_name("foo()", "foo");
+		test_sanitize_function_name("()", "");
+		test_sanitize_function_name("", "");
+	}
+
+	#[test]
+	fn deserialize_sanitize_event_name() {
+		fn test_sanitize_event_name(name: &str, expected: &str) {
+			let s = format!(r#"{{
+				"type":"event",
+					"inputs": [{{
+						"name":"a",
+						"type":"address",
+						"indexed":true
+					}}],
+					"name":"{}",
+					"outputs": [],
+					"anonymous": false
+			}}"#, name);
+
+			let deserialized: Operation = serde_json::from_str(&s).unwrap();
+			let event = deserialized.event().unwrap();
+
+			assert_eq!(event.name, expected);
+		}
+
+		test_sanitize_event_name("foo", "foo");
+		test_sanitize_event_name("foo()", "foo");
+		test_sanitize_event_name("()", "");
+		test_sanitize_event_name("", "");
 	}
 }
