@@ -1,5 +1,6 @@
 //! Ethereum ABI params.
 use std::fmt::{Display, Formatter, Error};
+use spec::ParamType;
 use hex::ToHex;
 
 /// Ethereum ABI params.
@@ -72,6 +73,49 @@ impl Display for Token {
 }
 
 impl Token {
+	/// Check whether the type of the token matches the given parameter type.
+	///
+	/// Numeric types (`Int` and `Uint`) type check if the size of the token
+	/// type is of greater or equal size than the provided parameter type.
+	pub fn type_check(&self, param_type: &ParamType) -> bool {
+		match *self {
+			Token::Address(_) => *param_type == ParamType::Address,
+			Token::Bytes(_) => *param_type == ParamType::Bytes,
+			Token::Int(bytes) =>
+				if let ParamType::Int(size) = *param_type {
+					size <= bytes.len() * 8
+				} else {
+					false
+				},
+			Token::Uint(bytes) =>
+				if let ParamType::Uint(size) = *param_type {
+					size <= bytes.len() * 8
+				} else {
+					false
+				},
+			Token::Bool(_) => *param_type == ParamType::Bool,
+			Token::String(_) => *param_type == ParamType::String,
+			Token::FixedBytes(ref bytes) =>
+				if let ParamType::FixedBytes(size) = *param_type {
+					size == bytes.len()
+				} else {
+					false
+				},
+			Token::Array(ref tokens) =>
+				if let ParamType::Array(ref param_type) = *param_type {
+					tokens.iter().all(|t| t.type_check(param_type))
+				} else {
+					false
+				},
+			Token::FixedArray(ref tokens) =>
+				if let ParamType::FixedArray(ref param_type, size) = *param_type {
+					size == tokens.len() && tokens.iter().all(|t| t.type_check(param_type))
+				} else {
+					false
+				},
+		}
+	}
+
 	/// Converts token to...
 	pub fn to_address(self) -> Option<[u8; 20]> {
 		match self {
