@@ -50,13 +50,13 @@ impl Contract {
     }
 
     /// Creates function call builder.
-    pub fn function(&self, name: String) -> Result<Function, Error> {
-        self.functions.get(&name).cloned().ok_or(Error::InvalidName)
+    pub fn function(&self, name: &str) -> Result<Function, Error> {
+        self.functions.get(name).cloned().ok_or(Error::InvalidName)
     }
 
     /// Creates event decoder.
-    pub fn event(&self, name: String) -> Result<Event, Error> {
-        self.events.get(&name).cloned().ok_or(Error::InvalidName)
+    pub fn event(&self, name: &str) -> Result<Event, Error> {
+        self.events.get(name).cloned().ok_or(Error::InvalidName)
     }
 
     /// Iterate over all functions of the contract in arbitrary order.

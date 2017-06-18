@@ -4,7 +4,7 @@ use spec::{Function as FunctionInterface, ParamType};
 use token::Token;
 use encoder::Encoder;
 use decoder::Decoder;
-use signature::signature;
+use signature::short_signature;
 use error::Error;
 
 /// Contract function call builder.
@@ -39,7 +39,7 @@ impl Function {
 			return Err(Error::InvalidData);
 		}
 
-		let signed = signature(&self.interface.name, &params);
+		let signed = short_signature(&self.interface.name, &params).to_vec();
 		let encoded = Encoder::encode(tokens);
 		Ok(signed.into_iter().chain(encoded.into_iter()).collect())
 	}
