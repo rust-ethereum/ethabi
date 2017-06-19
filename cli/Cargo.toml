@@ -1,6 +1,6 @@
 [package]
 name = "ethabi-cli"
-version = "1.1.0"
+version = "2.0.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 keywords = ["ethereum", "eth", "abi", "solidity", "cli"]
 description = "Easy to use cli for conversion of ethereum contract calls to bytecode."
@@ -10,8 +10,8 @@ license = "MIT"
 [dependencies]
 rustc-hex = "1.0"
 rustc-serialize = "0.3"
-docopt = "0.7"
-ethabi = { version = "1.1.*", path = ".." }
+docopt = "=0.6.85"
+ethabi = { version = "2.0", path = ".." }
 
 [[bin]]
 name = "ethabi"

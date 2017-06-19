@@ -91,7 +91,7 @@ fn load_function(path: &str, function: String) -> Result<Function, Error> {
 
 	let interface = try!(Interface::load(&bytes));
 	let contract = Contract::new(interface);
-	let function = try!(contract.function(function));
+	let function = try!(contract.function(&function));
 	Ok(function)
 }
 
@@ -101,7 +101,7 @@ fn load_event(path: &str, event: String) -> Result<Event, Error> {
 
 	let interface = try!(Interface::load(&bytes));
 	let contract = Contract::new(interface);
-	let event = try!(contract.event(event));
+	let event = try!(contract.event(&event));
 	Ok(event)
 }
 
@@ -196,8 +196,8 @@ fn decode_log(path: &str, event: String, topics: Vec<String>, data: String) -> R
 	let data = try!(data.from_hex());
 	let decoded = try!(event.decode_log(topics, data));
 
-	let result = decoded.params.into_iter()
-		.map(|(name, kind, value)| format!("{} {} {}", name, kind, value))
+	let result = decoded.into_iter()
+		.map(|log_param| format!("{} {}", log_param.name, log_param.value))
 		.collect::<Vec<String>>()
 		.join("\n");
 
@@ -240,7 +240,7 @@ mod tests {
 
 	#[test]
 	fn abi_encode() {
-		let command = "ethabi encode function examples/test.json foo -p 1".split(" ");
+		let command = "ethabi encode function ../examples/test.json foo -p 1".split(" ");
 		let expected = "455575780000000000000000000000000000000000000000000000000000000000000001";
 		assert_eq!(execute(command).unwrap(), expected);
 	}
@@ -278,17 +278,17 @@ bool false";
 
 	#[test]
 	fn abi_decode() {
-		let command = "ethabi decode function ./examples/foo.json bar 0000000000000000000000000000000000000000000000000000000000000001".split(" ");
+		let command = "ethabi decode function ../examples/foo.json bar 0000000000000000000000000000000000000000000000000000000000000001".split(" ");
 		let expected = "bool true";
 		assert_eq!(execute(command).unwrap(), expected);
 	}
 
 	#[test]
 	fn log_decode() {
-		let command = "ethabi decode log ./examples/event.json Event -l 0000000000000000000000000000000000000000000000000000000000000001 0000000000000000000000004444444444444444444444444444444444444444".split(" ");
+		let command = "ethabi decode log ../examples/event.json Event -l 0000000000000000000000000000000000000000000000000000000000000001 0000000000000000000000004444444444444444444444444444444444444444".split(" ");
 		let expected =
-"a bool true
-b address 4444444444444444444444444444444444444444";
+"a true
+b 4444444444444444444444444444444444444444";
 		assert_eq!(execute(command).unwrap(), expected);
 	}
 }
