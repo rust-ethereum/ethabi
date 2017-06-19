@@ -1,9 +1,9 @@
 [root]
 name = "ethabi-cli"
-version = "1.1.0"
+version = "1.2.0"
 dependencies = [
- "docopt 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "ethabi 1.1.1",
+ "docopt 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ethabi 1.2.0",
  "rustc-hex 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-serialize 0.3.24 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -18,12 +18,13 @@ dependencies = [
 
 [[package]]
 name = "docopt"
-version = "0.7.0"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "lazy_static 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "regex 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "rustc-serialize 0.3.24 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_derive 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "strsim 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -34,7 +35,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "ethabi"
-version = "1.1.1"
+version = "1.2.0"
 dependencies = [
  "rustc-hex 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -228,7 +229,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [metadata]
 "checksum aho-corasick 0.6.3 (registry+https://github.com/rust-lang/crates.io-index)" = "500909c4f87a9e52355b26626d890833e9e1d53ac566db76c36faa984b889699"
-"checksum docopt 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "ab32ea6e284d87987066f21a9e809a73c14720571ef34516f0890b3d355ccfd8"
+"checksum docopt 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)" = "63e408eee8a772c5c61f62353992e3ebf51ef5c832dd04d986b3dc7d48c5b440"
 "checksum dtoa 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)" = "80c8b71fd71146990a9742fc06dcbbde19161a267e0ad4e572c35162f4578c90"
 "checksum itoa 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "eb2f404fbc66fd9aac13e998248505e7ecb2ad8e44ab6388684c5fb11c6c251c"
 "checksum kernel32-sys 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "7507624b29483431c0ba2d82aece8ca6cdba9382bff4ddd0f7490560c056098d"
