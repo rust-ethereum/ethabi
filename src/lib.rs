@@ -30,7 +30,7 @@ pub use self::error::Error;
 pub use self::encoder::Encoder;
 pub use self::decoder::Decoder;
 pub use self::function::Function;
-pub use self::event::Event;
+pub use self::event::{Event, LogParam};
 
 /// ABI address.
 pub type Address = [u8; 20];
