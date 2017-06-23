@@ -1,6 +1,8 @@
 extern crate docopt;
 extern crate rustc_hex as hex;
-extern crate rustc_serialize;
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
 extern crate ethabi;
 
 mod error;
@@ -39,7 +41,7 @@ Commands:
     log                Decode event log.
 "#;
 
-#[derive(Debug, RustcDecodable)]
+#[derive(Debug, Deserialize)]
 struct Args {
 	cmd_encode: bool,
 	cmd_decode: bool,
@@ -61,14 +63,14 @@ fn main() {
 
 	match result {
 		Ok(s) => println!("{}", s),
+		Err(Error::Docopt(err)) => println!("{}", err),
 		Err(error) => println!("error: {:?}", error)
 	}
 }
 
 fn execute<S, I>(command: I) -> Result<String, Error> where I: IntoIterator<Item=S>, S: AsRef<str> {
 	let args: Args = Docopt::new(ETHABI)
-		.and_then(|d| d.argv(command).decode())
-		.unwrap_or_else(|e| e.exit());
+		.and_then(|d| d.argv(command).deserialize())?;
 
 	if args.cmd_encode && args.cmd_function {
 		encode_call(&args.arg_abi_path, args.arg_function_name, args.arg_param, args.flag_lenient)

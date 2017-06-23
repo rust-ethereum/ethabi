@@ -1,5 +1,6 @@
 use std::io::Error as IoError;
 use hex::FromHexError;
+use docopt;
 use ethabi::spec::Error as SpecError;
 use ethabi::spec::param_type::Error as ParamError;
 use ethabi::token::Error as TokenizerError;
@@ -13,6 +14,7 @@ pub enum Error {
 	Param(ParamError),
 	Tokenizer(TokenizerError),
 	Decoder(DecoderError),
+	Docopt(docopt::Error),
 }
 
 impl From<IoError> for Error {
@@ -48,5 +50,11 @@ impl From<TokenizerError> for Error {
 impl From<DecoderError> for Error {
 	fn from(err: DecoderError) -> Self {
 		Error::Decoder(err)
+	}
+}
+
+impl From<docopt::Error> for Error {
+	fn from(err: docopt::Error) -> Self {
+		Error::Docopt(err)
 	}
 }
