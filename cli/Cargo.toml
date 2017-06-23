@@ -9,8 +9,9 @@ license = "MIT"
 
 [dependencies]
 rustc-hex = "1.0"
-rustc-serialize = "0.3"
-docopt = "=0.6.85"
+serde = "1.0"
+serde_derive = "1.0"
+docopt = "0.8.1"
 ethabi = { version = "2.0", path = ".." }
 
 [[bin]]
