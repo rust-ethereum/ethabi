@@ -1,6 +1,6 @@
 [package]
 name = "ethabi-cli"
-version = "2.0.0"
+version = "2.0.1"
 authors = ["Parity Technologies <admin@parity.io>"]
 keywords = ["ethereum", "eth", "abi", "solidity", "cli"]
 description = "Easy to use cli for conversion of ethereum contract calls to bytecode."
