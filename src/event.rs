@@ -1,7 +1,7 @@
 //! Contract event.
 
 use std::collections::HashMap;
-use spec::{Event as EventInterface, ParamType};
+use spec::{Event as EventInterface, ParamType, EventParam};
 use decoder::Decoder;
 use token::Token;
 use error::Error;
@@ -100,9 +100,9 @@ impl Event {
 		&self.interface.name
 	}
 
-	/// EventInterface getter
-	pub fn interface(&self) -> &EventInterface {
-		&self.interface
+	/// Return the inputs of the event.
+	pub fn inputs(&self) -> &Vec<EventParam> {
+		&self.interface.inputs
 	}
 }
 
