@@ -2,7 +2,7 @@
 
 use std::collections::HashMap;
 use tiny_keccak::keccak256;
-use spec::{Event as EventInterface, ParamType};
+use spec::{Event as EventInterface, ParamType, EventParam};
 use decoder::Decoder;
 use token::Token;
 use error::Error;
@@ -21,6 +21,7 @@ pub struct LogParam {
 /// Contract event.
 #[derive(Clone, Debug)]
 pub struct Event {
+	/// spec::Event
 	interface: EventInterface,
 }
 
@@ -132,6 +133,11 @@ impl Event {
 	/// Return the name of the event.
 	pub fn name(&self) -> &str {
 		&self.interface.name
+	}
+
+	/// Return the inputs of the event.
+	pub fn inputs(&self) -> &[EventParam] {
+		&self.interface.inputs
 	}
 }
 
