@@ -1,10 +1,8 @@
 //! Ethereum ABI encoding decoding library.
 
 #![warn(missing_docs)]
-#![cfg_attr(feature="nightly", feature(plugin))]
-#![cfg_attr(feature="nightly", plugin(clippy))]
 
-extern crate rustc_serialize;
+extern crate rustc_hex as hex;
 extern crate serde;
 extern crate serde_json;
 extern crate tiny_keccak;
@@ -32,7 +30,7 @@ pub use self::error::Error;
 pub use self::encoder::Encoder;
 pub use self::decoder::Decoder;
 pub use self::function::Function;
-pub use self::event::Event;
+pub use self::event::{Event, LogParam};
 
 /// ABI address.
 pub type Address = [u8; 20];

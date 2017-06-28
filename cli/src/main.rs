@@ -1,5 +1,8 @@
 extern crate docopt;
-extern crate rustc_serialize;
+extern crate rustc_hex as hex;
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
 extern crate ethabi;
 
 mod error;
@@ -8,7 +11,7 @@ use std::fs::File;
 use std::io::Read;
 use std::env;
 use docopt::Docopt;
-use rustc_serialize::hex::{ToHex, FromHex};
+use hex::{ToHex, FromHex};
 use ethabi::spec::param_type::{ParamType, Reader};
 use ethabi::token::{Token, Tokenizer, StrictTokenizer, LenientTokenizer, TokenFromHex};
 use ethabi::{Encoder, Decoder, Contract, Function, Event, Interface};
@@ -38,7 +41,7 @@ Commands:
     log                Decode event log.
 "#;
 
-#[derive(Debug, RustcDecodable)]
+#[derive(Debug, Deserialize)]
 struct Args {
 	cmd_encode: bool,
 	cmd_decode: bool,
@@ -60,14 +63,14 @@ fn main() {
 
 	match result {
 		Ok(s) => println!("{}", s),
+		Err(Error::Docopt(err)) => println!("{}", err),
 		Err(error) => println!("error: {:?}", error)
 	}
 }
 
 fn execute<S, I>(command: I) -> Result<String, Error> where I: IntoIterator<Item=S>, S: AsRef<str> {
 	let args: Args = Docopt::new(ETHABI)
-		.and_then(|d| d.argv(command).decode())
-		.unwrap_or_else(|e| e.exit());
+		.and_then(|d| d.argv(command).deserialize())?;
 
 	if args.cmd_encode && args.cmd_function {
 		encode_call(&args.arg_abi_path, args.arg_function_name, args.arg_param, args.flag_lenient)
@@ -90,7 +93,7 @@ fn load_function(path: &str, function: String) -> Result<Function, Error> {
 
 	let interface = try!(Interface::load(&bytes));
 	let contract = Contract::new(interface);
-	let function = try!(contract.function(function));
+	let function = try!(contract.function(&function));
 	Ok(function)
 }
 
@@ -100,7 +103,7 @@ fn load_event(path: &str, event: String) -> Result<Event, Error> {
 
 	let interface = try!(Interface::load(&bytes));
 	let contract = Contract::new(interface);
-	let event = try!(contract.event(event));
+	let event = try!(contract.event(&event));
 	Ok(event)
 }
 
@@ -195,8 +198,8 @@ fn decode_log(path: &str, event: String, topics: Vec<String>, data: String) -> R
 	let data = try!(data.from_hex());
 	let decoded = try!(event.decode_log(topics, data));
 
-	let result = decoded.params.into_iter()
-		.map(|(name, kind, value)| format!("{} {} {}", name, kind, value))
+	let result = decoded.into_iter()
+		.map(|log_param| format!("{} {}", log_param.name, log_param.value))
 		.collect::<Vec<String>>()
 		.join("\n");
 
@@ -239,7 +242,7 @@ mod tests {
 
 	#[test]
 	fn abi_encode() {
-		let command = "ethabi encode function examples/test.json foo -p 1".split(" ");
+		let command = "ethabi encode function ../examples/test.json foo -p 1".split(" ");
 		let expected = "455575780000000000000000000000000000000000000000000000000000000000000001";
 		assert_eq!(execute(command).unwrap(), expected);
 	}
@@ -277,17 +280,17 @@ bool false";
 
 	#[test]
 	fn abi_decode() {
-		let command = "ethabi decode function ./examples/foo.json bar 0000000000000000000000000000000000000000000000000000000000000001".split(" ");
+		let command = "ethabi decode function ../examples/foo.json bar 0000000000000000000000000000000000000000000000000000000000000001".split(" ");
 		let expected = "bool true";
 		assert_eq!(execute(command).unwrap(), expected);
 	}
 
 	#[test]
 	fn log_decode() {
-		let command = "ethabi decode log ./examples/event.json Event -l 0000000000000000000000000000000000000000000000000000000000000001 0000000000000000000000004444444444444444444444444444444444444444".split(" ");
+		let command = "ethabi decode log ../examples/event.json Event -l 0000000000000000000000000000000000000000000000000000000000000001 0000000000000000000000004444444444444444444444444444444444444444".split(" ");
 		let expected =
-"a bool true
-b address 4444444444444444444444444444444444444444";
+"a true
+b 4444444444444444444444444444444444444444";
 		assert_eq!(execute(command).unwrap(), expected);
 	}
 }

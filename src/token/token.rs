@@ -1,52 +1,53 @@
 //! Ethereum ABI params.
 use std::fmt::{Display, Formatter, Error};
-use rustc_serialize::hex::ToHex;
+use spec::ParamType;
+use hex::ToHex;
 
 /// Ethereum ABI params.
 #[derive(Debug, PartialEq, Clone)]
 pub enum Token {
 	/// Address.
-	/// 
+	///
 	/// solidity name: address
 	/// Encoded to left padded [0u8; 32].
 	Address([u8;20]),
 	/// Vector of bytes with known size.
-	/// 
+	///
 	/// solidity name eg.: bytes8, bytes32, bytes64, bytes1024
 	/// Encoded to right padded [0u8; ((N + 31) / 32) * 32].
 	FixedBytes(Vec<u8>),
 	/// Vector of bytes of unknown size.
-	/// 
+	///
 	/// solidity name: bytes
 	/// Encoded in two parts.
 	/// Init part: offset of 'closing part`.
 	/// Closing part: encoded length followed by encoded right padded bytes.
 	Bytes(Vec<u8>),
 	/// Signed integer.
-	/// 
+	///
 	/// solidity name: int
 	Int([u8;32]),
 	/// Unisnged integer.
-	/// 
+	///
 	/// solidity name: uint
 	Uint([u8;32]),
 	/// Boolean value.
-	/// 
+	///
 	/// solidity name: bool
 	/// Encoded as left padded [0u8; 32], where last bit represents boolean value.
 	Bool(bool),
 	/// String.
-	/// 
+	///
 	/// solidity name: string
 	/// Encoded in the same way as bytes. Must be utf8 compliant.
 	String(String),
 	/// Array with known size.
-	/// 
+	///
 	/// solidity name eg.: int[3], bool[3], address[][8]
 	/// Encoding of array is equal to encoding of consecutive elements of array.
 	FixedArray(Vec<Token>),
 	/// Array of params with unknown size.
-	/// 
+	///
 	/// solidity name eg. int[], bool[], address[5][]
 	Array(Vec<Token>),
 }
@@ -72,6 +73,49 @@ impl Display for Token {
 }
 
 impl Token {
+	/// Check whether the type of the token matches the given parameter type.
+	///
+	/// Numeric types (`Int` and `Uint`) type check if the size of the token
+	/// type is of greater or equal size than the provided parameter type.
+	pub fn type_check(&self, param_type: &ParamType) -> bool {
+		match *self {
+			Token::Address(_) => *param_type == ParamType::Address,
+			Token::Bytes(_) => *param_type == ParamType::Bytes,
+			Token::Int(bytes) =>
+				if let ParamType::Int(size) = *param_type {
+					size <= bytes.len() * 8
+				} else {
+					false
+				},
+			Token::Uint(bytes) =>
+				if let ParamType::Uint(size) = *param_type {
+					size <= bytes.len() * 8
+				} else {
+					false
+				},
+			Token::Bool(_) => *param_type == ParamType::Bool,
+			Token::String(_) => *param_type == ParamType::String,
+			Token::FixedBytes(ref bytes) =>
+				if let ParamType::FixedBytes(size) = *param_type {
+					size == bytes.len()
+				} else {
+					false
+				},
+			Token::Array(ref tokens) =>
+				if let ParamType::Array(ref param_type) = *param_type {
+					tokens.iter().all(|t| t.type_check(param_type))
+				} else {
+					false
+				},
+			Token::FixedArray(ref tokens) =>
+				if let ParamType::FixedArray(ref param_type, size) = *param_type {
+					size == tokens.len() && tokens.iter().all(|t| t.type_check(param_type))
+				} else {
+					false
+				},
+		}
+	}
+
 	/// Converts token to...
 	pub fn to_address(self) -> Option<[u8; 20]> {
 		match self {
