@@ -101,7 +101,7 @@ impl Event {
 	}
 
 	/// Return the inputs of the event.
-	pub fn inputs(&self) -> &Vec<EventParam> {
+	pub fn inputs(&self) -> &[EventParam] {
 		&self.interface.inputs
 	}
 }
