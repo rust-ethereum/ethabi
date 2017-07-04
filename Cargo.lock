@@ -1,6 +1,6 @@
 [root]
 name = "ethabi-cli"
-version = "2.0.0"
+version = "2.0.1"
 dependencies = [
  "docopt 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "ethabi 2.0.0",

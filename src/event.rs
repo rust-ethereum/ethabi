@@ -49,7 +49,7 @@ impl Event {
 
 		let mut result = topics.into_iter()
 			.map(|topic| {
-				let encoded = Encoder::encode(vec![topic]);
+				let encoded: Vec<_> = Encoder::encode(vec![topic]);
 				if encoded.len() == 32 {
 					let mut data = [0u8; 32];
 					data.copy_from_slice(&encoded);
@@ -68,7 +68,7 @@ impl Event {
 	}
 
 	/// Decodes event indexed params and data.
-	pub fn decode_log(&self, topics: Vec<[u8; 32]>, data: Vec<u8>) -> Result<Vec<LogParam>, Error> {
+	pub fn decode_log(&self, topics: Vec<[u8; 32]>, data: &[u8]) -> Result<Vec<LogParam>, Error> {
 		let topics_len = topics.len();
 		// obtains all params info
 		let topic_params = self.interface.indexed_params(true);
@@ -94,7 +94,7 @@ impl Event {
 			.flat_map(|t| t.to_vec())
 			.collect::<Vec<u8>>();
 
-		let topic_tokens = try!(Decoder::decode(&topic_types, flat_topics));
+		let topic_tokens = try!(Decoder::decode(&topic_types, &flat_topics));
 
 		// topic may be only a 32 bytes encoded token
 		if topic_tokens.len() != topics_len - to_skip {

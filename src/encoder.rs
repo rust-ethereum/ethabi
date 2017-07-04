@@ -2,6 +2,7 @@
 
 use token::Token;
 use util::pad_u32;
+use std::iter::FromIterator;
 
 fn pad_bytes(bytes: Vec<u8>) -> Vec<[u8; 32]> {
 	let mut result = vec![pad_u32(bytes.len() as u32)];
@@ -115,7 +116,7 @@ pub struct Encoder;
 
 impl Encoder {
 	/// Encodes vector of tokens into ABI compliant vector of bytes.
-	pub fn encode(tokens: Vec<Token>) -> Vec<u8> {
+	pub fn encode<T: FromIterator<u8>>(tokens: Vec<Token>) -> T {
 		let mediates: Vec<Mediate> = tokens.into_iter()
 			.map(Self::encode_token)
 			.collect();
