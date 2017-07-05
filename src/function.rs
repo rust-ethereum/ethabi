@@ -2,8 +2,8 @@
 
 use spec::{Function as FunctionInterface, ParamType};
 use token::Token;
-use encoder::Encoder;
-use decoder::Decoder;
+use encoder::encode;
+use decoder::decode;
 use signature::short_signature;
 use error::Error;
 use std::iter::FromIterator;
@@ -41,13 +41,13 @@ impl Function {
 		}
 
 		let signed = short_signature(&self.interface.name, &params).to_vec();
-		let encoded: Vec<_> = Encoder::encode(tokens);
+		let encoded: Vec<_> = encode(tokens);
 		Ok(signed.into_iter().chain(encoded.into_iter()).collect())
 	}
 
 	/// Parses the ABI function output to list of tokens.
 	pub fn decode_output(&self, data: &[u8]) -> Result<Vec<Token>, Error> {
-		Decoder::decode(&self.interface.output_param_types(), data)
+		decode(&self.interface.output_param_types(), data)
 	}
 
 	/// Get the name of the function.
@@ -91,7 +91,7 @@ mod tests {
 		let func = Function::new(interface);
 		let mut uint = [0u8; 32];
 		uint[31] = 69;
-		let encoded = func.encode_call(vec![Token::Uint(uint), Token::Bool(true)]).unwrap();
+		let encoded: Vec<_> = func.encode_call(vec![Token::Uint(uint), Token::Bool(true)]).unwrap();
 		let expected = "cdcd77c000000000000000000000000000000000000000000000000000000000000000450000000000000000000000000000000000000000000000000000000000000001".from_hex().unwrap();
 		assert_eq!(encoded, expected);
 	}

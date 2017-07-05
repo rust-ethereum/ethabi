@@ -27,8 +27,8 @@ pub use self::constructor::Constructor;
 pub use self::contract::Contract;
 pub use self::token::Token;
 pub use self::error::Error;
-pub use self::encoder::Encoder;
-pub use self::decoder::Decoder;
+pub use self::encoder::encode;
+pub use self::decoder::decode;
 pub use self::function::Function;
 pub use self::event::{Event, LogParam};
 

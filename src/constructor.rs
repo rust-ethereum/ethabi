@@ -4,7 +4,7 @@ use spec::Constructor as ConstructorInterface;
 use function::type_check;
 use token::Token;
 use error::Error;
-use encoder::Encoder;
+use encoder::encode;
 
 /// Contract constructor call builder.
 #[derive(Clone, Debug)]
@@ -25,7 +25,7 @@ impl Constructor {
 		let params = self._interface.param_types();
 
 		if type_check(&tokens, &params) {
-			Ok(Encoder::encode(tokens))
+			Ok(encode(tokens))
 		} else {
 			Err(Error::InvalidData)
 		}
