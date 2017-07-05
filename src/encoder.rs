@@ -4,13 +4,13 @@ use token::Token;
 use util::pad_u32;
 use std::iter::FromIterator;
 
-fn pad_bytes(bytes: Vec<u8>) -> Vec<[u8; 32]> {
+fn pad_bytes(bytes: &[u8]) -> Vec<[u8; 32]> {
 	let mut result = vec![pad_u32(bytes.len() as u32)];
 	result.extend(pad_fixed_bytes(bytes));
 	result
 }
 
-fn pad_fixed_bytes(bytes: Vec<u8>) -> Vec<[u8; 32]> {
+fn pad_fixed_bytes(bytes: &[u8]) -> Vec<[u8; 32]> {
 	let mut result = vec![];
 	let len = (bytes.len() + 31) / 32;
 	for i in 0..len {
@@ -112,7 +112,7 @@ impl Mediate {
 }
 
 /// Encodes vector of tokens into ABI compliant vector of bytes.
-pub fn encode<T: FromIterator<u8>>(tokens: Vec<Token>) -> T {
+pub fn encode<T: FromIterator<u8>>(tokens: &[Token]) -> T {
 	let mediates: Vec<Mediate> = tokens.into_iter()
 		.map(encode_token)
 		.collect();
@@ -130,30 +130,30 @@ pub fn encode<T: FromIterator<u8>>(tokens: Vec<Token>) -> T {
 		.collect()
 }
 
-fn encode_token(token: Token) -> Mediate {
-	match token {
-		Token::Address(address) => {
+fn encode_token(token: &Token) -> Mediate {
+	match *token {
+		Token::Address(ref address) => {
 			let mut padded = [0u8; 32];
-			padded[12..].copy_from_slice(&address);
+			padded[12..].copy_from_slice(address);
 			Mediate::Raw(vec![padded])
 		},
-		Token::Bytes(bytes) => Mediate::Prefixed(pad_bytes(bytes)),
-		Token::String(s) => Mediate::Prefixed(pad_bytes(s.into_bytes())),
-		Token::FixedBytes(bytes) => Mediate::Raw(pad_fixed_bytes(bytes)),
-		Token::Int(int) => Mediate::Raw(vec![int]),
-		Token::Uint(uint) => Mediate::Raw(vec![uint]),
-		Token::Bool(b) => {
-			let value = if b { 1 } else { 0 };
+		Token::Bytes(ref bytes) => Mediate::Prefixed(pad_bytes(bytes)),
+		Token::String(ref s) => Mediate::Prefixed(pad_bytes(s.as_bytes())),
+		Token::FixedBytes(ref bytes) => Mediate::Raw(pad_fixed_bytes(bytes)),
+		Token::Int(ref int) => Mediate::Raw(vec![int.clone()]),
+		Token::Uint(ref uint) => Mediate::Raw(vec![uint.clone()]),
+		Token::Bool(ref b) => {
+			let value = if *b { 1 } else { 0 };
 			Mediate::Raw(vec![pad_u32(value)])
 		},
-		Token::Array(tokens) => {
+		Token::Array(ref tokens) => {
 			let mediates = tokens.into_iter()
 				.map(encode_token)
 				.collect();
 
 			Mediate::Array(mediates)
 		},
-		Token::FixedArray(tokens) => {
+		Token::FixedArray(ref tokens) => {
 			let mediates = tokens.into_iter()
 				.map(encode_token)
 				.collect();

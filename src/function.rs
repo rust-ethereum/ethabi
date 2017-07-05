@@ -33,7 +33,7 @@ impl Function {
 	}
 
 	/// Prepares ABI function call with given input params.
-	pub fn encode_call<T: FromIterator<u8>>(&self, tokens: Vec<Token>) -> Result<T, Error> {
+	pub fn encode_call<T: FromIterator<u8>>(&self, tokens: &[Token]) -> Result<T, Error> {
 		let params = self.interface.input_param_types();
 
 		if !type_check(&tokens, &params) {

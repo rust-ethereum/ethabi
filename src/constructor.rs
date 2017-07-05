@@ -21,7 +21,7 @@ impl Constructor {
 	}
 
 	/// Prepares ABI constructor call with given input params.
-	pub fn encode_call(&self, tokens: Vec<Token>) -> Result<Vec<u8>, Error> {
+	pub fn encode_call(&self, tokens: &[Token]) -> Result<Vec<u8>, Error> {
 		let params = self._interface.param_types();
 
 		if type_check(&tokens, &params) {

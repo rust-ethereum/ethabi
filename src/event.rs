@@ -49,7 +49,7 @@ impl Event {
 
 		let mut result = topics.into_iter()
 			.map(|topic| {
-				let encoded: Vec<_> = encode(vec![topic]);
+				let encoded: Vec<_> = encode(&[topic]);
 				if encoded.len() == 32 {
 					let mut data = [0u8; 32];
 					data.copy_from_slice(&encoded);
