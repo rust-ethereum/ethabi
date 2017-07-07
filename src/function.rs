@@ -91,7 +91,7 @@ mod tests {
 		let func = Function::new(interface);
 		let mut uint = [0u8; 32];
 		uint[31] = 69;
-		let encoded: Vec<_> = func.encode_call(vec![Token::Uint(uint), Token::Bool(true)]).unwrap();
+		let encoded: Vec<_> = func.encode_call(&[Token::Uint(uint), Token::Bool(true)]).unwrap();
 		let expected = "cdcd77c000000000000000000000000000000000000000000000000000000000000000450000000000000000000000000000000000000000000000000000000000000001".from_hex().unwrap();
 		assert_eq!(encoded, expected);
 	}
