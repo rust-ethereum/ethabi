@@ -14,7 +14,7 @@ use docopt::Docopt;
 use hex::{ToHex, FromHex};
 use ethabi::spec::param_type::{ParamType, Reader};
 use ethabi::token::{Token, Tokenizer, StrictTokenizer, LenientTokenizer, TokenFromHex};
-use ethabi::{Encoder, Decoder, Contract, Function, Event, Interface};
+use ethabi::{encode, decode, Contract, Function, Event, Interface};
 use error::Error;
 
 pub const ETHABI: &'static str = r#"
@@ -126,7 +126,7 @@ fn encode_call(path: &str, function: String, values: Vec<String>, lenient: bool)
 		.collect();
 
 	let tokens = try!(parse_tokens(&params, lenient));
-	let result = try!(function.encode_call(tokens));
+	let result: Vec<_> = try!(function.encode_call(tokens));
 
 	Ok(result.to_hex())
 }
@@ -145,7 +145,7 @@ fn encode_params(types: Vec<String>, values: Vec<String>, lenient: bool) -> Resu
 		.collect();
 
 	let tokens = try!(parse_tokens(&params, lenient));
-	let result = Encoder::encode(tokens);
+	let result: Vec<_> = encode(tokens);
 
 	Ok(result.to_hex())
 }
@@ -155,7 +155,7 @@ fn decode_call_output(path: &str, function: String, data: String) -> Result<Stri
 	let data = try!(data.from_hex());
 
 	let types = function.output_params();
-	let tokens = try!(function.decode_output(data));
+	let tokens = try!(function.decode_output(&data));
 
 	assert_eq!(types.len(), tokens.len());
 
@@ -176,7 +176,7 @@ fn decode_params(types: Vec<String>, data: String) -> Result<String, Error> {
 	let types = try!(types);
 	let data = try!(data.from_hex());
 
-	let tokens = try!(Decoder::decode(&types, data));
+	let tokens = try!(decode(&types, &data));
 
 	assert_eq!(types.len(), tokens.len());
 
@@ -196,7 +196,7 @@ fn decode_log(path: &str, event: String, topics: Vec<String>, data: String) -> R
 		.collect();
 	let topics = try!(topics);
 	let data = try!(data.from_hex());
-	let decoded = try!(event.decode_log(topics, data));
+	let decoded = try!(event.decode_log(topics, &data));
 
 	let result = decoded.into_iter()
 		.map(|log_param| format!("{} {}", log_param.name, log_param.value))
