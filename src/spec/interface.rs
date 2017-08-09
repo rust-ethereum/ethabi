@@ -1,7 +1,8 @@
 //! Contract interface.
 
 use serde_json;
-use super::{Operation, Constructor, Function, Event, Error};
+use super::{Operation, Constructor, Function, Event};
+use errors::Error;
 
 /// Contract interface.
 #[derive(Clone, Debug, PartialEq, Deserialize)]

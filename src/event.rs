@@ -5,7 +5,7 @@ use tiny_keccak::keccak256;
 use spec::{Event as EventInterface, ParamType, EventParam};
 use decoder::Decoder;
 use token::Token;
-use error::Error;
+use errors::{Error, ErrorKind};
 use signature::long_signature;
 use Encoder;
 
@@ -44,7 +44,7 @@ impl Event {
 		let equal_len = topics.len() == topic_params.len();
 		let equal_types = topics.iter().zip(topic_params.iter()).all(|(topic, param)| topic.type_check(&param.kind));
 		if !equal_len || !equal_types {
-			return Err(Error::InvalidData);
+			return Err(ErrorKind::InvalidData.into());
 		}
 
 		let mut result = topics.into_iter()
@@ -78,9 +78,9 @@ impl Event {
 			0
 		} else {
 			// verify
-			let event_signature = topics.get(0).ok_or(Error::InvalidData)?;
+			let event_signature = topics.get(0).ok_or(ErrorKind::InvalidData)?;
 			if event_signature != &self.signature() {
-				return Err(Error::InvalidData);
+				return Err(ErrorKind::InvalidData.into());
 			}
 			1
 		};
@@ -98,7 +98,7 @@ impl Event {
 
 		// topic may be only a 32 bytes encoded token
 		if topic_tokens.len() != topics_len - to_skip {
-			return Err(Error::InvalidData);
+			return Err(ErrorKind::InvalidData.into());
 		}
 
 		let topics_named_tokens = topic_params.into_iter()

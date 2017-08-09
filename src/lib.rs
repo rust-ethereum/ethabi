@@ -10,27 +10,30 @@ extern crate tiny_keccak;
 #[macro_use]
 extern crate serde_derive;
 
+#[macro_use]
+extern crate error_chain;
+
 pub mod spec;
 pub mod token;
 mod constructor;
 mod contract;
 mod decoder;
 mod encoder;
-mod error;
+mod errors;
 mod function;
 mod event;
 mod signature;
 pub mod util;
 
-pub use self::spec::Interface;
-pub use self::constructor::Constructor;
-pub use self::contract::Contract;
-pub use self::token::Token;
-pub use self::error::Error;
-pub use self::encoder::Encoder;
-pub use self::decoder::Decoder;
-pub use self::function::Function;
-pub use self::event::{Event, LogParam};
+pub use spec::Interface;
+pub use constructor::Constructor;
+pub use contract::Contract;
+pub use token::Token;
+pub use errors::{Error, ErrorKind, Result, ResultExt};
+pub use encoder::Encoder;
+pub use decoder::Decoder;
+pub use function::Function;
+pub use event::{Event, LogParam};
 
 /// ABI address.
 pub type Address = [u8; 20];

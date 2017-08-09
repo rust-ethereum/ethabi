@@ -1,11 +1,11 @@
 //! Utils used by different modules.
 
-use error::Error;
+use errors::{Error, ErrorKind};
 
 /// Convers vector of bytes with len equal n * 32, to a vector of slices.
 pub fn slice_data(data: Vec<u8>) -> Result<Vec<[u8; 32]>, Error> {
 	if data.len() % 32 != 0 {
-		return Err(Error::InvalidData);
+		return Err(ErrorKind::InvalidData.into());
 	}
 
 	let times = data.len() / 32;

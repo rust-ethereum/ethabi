@@ -5,7 +5,7 @@ use token::Token;
 use encoder::Encoder;
 use decoder::Decoder;
 use signature::short_signature;
-use error::Error;
+use errors::{Error, ErrorKind};
 
 /// Contract function call builder.
 #[derive(Clone, Debug)]
@@ -36,7 +36,7 @@ impl Function {
 		let params = self.interface.input_param_types();
 
 		if !type_check(&tokens, &params) {
-			return Err(Error::InvalidData);
+			return Err(ErrorKind::InvalidData.into());
 		}
 
 		let signed = short_signature(&self.interface.name, &params).to_vec();

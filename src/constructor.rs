@@ -3,7 +3,7 @@
 use spec::Constructor as ConstructorInterface;
 use function::type_check;
 use token::Token;
-use error::Error;
+use errors::{Error, ErrorKind};
 use encoder::Encoder;
 
 /// Contract constructor call builder.
@@ -27,7 +27,7 @@ impl Constructor {
 		if type_check(&tokens, &params) {
 			Ok(Encoder::encode(tokens))
 		} else {
-			Err(Error::InvalidData)
+			Err(ErrorKind::InvalidData.into())
 		}
 	}
 }

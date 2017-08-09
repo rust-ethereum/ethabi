@@ -1,13 +1,12 @@
 //! ABI param and parsing for it.
 
-mod error;
 mod lenient;
 mod strict;
 mod token;
 pub mod from_hex;
 
 use spec::ParamType;
-pub use self::error::Error;
+use errors::{Error, ErrorKind, ResultExt};
 pub use self::lenient::LenientTokenizer;
 pub use self::strict::StrictTokenizer;
 pub use self::token::Token;
@@ -27,7 +26,7 @@ pub trait Tokenizer {
 			ParamType::Int(_) => Self::tokenize_int(value).map(Token::Int),
 			ParamType::Array(ref p) => Self::tokenize_array(value, p).map(Token::Array),
 			ParamType::FixedArray(ref p, len) => Self::tokenize_fixed_array(value, p, len).map(Token::FixedArray),
-		}
+		}.chain_err(|| format!("Cannot parse {}", param))
 	}
 
 	/// Tries to parse a value as a vector of tokens of fixed size.
@@ -35,14 +34,14 @@ pub trait Tokenizer {
 		let result = try!(Self::tokenize_array(value, param));
 		match result.len() == len {
 			true => Ok(result),
-			false => Err(Error::InvalidValue),
+			false => Err(ErrorKind::InvalidData.into()),
 		}
 	}
 
 	/// Tries to parse a value as a vector of tokens.
 	fn tokenize_array(value: &str, param: &ParamType) -> Result<Vec<Token>, Error> {
 		if Some('[') != value.chars().next() || Some(']') != value.chars().last() {
-			return Err(Error::InvalidValue);
+			return Err(ErrorKind::InvalidData.into());
 		}
 
 		let mut result = vec![];
@@ -57,7 +56,7 @@ pub trait Tokenizer {
 				']' if ignore == false => {
 					nested -= 1;
 					if nested < 0 {
-						return Err(Error::InvalidValue);
+						return Err(ErrorKind::InvalidData.into());
 					} else if nested == 0 {
 						let sub = &value[last_item..i];
 						let token = try!(Self::tokenize(param, sub));

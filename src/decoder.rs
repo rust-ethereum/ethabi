@@ -1,7 +1,7 @@
 //! ABI decoder.
 
 use spec::ParamType;
-use error::Error;
+use errors::{ErrorKind, Error, ResultExt};
 use token::Token;
 use util::slice_data;
 
@@ -20,7 +20,7 @@ struct BytesTaken {
 
 fn as_u32(slice: &[u8; 32]) -> Result<u32, Error> {
 	if !slice[..28].iter().all(|x| *x == 0) {
-		return Err(Error::InvalidData);
+		return Err(ErrorKind::InvalidData.into());
 	}
 
 	let result = ((slice[28] as u32) << 24) +
@@ -33,7 +33,7 @@ fn as_u32(slice: &[u8; 32]) -> Result<u32, Error> {
 
 fn as_bool(slice: &[u8; 32]) -> Result<bool, Error> {
 	if !slice[..31].iter().all(|x| *x == 0) {
-		return Err(Error::InvalidData);
+		return Err(ErrorKind::InvalidData.into());
 	}
 
 	Ok(slice[31] == 1)
@@ -42,11 +42,11 @@ fn as_bool(slice: &[u8; 32]) -> Result<bool, Error> {
 impl Decoder {
 	/// Decodes ABI compliant vector of bytes into vector of tokens described by types param.
 	pub fn decode(types: &[ParamType], data: Vec<u8>) -> Result<Vec<Token>, Error> {
-		let slices = try!(slice_data(data));
+		let slices = slice_data(data)?;
 		let mut tokens = vec![];
 		let mut offset = 0;
 		for param in types {
-			let res = try!(Self::decode_param(param, &slices, offset));
+			let res = Self::decode_param(param, &slices, offset).chain_err(|| format!("Cannot decode {}", param))?;
 			offset = res.new_offset;
 			tokens.push(res.token);
 		}
@@ -54,7 +54,7 @@ impl Decoder {
 	}
 
 	fn peek(slices: &Vec<[u8; 32]>, position: usize) -> Result<&[u8; 32], Error> {
-		slices.get(position).ok_or(Error::InvalidData)
+		slices.get(position).ok_or_else(|| ErrorKind::InvalidData.into())
 	}
 
 	fn take_bytes(slices: &Vec<[u8; 32]>, position: usize, len: usize) -> Result<BytesTaken, Error> {
