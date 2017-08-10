@@ -1,5 +1,5 @@
 //! Ethereum ABI params.
-use std::fmt::{Display, Formatter, Error};
+use std::fmt;
 use spec::ParamType;
 use hex::ToHex;
 
@@ -52,8 +52,8 @@ pub enum Token {
 	Array(Vec<Token>),
 }
 
-impl Display for Token {
-	fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+impl fmt::Display for Token {
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 		match *self {
 			Token::Bool(b) => write!(f, "{}", b),
 			Token::String(ref s) => write!(f, "{}", s),

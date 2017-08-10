@@ -3,7 +3,7 @@ use spec::{Interface, Operation};
 use function::Function;
 use constructor::Constructor;
 use event::Event;
-use error::Error;
+use errors::{Error, ErrorKind};
 
 /// API building calls to contracts ABI.
 #[derive(Clone, Debug)]
@@ -51,12 +51,12 @@ impl Contract {
 
     /// Creates function call builder.
     pub fn function(&self, name: &str) -> Result<Function, Error> {
-        self.functions.get(name).cloned().ok_or(Error::InvalidName)
+        self.functions.get(name).cloned().ok_or_else(|| ErrorKind::InvalidName(name.to_owned()).into())
     }
 
     /// Creates event decoder.
     pub fn event(&self, name: &str) -> Result<Event, Error> {
-        self.events.get(name).cloned().ok_or(Error::InvalidName)
+        self.events.get(name).cloned().ok_or_else(|| ErrorKind::InvalidName(name.to_owned()).into())
     }
 
     /// Iterate over all functions of the contract in arbitrary order.

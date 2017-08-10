@@ -1,7 +1,7 @@
 //! Creates fixed size token from bytes.
 
 use hex::FromHex;
-use super::Error;
+use errors::{Error, ErrorKind};
 
 /// Creates fixed size token from bytes.
 pub trait TokenFromHex<T> {
@@ -14,10 +14,10 @@ macro_rules! impl_token_from_hex {
 		impl TokenFromHex<[u8; $size]> for str {
 			fn token_from_hex(&self) -> Result<[u8; $size], Error> {
 				let mut result = [0u8; $size];
-				let bytes = self.from_hex().unwrap();
+				let bytes = self.from_hex()?;
 
 				if bytes.len() != $size {
-					return Err(Error::InvalidValue);
+					return Err(ErrorKind::InvalidData.into());
 				}
 
 				result.copy_from_slice(&bytes);

@@ -3,6 +3,8 @@ extern crate rustc_hex as hex;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
+#[macro_use]
+extern crate error_chain;
 extern crate ethabi;
 
 mod error;
@@ -15,7 +17,7 @@ use hex::{ToHex, FromHex};
 use ethabi::spec::param_type::{ParamType, Reader};
 use ethabi::token::{Token, Tokenizer, StrictTokenizer, LenientTokenizer, TokenFromHex};
 use ethabi::{Encoder, Decoder, Contract, Function, Event, Interface};
-use error::Error;
+use error::{Error, ResultExt};
 
 pub const ETHABI: &'static str = r#"
 Ethereum ABI coder.
@@ -63,9 +65,16 @@ fn main() {
 
 	match result {
 		Ok(s) => println!("{}", s),
-		Err(Error::Docopt(err)) => println!("{}", err),
-		Err(error) => println!("error: {:?}", error)
+		Err(error) => print_err(error),
 	}
+}
+
+fn print_err(err: Error) {
+	let message = err.iter()
+		.map(|e| e.to_string())
+		.filter(|e| !e.is_empty())
+		.collect::<Vec<_>>().join("\n\nCaused by:\n  ");
+	println!("{}", message);
 }
 
 fn execute<S, I>(command: I) -> Result<String, Error> where I: IntoIterator<Item=S>, S: AsRef<str> {
@@ -125,8 +134,8 @@ fn encode_call(path: &str, function: String, values: Vec<String>, lenient: bool)
 		.zip(values.into_iter())
 		.collect();
 
-	let tokens = try!(parse_tokens(&params, lenient));
-	let result = try!(function.encode_call(tokens));
+	let tokens = parse_tokens(&params, lenient)?;
+	let result = function.encode_call(tokens)?;
 
 	Ok(result.to_hex())
 }
@@ -134,17 +143,15 @@ fn encode_call(path: &str, function: String, values: Vec<String>, lenient: bool)
 fn encode_params(types: Vec<String>, values: Vec<String>, lenient: bool) -> Result<String, Error> {
 	assert_eq!(types.len(), values.len());
 
-	let types: Result<Vec<ParamType>, _> = types.iter()
+	let types: Vec<ParamType> = types.iter()
 		.map(|s| Reader::read(s))
-		.collect();
-
-	let types = try!(types);
+		.collect::<Result<_, _>>()?;
 
 	let params: Vec<_> = types.into_iter()
 		.zip(values.into_iter())
 		.collect();
 
-	let tokens = try!(parse_tokens(&params, lenient));
+	let tokens = parse_tokens(&params, lenient)?;
 	let result = Encoder::encode(tokens);
 
 	Ok(result.to_hex())
@@ -152,7 +159,7 @@ fn encode_params(types: Vec<String>, values: Vec<String>, lenient: bool) -> Resu
 
 fn decode_call_output(path: &str, function: String, data: String) -> Result<String, Error> {
 	let function = try!(load_function(path, function));
-	let data = try!(data.from_hex());
+	let data = data.from_hex().chain_err(|| "Expected <data> to be hex")?;
 
 	let types = function.output_params();
 	let tokens = try!(function.decode_output(data));
@@ -169,12 +176,11 @@ fn decode_call_output(path: &str, function: String, data: String) -> Result<Stri
 }
 
 fn decode_params(types: Vec<String>, data: String) -> Result<String, Error> {
-	let types: Result<Vec<ParamType>, _> = types.iter()
+	let types: Vec<ParamType> = types.iter()
 		.map(|s| Reader::read(s))
-		.collect();
+		.collect::<Result<_, _>>()?;
 
-	let types = try!(types);
-	let data = try!(data.from_hex());
+	let data = data.from_hex().chain_err(|| "Expected <data> to be hex")?;
 
 	let tokens = try!(Decoder::decode(&types, data));
 
@@ -191,11 +197,10 @@ fn decode_params(types: Vec<String>, data: String) -> Result<String, Error> {
 
 fn decode_log(path: &str, event: String, topics: Vec<String>, data: String) -> Result<String, Error> {
 	let event = try!(load_event(path, event));
-	let topics: Result<Vec<[u8; 32]>, Error> = topics.into_iter()
+	let topics: Vec<[u8; 32]> = topics.into_iter()
 		.map(|t| t.token_from_hex().map_err(From::from))
-		.collect();
-	let topics = try!(topics);
-	let data = try!(data.from_hex());
+		.collect::<Result<_, Error>>()?;
+	let data = data.from_hex().chain_err(|| "Expected <data> to be hex")?;
 	let decoded = try!(event.decode_log(topics, data));
 
 	let result = decoded.into_iter()
