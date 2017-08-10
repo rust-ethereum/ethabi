@@ -25,14 +25,15 @@ pub struct Event {
 	interface: EventInterface,
 }
 
-impl Event {
-	/// Creates new instance of `Event`.
-	pub fn new(interface: EventInterface) -> Self {
+impl From<EventInterface> for Event {
+	fn from(interface: EventInterface) -> Self {
 		Event {
-			interface: interface
+			interface,
 		}
 	}
+}
 
+impl Event {
 	/// Event signature
 	pub fn signature(&self) -> [u8; 32] {
 		long_signature(&self.interface.name, &self.interface.param_types())
@@ -173,7 +174,7 @@ mod tests {
 			anonymous: false,
 		};
 
-		let event = Event::new(i);
+		let event = Event::from(i);
 
 		let result = event.decode_log(
 			vec![

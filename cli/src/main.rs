@@ -10,13 +10,12 @@ extern crate ethabi;
 mod error;
 
 use std::fs::File;
-use std::io::Read;
 use std::env;
 use docopt::Docopt;
 use hex::{ToHex, FromHex};
 use ethabi::spec::param_type::{ParamType, Reader};
 use ethabi::token::{Token, Tokenizer, StrictTokenizer, LenientTokenizer, TokenFromHex};
-use ethabi::{Encoder, Decoder, Contract, Function, Event, Interface};
+use ethabi::{Encoder, Decoder, Contract, Function, Event};
 use error::{Error, ResultExt};
 
 pub const ETHABI: &'static str = r#"
@@ -97,22 +96,16 @@ fn execute<S, I>(command: I) -> Result<String, Error> where I: IntoIterator<Item
 }
 
 fn load_function(path: &str, function: String) -> Result<Function, Error> {
-	let file = try!(File::open(path));
-	let bytes: Vec<u8> = try!(file.bytes().collect());
-
-	let interface = try!(Interface::load(&bytes));
-	let contract = Contract::new(interface);
-	let function = try!(contract.function(&function));
+	let file = File::open(path)?;
+	let contract = Contract::load(file)?;
+	let function = contract.function(&function)?.clone();
 	Ok(function)
 }
 
 fn load_event(path: &str, event: String) -> Result<Event, Error> {
-	let file = try!(File::open(path));
-	let bytes: Vec<u8> = try!(file.bytes().collect());
-
-	let interface = try!(Interface::load(&bytes));
-	let contract = Contract::new(interface);
-	let event = try!(contract.event(&event));
+	let file = File::open(path)?;
+	let contract = Contract::load(file)?;
+	let event = contract.event(&event)?.clone();
 	Ok(event)
 }
 

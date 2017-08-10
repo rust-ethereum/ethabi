@@ -13,14 +13,15 @@ pub struct Function {
 	interface: FunctionInterface,
 }
 
-impl Function {
-	/// Creates new function call builder.
-	pub fn new(interface: FunctionInterface) -> Self {
+impl From<FunctionInterface> for Function {
+	fn from(interface: FunctionInterface) -> Self {
 		Function {
-			interface: interface
+			interface,
 		}
 	}
+}
 
+impl Function {
 	/// Returns function params.
 	pub fn input_params(&self) -> Vec<ParamType> {
 		self.interface.input_param_types()
@@ -87,7 +88,7 @@ mod tests {
 			outputs: vec![]
 		};
 
-		let func = Function::new(interface);
+		let func = Function::from(interface);
 		let mut uint = [0u8; 32];
 		uint[31] = 69;
 		let encoded = func.encode_call(vec![Token::Uint(uint), Token::Bool(true)]).unwrap();

@@ -12,14 +12,15 @@ pub struct Constructor {
 	_interface: ConstructorInterface,
 }
 
-impl Constructor {
-	/// Creates new constructor call builder.
-	pub fn new(interface: ConstructorInterface) -> Self {
+impl From<ConstructorInterface> for Constructor {
+	fn from(interface: ConstructorInterface) -> Self {
 		Constructor {
-			_interface: interface
+			_interface: interface,
 		}
 	}
+}
 
+impl Constructor {
 	/// Prepares ABI constructor call with given input params.
 	pub fn encode_call(&self, tokens: Vec<Token>) -> Result<Vec<u8>, Error> {
 		let params = self._interface.param_types();

@@ -13,7 +13,7 @@ pub use self::constructor::Constructor;
 pub use self::event::Event;
 pub use self::event_param::EventParam;
 pub use self::function::Function;
-pub use self::interface::{Interface, Operations};
+pub use self::interface::Interface;
 pub use self::operation::Operation;
 pub use self::param::Param;
 pub use self::param_type::ParamType;

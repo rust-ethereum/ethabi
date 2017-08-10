@@ -27,7 +27,7 @@ pub mod util;
 
 pub use spec::Interface;
 pub use constructor::Constructor;
-pub use contract::Contract;
+pub use contract::{Contract, Functions, Events};
 pub use token::Token;
 pub use errors::{Error, ErrorKind, Result, ResultExt};
 pub use encoder::Encoder;

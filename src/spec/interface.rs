@@ -1,64 +1,70 @@
 //! Contract interface.
 
+use std::io;
+use std::collections::HashMap;
+use std::fmt;
+use serde::{Deserialize, Deserializer};
+use serde::de::{Visitor, SeqAccess};
 use serde_json;
-use super::{Operation, Constructor, Function, Event};
 use errors::Error;
+use super::{Operation, Constructor, Function, Event};
 
 /// Contract interface.
-#[derive(Clone, Debug, PartialEq, Deserialize)]
-pub struct Interface(Vec<Operation>);
+#[derive(Default, Clone, Debug, PartialEq)]
+pub struct Interface {
+	/// Contract constructor.
+	pub constructor: Option<Constructor>,
+	/// Contract functions.
+	pub functions: HashMap<String, Function>,
+	/// Contract events.
+	pub events: HashMap<String, Event>,
+	/// Contract has fallback function.
+	pub fallback: bool,
+}
+
+impl<'a> Deserialize<'a> for Interface {
+	fn deserialize<D>(deserializer: D) -> Result<Interface, D::Error> where D: Deserializer<'a> {
+		deserializer.deserialize_any(InterfaceVisitor)
+	}
+}
+
+struct InterfaceVisitor;
+
+impl<'a> Visitor<'a> for InterfaceVisitor {
+	type Value = Interface;
+
+	fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+		formatter.write_str("valid abi spec file")
+	}
+
+	fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error> where A: SeqAccess<'a> {
+		let mut result = Interface::default();
+
+		while let Some(operation) = seq.next_element()? {
+			match operation {
+				Operation::Constructor(constructor) => {
+					result.constructor = Some(constructor);
+				},
+				Operation::Function(func) => {
+					result.functions.insert(func.name.clone(), func);
+				},
+				Operation::Event(event) => {
+					result.events.insert(event.name.clone(), event);
+				},
+				Operation::Fallback => {
+					result.fallback = true;
+				},
+			}
+		}
+
+		Ok(result)
+	}
+}
 
 impl Interface {
 	/// Loads interface from json.
-	pub fn load(bytes: &[u8]) -> Result<Self, Error> {
-		serde_json::from_slice(bytes).map_err(From::from)
-	}
-
-	/// Returns contract constructor specification.
-	// TODO: these methods can be removed in a future major version as they are
-	//       currently unused and the same functionality can be achieved with
-	//       Contract
-	pub fn constructor(&self) -> Option<Constructor> {
-		self.0.iter()
-			.filter_map(Operation::constructor)
-			.next()
-			.cloned()
-	}
-
-	/// Returns specification of contract function.
-	pub fn function(&self, name: String) -> Option<Function> {
-		self.0.iter()
-			.filter_map(Operation::function)
-			.find(|f| f.name == name)
-			.cloned()
-	}
-
-	/// Returns specification of contract event.
-	pub fn event(&self, name: String) -> Option<Event> {
-		self.0.iter()
-			.filter_map(Operation::event)
-			.find(|e| e.name == name)
-			.cloned()
-	}
-
-	/// Get an iterator over all operations of the contract.
-	pub fn operations(&self) -> Operations {
-		Operations {
-			inner: self.0.iter()
-		}
-	}
-}
-
-/// An iterator over all operations of an interface.
-pub struct Operations<'a> {
-	inner: ::std::slice::Iter<'a, Operation>,
-}
-
-impl<'a> Iterator for Operations<'a> {
-	type Item = &'a Operation;
-
-	fn next(&mut self) -> Option<&'a Operation> {
-		self.inner.next()
+	pub fn load<T: io::Read>(reader: T) -> Result<Self, Error> {
+		serde_json::from_reader(reader).map_err(From::from)
 	}
 }
 
@@ -66,7 +72,6 @@ impl<'a> Iterator for Operations<'a> {
 mod tests {
 	use serde_json;
 	use super::Interface;
-	use spec::{ParamType, Function, Param, Operation, Event, EventParam};
 
 	#[test]
 	fn deserialize_interface() {
@@ -93,36 +98,7 @@ mod tests {
 			"outputs": []
 		}]"#;
 
-		let deserialized: Interface = serde_json::from_str(s).unwrap();
-
-		assert_eq!(deserialized, Interface(vec![
-			Operation::Event(Event {
-				name: "Event2".to_owned(),
-				inputs: vec![
-					EventParam {
-						name: "a".to_owned(),
-						kind: ParamType::Uint(256),
-						indexed: true,
-					},
-					EventParam {
-						name: "b".to_owned(),
-						kind: ParamType::FixedBytes(32),
-						indexed: false,
-					}
-				],
-				anonymous: false,
-			}),
-			Operation::Function(Function {
-				name: "foo".to_owned(),
-				inputs: vec![
-					Param {
-						name: "a".to_owned(),
-						kind: ParamType::Uint(256),
-					}
-				],
-				outputs: vec![]
-			})
-		]));
+		let _: Interface = serde_json::from_str(s).unwrap();
 	}
 
 	#[test]
