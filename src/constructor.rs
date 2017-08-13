@@ -7,7 +7,7 @@ use errors::{Error, ErrorKind};
 use encoder::Encoder;
 
 /// Contract constructor call builder.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Constructor {
 	_interface: ConstructorInterface,
 }

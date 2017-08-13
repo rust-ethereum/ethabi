@@ -19,7 +19,7 @@ pub struct LogParam {
 }
 
 /// Contract event.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Event {
 	/// spec::Event
 	interface: EventInterface,

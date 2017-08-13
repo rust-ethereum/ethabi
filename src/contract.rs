@@ -8,7 +8,7 @@ use event::Event;
 use errors::{Error, ErrorKind};
 
 /// API building calls to contracts ABI.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Contract {
     constructor: Option<Constructor>,
     functions: HashMap<String, Function>,

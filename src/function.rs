@@ -8,7 +8,7 @@ use signature::short_signature;
 use errors::{Error, ErrorKind};
 
 /// Contract function call builder.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Function {
 	interface: FunctionInterface,
 }
