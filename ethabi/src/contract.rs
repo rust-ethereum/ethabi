@@ -18,12 +18,12 @@ pub struct Contract {
 
 impl From<Interface> for Contract {
 	fn from(interface: Interface) -> Self {
-        Contract {
-            constructor: interface.constructor.map(Into::into),
-            events: interface.events.into_iter().map(|(name, event)| (name, event.into())).collect(),
-            functions: interface.functions.into_iter().map(|(name, func)| (name, func.into())).collect(),
+		Contract {
+			constructor: interface.constructor.map(Into::into),
+			events: interface.events.into_iter().map(|(name, event)| (name, event.into())).collect(),
+			functions: interface.functions.into_iter().map(|(name, func)| (name, func.into())).collect(),
 			fallback: interface.fallback,
-        }
+		}
 	}
 }
 
