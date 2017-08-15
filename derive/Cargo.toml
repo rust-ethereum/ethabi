@@ -1,0 +1,14 @@
+[package]
+name = "ethabi_derive"
+version = "0.1.0"
+authors = ["debris <marek.kotewicz@gmail.com>"]
+
+[lib]
+name = "ethabi_derive"
+proc-macro = true
+
+[dependencies]
+ethabi = { path = "../ethabi" }
+heck = "0.2"
+syn = "0.11.11"
+quote = "0.3.15"

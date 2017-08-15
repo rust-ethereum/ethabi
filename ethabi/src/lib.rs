@@ -38,8 +38,17 @@ pub use event::{Event, LogParam};
 /// ABI address.
 pub type Address = [u8; 20];
 
-/// ABI unsigned integer.
-pub type Uint = [u8; 32];
+/// ABI fixed bytes.
+pub type FixedBytes = Vec<u8>;
+
+/// ABI bytes.
+pub type Bytes = Vec<u8>;
 
 /// ABI signed integer.
 pub type Int = [u8; 32];
+
+/// ABI unsigned integer.
+pub type Uint = [u8; 32];
+
+/// Commonly used FixedBytes of size 32
+pub type Hash = [u8; 32];

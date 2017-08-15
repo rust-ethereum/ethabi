@@ -1,0 +1,8 @@
+[package]
+name = "ethabi_contract"
+version = "0.1.0"
+authors = ["debris <marek.kotewicz@gmail.com>"]
+
+[dependencies]
+ethabi = { path = "../ethabi" }
+ethabi_derive = { path = "../derive" }
