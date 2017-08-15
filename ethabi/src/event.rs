@@ -7,6 +7,7 @@ use decoder::Decoder;
 use token::Token;
 use errors::{Error, ErrorKind};
 use signature::long_signature;
+use {Log, Hash};
 use Encoder;
 
 /// Decoded log param.
@@ -35,12 +36,12 @@ impl From<EventInterface> for Event {
 
 impl Event {
 	/// Event signature
-	pub fn signature(&self) -> [u8; 32] {
+	pub fn signature(&self) -> Hash {
 		long_signature(&self.interface.name, &self.interface.param_types())
 	}
 
 	/// Creates topic filter
-	pub fn create_topics_filter(&self, topics: Vec<Token>) -> Result<Vec<[u8; 32]>, Error> {
+	pub fn create_filter(&self, topics: Vec<Token>) -> Result<Vec<[u8; 32]>, Error> {
 		let topic_params = self.interface.indexed_params(true);
 		let equal_len = topics.len() == topic_params.len();
 		let equal_types = topics.iter().zip(topic_params.iter()).all(|(topic, param)| topic.type_check(&param.kind));
@@ -69,7 +70,9 @@ impl Event {
 	}
 
 	/// Decodes event indexed params and data.
-	pub fn decode_log(&self, topics: Vec<[u8; 32]>, data: Vec<u8>) -> Result<Vec<LogParam>, Error> {
+	pub fn decode_log(&self, log: Log) -> Result<Vec<LogParam>, Error> {
+		let topics = log.topics;
+		let data = log.data;
 		let topics_len = topics.len();
 		// obtains all params info
 		let topic_params = self.interface.indexed_params(true);
@@ -148,6 +151,7 @@ mod tests {
 	use spec::{Event as EventInterface, EventParam, ParamType};
 	use token::{Token, TokenFromHex};
 	use signature::long_signature;
+	use log::Log;
 	use super::{Event, LogParam};
 
 	#[test]
@@ -176,16 +180,18 @@ mod tests {
 
 		let event = Event::from(i);
 
-		let result = event.decode_log(
-			vec![
+		let log = Log {
+			topics: vec![
 				long_signature("foo", &[ParamType::Int(256), ParamType::Int(256), ParamType::Address, ParamType::Address]),
 				"0000000000000000000000000000000000000000000000000000000000000002".token_from_hex().unwrap(),
 				"0000000000000000000000001111111111111111111111111111111111111111".token_from_hex().unwrap(),
 			],
+			data:
 			("".to_owned() +
 				"0000000000000000000000000000000000000000000000000000000000000003" +
 				"0000000000000000000000002222222222222222222222222222222222222222").from_hex().unwrap()
-		).unwrap();
+		};
+		let result = event.decode_log(log).unwrap();
 
 		assert_eq!(result, vec![
 			("a".to_owned(), Token::Int("0000000000000000000000000000000000000000000000000000000000000003".token_from_hex().unwrap())),

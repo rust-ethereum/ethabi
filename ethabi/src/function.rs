@@ -1,26 +1,12 @@
 //! Contract function call builder.
 
-use spec::{self, Function as FunctionInterface, ParamType};
+use spec::{Function as FunctionInterface, ParamType};
 use token::Token;
 use encoder::Encoder;
 use decoder::Decoder;
 use signature::short_signature;
 use errors::{Error, ErrorKind};
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct Param {
-	pub name: String,
-	pub kind: ParamType,
-}
-
-impl From<spec::Param> for Param {
-	fn from(param: spec::Param) -> Self {
-		Param {
-			name: param.name,
-			kind: param.kind,
-		}
-	}
-}
+use param::Param;
 
 /// Contract function call builder.
 #[derive(Clone, Debug, PartialEq)]

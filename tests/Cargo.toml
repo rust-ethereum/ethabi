@@ -7,3 +7,4 @@ authors = ["debris <marek.kotewicz@gmail.com>"]
 ethabi = { path = "../ethabi" }
 ethabi_derive = { path = "../derive" }
 ethabi_contract = { path = "../contract" }
+rustc-hex = "1.0"

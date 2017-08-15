@@ -20,8 +20,11 @@ mod contract;
 mod decoder;
 mod encoder;
 mod errors;
-mod function;
 mod event;
+mod filter;
+mod function;
+mod log;
+mod param;
 mod signature;
 pub mod util;
 
@@ -33,6 +36,8 @@ pub use errors::{Error, ErrorKind, Result, ResultExt};
 pub use encoder::Encoder;
 pub use decoder::Decoder;
 pub use function::Function;
+pub use param::Param;
+pub use log::Log;
 pub use event::{Event, LogParam};
 
 /// ABI address.
