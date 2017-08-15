@@ -194,7 +194,7 @@ fn decode_log(path: &str, event: String, topics: Vec<String>, data: String) -> R
 		.map(|t| t.token_from_hex().map_err(From::from))
 		.collect::<Result<_, Error>>()?;
 	let data = data.from_hex().chain_err(|| "Expected <data> to be hex")?;
-	let decoded = try!(event.decode_log(topics, data));
+	let decoded = try!(event.parse_log(topics, data));
 
 	let result = decoded.into_iter()
 		.map(|log_param| format!("{} {}", log_param.name, log_param.value))

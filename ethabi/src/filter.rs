@@ -4,7 +4,7 @@ use hex::ToHex;
 use {Hash, Token};
 
 /// Raw topic filter.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Default)]
 pub struct RawTopicFilter {
 	/// Topic.
 	pub topic0: Topic<Token>,
@@ -15,7 +15,7 @@ pub struct RawTopicFilter {
 }
 
 /// Topic filter.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Default)]
 pub struct TopicFilter {
 	/// Usually (for not-anonymous transactions) the first topic is event signature.
 	pub topic0: Topic<Hash>,
@@ -43,6 +43,23 @@ pub enum Topic<T> {
 	OneOf(Vec<T>),
 	/// Match only this hash.
 	This(T),
+}
+
+impl<T> Topic<T> {
+	/// Map
+	pub fn map<F, O>(self, f: F) -> Topic<O> where F: Fn(T) -> O {
+		match self {
+			Topic::Any => Topic::Any,
+			Topic::OneOf(topics) => Topic::OneOf(topics.into_iter().map(f).collect()),
+			Topic::This(topic) => Topic::This(f(topic)),
+		}
+	}
+}
+
+impl<T> Default for Topic<T> {
+	fn default() -> Self {
+		Topic::Any
+	}
 }
 
 impl Serialize for Topic<Hash> {

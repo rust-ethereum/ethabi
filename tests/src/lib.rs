@@ -19,6 +19,13 @@ fn encoding_input_works() {
 	let spender = [1u8; 20];
 	let encoded = contract.functions().allowance().input(owner, spender);
 	// 4 bytes signature + 2 * 32 bytes for params
-	assert_eq!(encoded.len(), 68);
 	assert_eq!(encoded.to_hex(), expected);
+
+	let from = [2u8; 20];
+	let to = [3u8; 20];
+	let to2 = [4u8; 20];
+	let _filter = contract.events().transfer().create_filter(
+		ethabi::Topic::This(owner),
+		ethabi::Topic::OneOf(vec![to, to2]),
+		ethabi::Topic::Any);
 }

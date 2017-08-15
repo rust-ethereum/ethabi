@@ -318,6 +318,16 @@ fn declare_events(event: &Event) -> quote::Tokens {
 	let log_params: Vec<_> = names.iter().zip(to_log.iter())
 		.map(|(param_name, convert)| quote! { #param_name: #convert })
 		.collect();
+	let to_filter: Vec<_> = names.iter().zip(event.inputs().iter())
+		.enumerate()
+		.take(3)
+		.map(|(index, (param_name, param))| {
+			let topic = syn::Ident::new(format!("topic{}", index));
+			let i = "i".into();
+			let to_token = to_token(&i, &param.kind);
+			quote! { #topic: #param_name.map(|#i| #to_token), }
+		})
+		.collect();
 
 	quote! {
 		pub struct #name<'a> {
@@ -344,8 +354,13 @@ fn declare_events(event: &Event) -> quote::Tokens {
 			}
 
 			/// Creates topic filter.
-			pub fn create_filter(&self, #(#params),*) -> ethabi::Bytes {
-				unimplemented!();
+			pub fn create_filter(&self, #(#params),*) -> ethabi::TopicFilter {
+				let raw = ethabi::RawTopicFilter {
+					#(#to_filter)*
+					..Default::default()
+				};
+
+				self.event.create_filter(raw).unwrap()
 			}
 		}
 	}
