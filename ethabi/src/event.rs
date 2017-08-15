@@ -87,7 +87,7 @@ impl Event {
 	}
 
 	/// Decodes event indexed params and data.
-	pub fn decode_log(&self, log: RawLog) -> Result<Log, Error> {
+	pub fn parse_log(&self, log: RawLog) -> Result<Log, Error> {
 		let topics = log.topics;
 		let data = log.data;
 		let topics_len = topics.len();
@@ -212,7 +212,7 @@ mod tests {
 				"0000000000000000000000000000000000000000000000000000000000000003" +
 				"0000000000000000000000002222222222222222222222222222222222222222").from_hex().unwrap()
 		};
-		let result = event.decode_log(log).unwrap();
+		let result = event.parse_log(log).unwrap();
 
 		assert_eq!(result, Log { params: vec![
 			("a".to_owned(), Token::Int("0000000000000000000000000000000000000000000000000000000000000003".token_from_hex().unwrap())),

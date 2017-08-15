@@ -214,6 +214,49 @@ fn to_token(name: &syn::Ident, kind: &ParamType) -> quote::Tokens {
 	}
 }
 
+fn from_token(kind: &ParamType, token: &syn::Ident) -> quote::Tokens {
+	match *kind {
+		ParamType::Address => quote! { #token.to_address().unwrap() },
+		ParamType::Bytes => quote! { #token.to_bytes().unwrap() },
+		ParamType::FixedBytes(size) => {
+			let size: syn::Ident = format!("{}", size).into();
+			quote! {
+				{
+					let mut result = [0u8; #size];
+					let v = #token.to_fixed_bytes().unwrap();
+					result.copy_from_slice(&v);
+					v
+				}
+			}
+		},
+		ParamType::Int(_) => quote! { #token.to_int().unwrap() },
+		ParamType::Uint(_) => quote! { #token.to_uint().unwrap() },
+		ParamType::Bool => quote! { #token.to_bool().unwrap() },
+		ParamType::String => quote! { #token.to_string().unwrap() },
+		ParamType::Array(ref kind) => {
+			let inner: syn::Ident = format!("inner_{}", token).into();
+			let inner_loop = from_token(kind, &inner);
+			quote! {
+				#token.to_array().unwrap().into_iter()
+					map(|#inner| #inner_loop)
+					.collect()
+			}
+		},
+		ParamType::FixedArray(ref kind, size) => {
+			let inner: syn::Ident = format!("inner_{}", token).into();
+			let inner_loop = from_token(kind, &inner);
+			let to_array = vec![quote! { iter.next() }; size];
+			quote! {
+				{
+					let iter = #token.to_array().unwrap().into_iter()
+						map(|#inner| #inner_loop);
+					[#(#to_array),*]
+				}
+			}
+		},
+	}
+}
+
 fn impl_contract_event(event: &Event) -> quote::Tokens {
 	let query_name = string_ident(event.name());
 	let name = syn::Ident::new(event.name().to_snake_case());
@@ -265,7 +308,15 @@ fn declare_events(event: &Event) -> quote::Tokens {
 		.map(|param| rust_type(&param.kind))
 		.collect();
 	let params: Vec<_> = names.iter().zip(kinds.iter())
-		.map(|(param_name, kind)| quote! { #param_name: Option<#kind> })
+		.map(|(param_name, kind)| quote! { #param_name: ethabi::Topic<#kind> })
+		.collect();
+	let iter = syn::Ident::new("log.next().unwrap().value");
+	let to_log: Vec<_> = event.inputs()
+		.iter()
+		.map(|param| from_token(&param.kind, &iter))
+		.collect();
+	let log_params: Vec<_> = names.iter().zip(to_log.iter())
+		.map(|(param_name, convert)| quote! { #param_name: #convert })
 		.collect();
 
 	quote! {
@@ -284,12 +335,16 @@ fn declare_events(event: &Event) -> quote::Tokens {
 
 		impl<'a> #name<'a> {
 			/// Parses log.
-			pub fn parse_log(&self, log: ethabi::Log) -> super::logs::#name {
-				unimplemented!();
+			pub fn parse_log(&self, log: ethabi::RawLog) -> ethabi::Result<super::logs::#name> {
+				let mut log = self.event.parse_log(log)?.params.into_iter();
+				let result = super::logs::#name {
+					#(#log_params),*
+				};
+				Ok(result)
 			}
 
 			/// Creates topic filter.
-			pub fn create_filter(&self, #(#params),*) -> Vec<u8> {
+			pub fn create_filter(&self, #(#params),*) -> ethabi::Bytes {
 				unimplemented!();
 			}
 		}
@@ -332,7 +387,7 @@ fn declare_functions(function: &Function) -> quote::Tokens {
 		}
 
 		impl<'a> #name<'a> {
-			pub fn input(&self, #(#params),*) -> Vec<u8> {
+			pub fn input(&self, #(#params),*) -> ethabi::Bytes {
 				let v: Vec<ethabi::Token> = vec![#(#usage),*];
 				self.function.encode_call(v).expect("encode_call not to fail; ethabi_derive bug")
 			}

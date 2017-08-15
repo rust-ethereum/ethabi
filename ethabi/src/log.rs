@@ -1,4 +1,4 @@
-use {Hash, Token};
+use {Hash, Token, Bytes};
 
 /// Ethereum log.
 #[derive(Debug, PartialEq)]
@@ -6,7 +6,7 @@ pub struct RawLog {
 	/// Indexed event params are represented as log topics.
 	pub topics: Vec<Hash>,
 	/// Others are just plain data.
-	pub data: Vec<u8>,
+	pub data: Bytes,
 }
 
 /// Decoded log param.
