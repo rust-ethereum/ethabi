@@ -1,19 +1,30 @@
 use serde::{Serialize, Serializer};
 use serde_json::Value;
 use hex::ToHex;
-use Hash;
+use {Hash, Token};
+
+/// Raw topic filter.
+#[derive(Debug, PartialEq)]
+pub struct RawTopicFilter {
+	/// Topic.
+	pub topic0: Topic<Token>,
+	/// Topic.
+	pub topic1: Topic<Token>,
+	/// Topic.
+	pub topic2: Topic<Token>,
+}
 
 /// Topic filter.
 #[derive(Debug, PartialEq)]
 pub struct TopicFilter {
 	/// Usually (for not-anonymous transactions) the first topic is event signature.
-	pub topic0: Topic,
+	pub topic0: Topic<Hash>,
 	/// Second topic.
-	pub topic1: Topic,
+	pub topic1: Topic<Hash>,
 	/// Third topic.
-	pub topic2: Topic,
+	pub topic2: Topic<Hash>,
 	/// Fourth topic.
-	pub topic3: Topic,
+	pub topic3: Topic<Hash>,
 }
 
 impl Serialize for TopicFilter {
@@ -25,16 +36,16 @@ impl Serialize for TopicFilter {
 
 /// Acceptable topic possibilities.
 #[derive(Debug, PartialEq)]
-pub enum Topic {
+pub enum Topic<T> {
 	/// Match any.
 	Any,
 	/// Match any of the hashes.
-	OneOf(Vec<Hash>),
+	OneOf(Vec<T>),
 	/// Match only this hash.
-	This(Hash),
+	This(T),
 }
 
-impl Serialize for Topic {
+impl Serialize for Topic<Hash> {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
 	where S: Serializer {
 		let value = match *self {

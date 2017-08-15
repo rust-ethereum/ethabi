@@ -7,17 +7,8 @@ use decoder::Decoder;
 use token::Token;
 use errors::{Error, ErrorKind};
 use signature::long_signature;
-use {Log, Hash};
+use {Log, Hash, RawLog, LogParam, RawTopicFilter, TopicFilter, Topic};
 use Encoder;
-
-/// Decoded log param.
-#[derive(Debug, PartialEq)]
-pub struct LogParam {
-	/// Decoded log name.
-	pub name: String,
-	/// Decoded log value.
-	pub value: Token,
-}
 
 /// Contract event.
 #[derive(Clone, Debug, PartialEq)]
@@ -41,36 +32,62 @@ impl Event {
 	}
 
 	/// Creates topic filter
-	pub fn create_filter(&self, topics: Vec<Token>) -> Result<Vec<[u8; 32]>, Error> {
-		let topic_params = self.interface.indexed_params(true);
-		let equal_len = topics.len() == topic_params.len();
-		let equal_types = topics.iter().zip(topic_params.iter()).all(|(topic, param)| topic.type_check(&param.kind));
-		if !equal_len || !equal_types {
-			return Err(ErrorKind::InvalidData.into());
+	pub fn create_filter(&self, raw: RawTopicFilter) -> Result<TopicFilter, Error> {
+		fn convert_token(token: Token, kind: &ParamType) -> Result<Hash, Error> {
+			if !token.type_check(kind) {
+				return Err(ErrorKind::InvalidData.into());
+			}
+			let encoded = Encoder::encode(vec![token]);
+			if encoded.len() == 32 {
+				let mut data = [0u8; 32];
+				data.copy_from_slice(&encoded);
+				Ok(data)
+			} else {
+				Ok(keccak256(&encoded))
+			}
 		}
 
-		let mut result = topics.into_iter()
-			.map(|topic| {
-				let encoded = Encoder::encode(vec![topic]);
-				if encoded.len() == 32 {
-					let mut data = [0u8; 32];
-					data.copy_from_slice(&encoded);
-					data
-				} else {
-					keccak256(&encoded)
+		fn convert_topic(topic: Topic<Token>, kind: Option<&ParamType>) -> Result<Topic<Hash>, Error> {
+			match topic {
+				Topic::Any => Ok(Topic::Any),
+				Topic::OneOf(tokens) => match kind {
+					None => Err(ErrorKind::InvalidData.into()),
+					Some(kind) => {
+						let topics = tokens.into_iter()
+							.map(|token| convert_token(token, kind))
+							.collect::<Result<Vec<_>, _>>()?;
+						Ok(Topic::OneOf(topics))
+					}
+				},
+				Topic::This(token) => match kind {
+					None => Err(ErrorKind::InvalidData.into()),
+					Some(kind) => Ok(Topic::This(convert_token(token, kind)?)),
 				}
-			})
-			.collect::<Vec<_>>();
-
-		if !self.interface.anonymous {
-			result.insert(0, self.signature());
+			}
 		}
+
+		let kinds: Vec<_> = self.interface.indexed_params(true).into_iter().map(|param| param.kind).collect();
+		let result = if self.interface.anonymous {
+			TopicFilter {
+				topic0: convert_topic(raw.topic0, kinds.get(0))?,
+				topic1: convert_topic(raw.topic1, kinds.get(1))?,
+				topic2: convert_topic(raw.topic2, kinds.get(2))?,
+				topic3: Topic::Any,
+			}
+		} else {
+			TopicFilter {
+				topic0: Topic::This(self.signature()),
+				topic1: convert_topic(raw.topic0, kinds.get(0))?,
+				topic2: convert_topic(raw.topic1, kinds.get(1))?,
+				topic3: convert_topic(raw.topic2, kinds.get(2))?,
+			}
+		};
 
 		Ok(result)
 	}
 
 	/// Decodes event indexed params and data.
-	pub fn decode_log(&self, log: Log) -> Result<Vec<LogParam>, Error> {
+	pub fn decode_log(&self, log: RawLog) -> Result<Log, Error> {
 		let topics = log.topics;
 		let data = log.data;
 		let topics_len = topics.len();
@@ -131,7 +148,11 @@ impl Event {
 			})
 			.collect();
 
-		Ok(decoded_params)
+		let result = Log {
+			params: decoded_params,
+		};
+
+		Ok(result)
 	}
 
 	/// Return the name of the event.
@@ -151,7 +172,7 @@ mod tests {
 	use spec::{Event as EventInterface, EventParam, ParamType};
 	use token::{Token, TokenFromHex};
 	use signature::long_signature;
-	use log::Log;
+	use log::{RawLog, Log};
 	use super::{Event, LogParam};
 
 	#[test]
@@ -180,7 +201,7 @@ mod tests {
 
 		let event = Event::from(i);
 
-		let log = Log {
+		let log = RawLog {
 			topics: vec![
 				long_signature("foo", &[ParamType::Int(256), ParamType::Int(256), ParamType::Address, ParamType::Address]),
 				"0000000000000000000000000000000000000000000000000000000000000002".token_from_hex().unwrap(),
@@ -193,11 +214,11 @@ mod tests {
 		};
 		let result = event.decode_log(log).unwrap();
 
-		assert_eq!(result, vec![
+		assert_eq!(result, Log { params: vec![
 			("a".to_owned(), Token::Int("0000000000000000000000000000000000000000000000000000000000000003".token_from_hex().unwrap())),
 			("b".to_owned(), Token::Int("0000000000000000000000000000000000000000000000000000000000000002".token_from_hex().unwrap())),
 			("c".to_owned(), Token::Address("2222222222222222222222222222222222222222".token_from_hex().unwrap())),
 			("d".to_owned(), Token::Address("1111111111111111111111111111111111111111".token_from_hex().unwrap())),
-		].into_iter().map(|(name, value)| LogParam { name, value }).collect::<Vec<_>>());
+		].into_iter().map(|(name, value)| LogParam { name, value }).collect::<Vec<_>>()});
 	}
 }

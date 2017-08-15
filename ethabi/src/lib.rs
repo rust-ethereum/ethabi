@@ -35,10 +35,11 @@ pub use token::Token;
 pub use errors::{Error, ErrorKind, Result, ResultExt};
 pub use encoder::Encoder;
 pub use decoder::Decoder;
+pub use filter::{Topic, TopicFilter, RawTopicFilter};
 pub use function::Function;
 pub use param::Param;
-pub use log::Log;
-pub use event::{Event, LogParam};
+pub use log::{Log, RawLog, LogParam};
+pub use event::Event;
 
 /// ABI address.
 pub type Address = [u8; 20];
