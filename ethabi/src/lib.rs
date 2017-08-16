@@ -13,7 +13,7 @@ extern crate serde_derive;
 #[macro_use]
 extern crate error_chain;
 
-mod param_type;
+pub mod param_type;
 pub mod token;
 mod constructor;
 mod contract;

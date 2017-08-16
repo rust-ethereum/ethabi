@@ -9,6 +9,15 @@ pub struct RawLog {
 	pub data: Bytes,
 }
 
+impl From<(Vec<Hash>, Bytes)> for RawLog {
+	fn from(raw: (Vec<Hash>, Bytes)) -> Self {
+		RawLog {
+			topics: raw.0,
+			data: raw.1,
+		}
+	}
+}
+
 /// Decoded log param.
 #[derive(Debug, PartialEq)]
 pub struct LogParam {

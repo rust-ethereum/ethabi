@@ -1,10 +1,9 @@
 [package]
-name = "ethabi_derive"
+name = "ethabi-derive"
 version = "0.1.0"
 authors = ["debris <marek.kotewicz@gmail.com>"]
 
 [lib]
-name = "ethabi_derive"
 proc-macro = true
 
 [dependencies]
