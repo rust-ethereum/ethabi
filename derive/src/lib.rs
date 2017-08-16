@@ -294,30 +294,57 @@ fn declare_logs(event: &Event) -> quote::Tokens {
 
 fn declare_events(event: &Event) -> quote::Tokens {
 	let name = syn::Ident::new(event.name.to_camel_case());
+
+	// parse log
+
 	let names: Vec<_> = event.inputs
 		.iter()
 		.enumerate()
 		.map(|(index, param)| if param.name.is_empty() {
-			syn::Ident::new(format!("param{}", index))
+			if param.indexed {
+				syn::Ident::new(format!("topic{}", index))
+			} else {
+				syn::Ident::new(format!("param{}", index))
+			}
 		} else {
 			param.name.to_snake_case().into()
 		}).collect();
-	let kinds: Vec<_> = event.inputs
-		.iter()
-		.map(|param| rust_type(&param.kind))
-		.collect();
-	let params: Vec<_> = names.iter().zip(kinds.iter())
-		.map(|(param_name, kind)| quote! { #param_name: ethabi::Topic<#kind> })
-		.collect();
-	let iter = syn::Ident::new("log.next().unwrap().value");
+
+	let log_iter = syn::Ident::new("log.next().unwrap().value");
+
 	let to_log: Vec<_> = event.inputs
 		.iter()
-		.map(|param| from_token(&param.kind, &iter))
+		.map(|param| from_token(&param.kind, &log_iter))
 		.collect();
+
 	let log_params: Vec<_> = names.iter().zip(to_log.iter())
 		.map(|(param_name, convert)| quote! { #param_name: #convert })
 		.collect();
-	let to_filter: Vec<_> = names.iter().zip(event.inputs.iter())
+
+	// create filter
+
+	let topic_names: Vec<_> = event.inputs
+		.iter()
+		.enumerate()
+		.filter(|&(_, param)| param.indexed)
+		.map(|(index, param)| if param.name.is_empty() {
+			syn::Ident::new(format!("topic{}", index))
+		} else {
+			param.name.to_snake_case().into()
+		})
+		.collect();
+
+	let topic_kinds: Vec<_> = event.inputs
+		.iter()
+		.filter(|param| param.indexed)
+		.map(|param| rust_type(&param.kind))
+		.collect();
+
+	let params: Vec<_> = topic_names.iter().zip(topic_kinds.iter())
+		.map(|(param_name, kind)| quote! { #param_name: ethabi::Topic<#kind> })
+		.collect();
+
+	let to_filter: Vec<_> = topic_names.iter().zip(event.inputs.iter().filter(|p| p.indexed))
 		.enumerate()
 		.take(3)
 		.map(|(index, (param_name, param))| {

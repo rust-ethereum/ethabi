@@ -25,6 +25,6 @@ fn encoding_input_works() {
 	let to2 = [4u8; 20];
 	let _filter = contract.events().transfer().create_filter(
 		ethabi::Topic::This(from),
-		ethabi::Topic::OneOf(vec![to, to2]),
-		ethabi::Topic::Any);
+		ethabi::Topic::OneOf(vec![to, to2])
+	);
 }
