@@ -1,7 +1,7 @@
 //! Ethereum ABI params.
 use std::fmt;
 use hex::ToHex;
-use {ParamType};
+use {ParamType, Hash, Address, FixedBytes, Bytes};
 
 /// Ethereum ABI params.
 #[derive(Debug, PartialEq, Clone)]
@@ -10,27 +10,27 @@ pub enum Token {
 	///
 	/// solidity name: address
 	/// Encoded to left padded [0u8; 32].
-	Address([u8;20]),
+	Address(Address),
 	/// Vector of bytes with known size.
 	///
 	/// solidity name eg.: bytes8, bytes32, bytes64, bytes1024
 	/// Encoded to right padded [0u8; ((N + 31) / 32) * 32].
-	FixedBytes(Vec<u8>),
+	FixedBytes(FixedBytes),
 	/// Vector of bytes of unknown size.
 	///
 	/// solidity name: bytes
 	/// Encoded in two parts.
 	/// Init part: offset of 'closing part`.
 	/// Closing part: encoded length followed by encoded right padded bytes.
-	Bytes(Vec<u8>),
+	Bytes(Bytes),
 	/// Signed integer.
 	///
 	/// solidity name: int
-	Int([u8;32]),
+	Int(Hash),
 	/// Unisnged integer.
 	///
 	/// solidity name: uint
-	Uint([u8;32]),
+	Uint(Hash),
 	/// Boolean value.
 	///
 	/// solidity name: bool

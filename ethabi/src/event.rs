@@ -6,7 +6,7 @@ use signature::long_signature;
 use {
 	Log, Hash, RawLog, LogParam, RawTopicFilter, TopicFilter,
 	Topic, ParamType, EventParam, encode, decode, Token,
-	Error, ErrorKind
+	Result, ErrorKind
 };
 
 /// Contract event.
@@ -49,8 +49,8 @@ impl Event {
 	}
 
 	/// Creates topic filter
-	pub fn create_filter(&self, raw: RawTopicFilter) -> Result<TopicFilter, Error> {
-		fn convert_token(token: Token, kind: &ParamType) -> Result<Hash, Error> {
+	pub fn create_filter(&self, raw: RawTopicFilter) -> Result<TopicFilter> {
+		fn convert_token(token: Token, kind: &ParamType) -> Result<Hash> {
 			if !token.type_check(kind) {
 				return Err(ErrorKind::InvalidData.into());
 			}
@@ -64,7 +64,7 @@ impl Event {
 			}
 		}
 
-		fn convert_topic(topic: Topic<Token>, kind: Option<&ParamType>) -> Result<Topic<Hash>, Error> {
+		fn convert_topic(topic: Topic<Token>, kind: Option<&ParamType>) -> Result<Topic<Hash>> {
 			match topic {
 				Topic::Any => Ok(Topic::Any),
 				Topic::OneOf(tokens) => match kind {
@@ -72,7 +72,7 @@ impl Event {
 					Some(kind) => {
 						let topics = tokens.into_iter()
 							.map(|token| convert_token(token, kind))
-							.collect::<Result<Vec<_>, _>>()?;
+							.collect::<Result<Vec<_>>>()?;
 						Ok(Topic::OneOf(topics))
 					}
 				},
@@ -104,7 +104,7 @@ impl Event {
 	}
 
 	/// Decodes event indexed params and data.
-	pub fn parse_log(&self, log: RawLog) -> Result<Log, Error> {
+	pub fn parse_log(&self, log: RawLog) -> Result<Log> {
 		let topics = log.topics;
 		let data = log.data;
 		let topics_len = topics.len();

@@ -5,7 +5,7 @@ use serde::{Deserialize, Deserializer};
 use serde::de::{Visitor, SeqAccess};
 use serde_json;
 use operation::Operation;
-use {Error, ErrorKind, Event, Constructor, Function};
+use {errors, ErrorKind, Event, Constructor, Function};
 
 /// API building calls to contracts ABI.
 #[derive(Clone, Debug, PartialEq)]
@@ -66,7 +66,7 @@ impl<'a> Visitor<'a> for ContractVisitor {
 
 impl Contract {
 	/// Loads contract from json.
-	pub fn load<T: io::Read>(reader: T) -> Result<Self, Error> {
+	pub fn load<T: io::Read>(reader: T) -> errors::Result<Self> {
 		serde_json::from_reader(reader).map_err(From::from)
 	}
 
@@ -76,12 +76,12 @@ impl Contract {
     }
 
     /// Creates function call builder.
-    pub fn function(&self, name: &str) -> Result<&Function, Error> {
+    pub fn function(&self, name: &str) -> errors::Result<&Function> {
         self.functions.get(name).ok_or_else(|| ErrorKind::InvalidName(name.to_owned()).into())
     }
 
     /// Creates event decoder.
-    pub fn event(&self, name: &str) -> Result<&Event, Error> {
+    pub fn event(&self, name: &str) -> errors::Result<&Event> {
         self.events.get(name).ok_or_else(|| ErrorKind::InvalidName(name.to_owned()).into())
     }
 
