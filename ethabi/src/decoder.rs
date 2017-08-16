@@ -34,174 +34,174 @@ fn as_bool(slice: &[u8; 32]) -> Result<bool, Error> {
 	Ok(slice[31] == 1)
 }
 
-	/// Decodes ABI compliant vector of bytes into vector of tokens described by types param.
-	pub fn decode(types: &[ParamType], data: &[u8]) -> Result<Vec<Token>, Error> {
-		let slices = slice_data(data)?;
-		let mut tokens = vec![];
-		let mut offset = 0;
-		for param in types {
-			let res = decode_param(param, &slices, offset).chain_err(|| format!("Cannot decode {}", param))?;
-			offset = res.new_offset;
-			tokens.push(res.token);
-		}
-		Ok(tokens)
+/// Decodes ABI compliant vector of bytes into vector of tokens described by types param.
+pub fn decode(types: &[ParamType], data: &[u8]) -> Result<Vec<Token>, Error> {
+	let slices = slice_data(data)?;
+	let mut tokens = vec![];
+	let mut offset = 0;
+	for param in types {
+		let res = decode_param(param, &slices, offset).chain_err(|| format!("Cannot decode {}", param))?;
+		offset = res.new_offset;
+		tokens.push(res.token);
+	}
+	Ok(tokens)
+}
+
+fn peek(slices: &[Hash], position: usize) -> Result<&[u8; 32], Error> {
+	slices.get(position).ok_or_else(|| ErrorKind::InvalidData.into())
+}
+
+fn take_bytes(slices: &[Hash], position: usize, len: usize) -> Result<BytesTaken, Error> {
+	let slices_len = (len + 31) / 32;
+
+	let mut bytes_slices = vec![];
+	for i in 0..slices_len {
+		let slice = try!(peek(slices, position + i)).clone();
+		bytes_slices.push(slice);
 	}
 
-	fn peek(slices: &[Hash], position: usize) -> Result<&[u8; 32], Error> {
-		slices.get(position).ok_or_else(|| ErrorKind::InvalidData.into())
-	}
+	let bytes = bytes_slices.into_iter()
+		.flat_map(|slice| slice.to_vec())
+		.take(len)
+		.collect();
 
-	fn take_bytes(slices: &[Hash], position: usize, len: usize) -> Result<BytesTaken, Error> {
-		let slices_len = (len + 31) / 32;
+	let taken = BytesTaken {
+		bytes: bytes,
+		new_offset: position + slices_len,
+	};
 
-		let mut bytes_slices = vec![];
-		for i in 0..slices_len {
-			let slice = try!(peek(slices, position + i)).clone();
-			bytes_slices.push(slice);
-		}
+	Ok(taken)
+}
 
-		let bytes = bytes_slices.into_iter()
-			.flat_map(|slice| slice.to_vec())
-			.take(len)
-			.collect();
+fn decode_param(param: &ParamType, slices: &Vec<[u8; 32]>, offset: usize) -> Result<DecodeResult, Error> {
+	match *param {
+		ParamType::Address => {
+			let slice = try!(peek(slices, offset));
+			let mut address = [0u8; 20];
+			address.copy_from_slice(&slice[12..]);
 
-		let taken = BytesTaken {
-			bytes: bytes,
-			new_offset: position + slices_len,
-		};
+			let result = DecodeResult {
+				token: Token::Address(address),
+				new_offset: offset + 1,
+			};
 
-		Ok(taken)
-	}
+			Ok(result)
+		},
+		ParamType::Int(_) => {
+			let slice = try!(peek(slices, offset));
 
-	fn decode_param(param: &ParamType, slices: &Vec<[u8; 32]>, offset: usize) -> Result<DecodeResult, Error> {
-		match *param {
-			ParamType::Address => {
-				let slice = try!(peek(slices, offset));
-				let mut address = [0u8; 20];
-				address.copy_from_slice(&slice[12..]);
+			let result = DecodeResult {
+				token: Token::Int(slice.clone()),
+				new_offset: offset + 1,
+			};
 
-				let result = DecodeResult {
-					token: Token::Address(address),
-					new_offset: offset + 1,
-				};
+			Ok(result)
+		},
+		ParamType::Uint(_) => {
+			let slice = try!(peek(slices, offset));
 
-				Ok(result)
-			},
-			ParamType::Int(_) => {
-				let slice = try!(peek(slices, offset));
+			let result = DecodeResult {
+				token: Token::Uint(slice.clone()),
+				new_offset: offset + 1,
+			};
 
-				let result = DecodeResult {
-					token: Token::Int(slice.clone()),
-					new_offset: offset + 1,
-				};
+			Ok(result)
+		},
+		ParamType::Bool => {
+			let slice = try!(peek(slices, offset));
 
-				Ok(result)
-			},
-			ParamType::Uint(_) => {
-				let slice = try!(peek(slices, offset));
+			let b = try!(as_bool(slice));
 
-				let result = DecodeResult {
-					token: Token::Uint(slice.clone()),
-					new_offset: offset + 1,
-				};
+			let result = DecodeResult {
+				token: Token::Bool(b),
+				new_offset: offset + 1,
+			};
 
-				Ok(result)
-			},
-			ParamType::Bool => {
-				let slice = try!(peek(slices, offset));
+			Ok(result)
+		},
+		ParamType::FixedBytes(len) => {
+			let taken = try!(take_bytes(slices, offset, len));
 
-				let b = try!(as_bool(slice));
+			let result = DecodeResult {
+				token: Token::FixedBytes(taken.bytes),
+				new_offset: taken.new_offset,
+			};
 
-				let result = DecodeResult {
-					token: Token::Bool(b),
-					new_offset: offset + 1,
-				};
+			Ok(result)
+		},
+		ParamType::Bytes => {
+			let offset_slice = try!(peek(slices, offset));
+			let len_offset = (try!(as_u32(offset_slice)) / 32) as usize;
 
-				Ok(result)
-			},
-			ParamType::FixedBytes(len) => {
-				let taken = try!(take_bytes(slices, offset, len));
+			let len_slice = try!(peek(slices, len_offset));
+			let len = try!(as_u32(len_slice)) as usize;
 
-				let result = DecodeResult {
-					token: Token::FixedBytes(taken.bytes),
-					new_offset: taken.new_offset,
-				};
+			let taken = try!(take_bytes(slices, len_offset + 1, len));
 
-				Ok(result)
-			},
-			ParamType::Bytes => {
-				let offset_slice = try!(peek(slices, offset));
-				let len_offset = (try!(as_u32(offset_slice)) / 32) as usize;
+			let result = DecodeResult {
+				token: Token::Bytes(taken.bytes),
+				new_offset: offset + 1,
+			};
 
-				let len_slice = try!(peek(slices, len_offset));
-				let len = try!(as_u32(len_slice)) as usize;
+			Ok(result)
+		},
+		ParamType::String => {
+			let offset_slice = try!(peek(slices, offset));
+			let len_offset = (try!(as_u32(offset_slice)) / 32) as usize;
 
-				let taken = try!(take_bytes(slices, len_offset + 1, len));
+			let len_slice = try!(peek(slices, len_offset));
+			let len = try!(as_u32(len_slice)) as usize;
 
-				let result = DecodeResult {
-					token: Token::Bytes(taken.bytes),
-					new_offset: offset + 1,
-				};
+			let taken = try!(take_bytes(slices, len_offset + 1, len));
 
-				Ok(result)
-			},
-			ParamType::String => {
-				let offset_slice = try!(peek(slices, offset));
-				let len_offset = (try!(as_u32(offset_slice)) / 32) as usize;
+			let result = DecodeResult {
+				token: Token::String(try!(String::from_utf8(taken.bytes))),
+				new_offset: offset + 1,
+			};
 
-				let len_slice = try!(peek(slices, len_offset));
-				let len = try!(as_u32(len_slice)) as usize;
+			Ok(result)
+		},
+		ParamType::Array(ref t) => {
+			let offset_slice = try!(peek(slices, offset));
+			let len_offset = (try!(as_u32(offset_slice)) / 32) as usize;
 
-				let taken = try!(take_bytes(slices, len_offset + 1, len));
+			let len_slice = try!(peek(slices, len_offset));
+			let len = try!(as_u32(len_slice)) as usize;
 
-				let result = DecodeResult {
-					token: Token::String(try!(String::from_utf8(taken.bytes))),
-					new_offset: offset + 1,
-				};
+			let mut tokens = vec![];
+			let mut new_offset = len_offset + 1;
 
-				Ok(result)
-			},
-			ParamType::Array(ref t) => {
-				let offset_slice = try!(peek(slices, offset));
-				let len_offset = (try!(as_u32(offset_slice)) / 32) as usize;
-
-				let len_slice = try!(peek(slices, len_offset));
-				let len = try!(as_u32(len_slice)) as usize;
-
-				let mut tokens = vec![];
-				let mut new_offset = len_offset + 1;
-
-				for _ in 0..len {
-					let res = try!(decode_param(t, &slices, new_offset));
-					new_offset = res.new_offset;
-					tokens.push(res.token);
-				}
-
-				let result = DecodeResult {
-					token: Token::Array(tokens),
-					new_offset: offset + 1,
-				};
-
-				Ok(result)
-			},
-			ParamType::FixedArray(ref t, len) => {
-				let mut tokens = vec![];
-				let mut new_offset = offset;
-				for _ in 0..len {
-					let res = try!(decode_param(t, &slices, new_offset));
-					new_offset = res.new_offset;
-					tokens.push(res.token);
-				}
-
-				let result = DecodeResult {
-					token: Token::FixedArray(tokens),
-					new_offset: new_offset,
-				};
-
-				Ok(result)
+			for _ in 0..len {
+				let res = try!(decode_param(t, &slices, new_offset));
+				new_offset = res.new_offset;
+				tokens.push(res.token);
 			}
+
+			let result = DecodeResult {
+				token: Token::Array(tokens),
+				new_offset: offset + 1,
+			};
+
+			Ok(result)
+		},
+		ParamType::FixedArray(ref t, len) => {
+			let mut tokens = vec![];
+			let mut new_offset = offset;
+			for _ in 0..len {
+				let res = try!(decode_param(t, &slices, new_offset));
+				new_offset = res.new_offset;
+				tokens.push(res.token);
+			}
+
+			let result = DecodeResult {
+				token: Token::FixedArray(tokens),
+				new_offset: new_offset,
+			};
+
+			Ok(result)
 		}
 	}
+}
 
 #[cfg(test)]
 mod tests {
