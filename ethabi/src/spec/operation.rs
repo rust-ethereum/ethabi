@@ -4,7 +4,8 @@ use serde::{Deserialize, Deserializer};
 use serde::de::{Error as SerdeError};
 use serde_json::Value;
 use serde_json::value::from_value;
-use super::{Function, Event, Constructor};
+use super::{Event, Constructor};
+use {Function};
 
 /// Operation type.
 #[derive(Clone, Debug, PartialEq)]
@@ -81,7 +82,8 @@ impl Operation {
 mod tests {
 	use serde_json;
 	use super::Operation;
-	use spec::{ParamType, Function, Param};
+	use spec::{ParamType, Param};
+	use {Function};
 
 	#[test]
 	fn deserialize_operation() {

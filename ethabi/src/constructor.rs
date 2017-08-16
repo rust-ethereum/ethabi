@@ -1,7 +1,7 @@
 //! Contract constructor call builder.
 
 use spec::Constructor as ConstructorInterface;
-use function::type_check;
+//use function::type_check;
 use token::Token;
 use errors::{Error, ErrorKind};
 use encoder::Encoder;
@@ -25,7 +25,7 @@ impl Constructor {
 	pub fn encode_call(&self, tokens: Vec<Token>) -> Result<Vec<u8>, Error> {
 		let params = self._interface.param_types();
 
-		if type_check(&tokens, &params) {
+		if Token::types_check(&tokens, &params) {
 			Ok(Encoder::encode(tokens))
 		} else {
 			Err(ErrorKind::InvalidData.into())

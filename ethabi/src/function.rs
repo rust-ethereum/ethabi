@@ -1,83 +1,64 @@
 //! Contract function call builder.
 
-use spec::{Function as FunctionInterface, ParamType};
-use token::Token;
-use encoder::Encoder;
-use decoder::Decoder;
+use spec::{Param, ParamType};
 use signature::short_signature;
-use errors::{Error, ErrorKind};
-use param::Param;
+use {Token, Result, ErrorKind, Encoder, Bytes, Decoder};
 
-/// Contract function call builder.
-#[derive(Clone, Debug, PartialEq)]
+/// Contract function specification.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct Function {
-	interface: FunctionInterface,
-}
-
-impl From<FunctionInterface> for Function {
-	fn from(interface: FunctionInterface) -> Self {
-		Function {
-			interface,
-		}
-	}
+	/// Function name.
+	pub name: String,
+	/// Function input.
+	pub inputs: Vec<Param>,
+	/// Function output.
+	pub outputs: Vec<Param>,
 }
 
 impl Function {
-	/// Returns function params.
-	pub fn input_params(&self) -> Vec<Param> {
-		self.interface.inputs.clone().into_iter().map(Into::into).collect()
+	/// Returns all input params of given function.
+	fn input_param_types(&self) -> Vec<ParamType> {
+		self.inputs.iter()
+			.map(|p| p.kind.clone())
+			.collect()
 	}
 
-	/// Return output params.
-	pub fn output_params(&self) -> Vec<ParamType> {
-		self.interface.output_param_types()
+	/// Returns all output params of given function.
+	fn output_param_types(&self) -> Vec<ParamType> {
+		self.outputs.iter()
+			.map(|p| p.kind.clone())
+			.collect()
 	}
 
 	/// Prepares ABI function call with given input params.
-	pub fn encode_call(&self, tokens: Vec<Token>) -> Result<Vec<u8>, Error> {
-		let params = self.interface.input_param_types();
+	pub fn encode_input(&self, tokens: Vec<Token>) -> Result<Bytes> {
+		let params = self.input_param_types();
 
-		if !type_check(&tokens, &params) {
+		if !Token::types_check(&tokens, &params) {
 			return Err(ErrorKind::InvalidData.into());
 		}
 
-		let signed = short_signature(&self.interface.name, &params).to_vec();
+		let signed = short_signature(&self.name, &params).to_vec();
 		let encoded = Encoder::encode(tokens);
 		Ok(signed.into_iter().chain(encoded.into_iter()).collect())
 	}
 
 	/// Parses the ABI function output to list of tokens.
-	pub fn decode_output(&self, data: Vec<u8>) -> Result<Vec<Token>, Error> {
-		Decoder::decode(&self.interface.output_param_types(), data)
-	}
-
-	/// Get the name of the function.
-	pub fn name(&self) -> &str {
-		&self.interface.name
-	}
-}
-
-/// Check if all the types of the tokens match the given parameter types.
-pub fn type_check(tokens: &[Token], param_types: &[ParamType]) -> bool {
-	param_types.len() == tokens.len() && {
-		param_types.iter().zip(tokens).all(|e| {
-			let (param_type, token) = e;
-			token.type_check(param_type)
-		})
+	pub fn decode_output(&self, data: Bytes) -> Result<Vec<Token>> {
+		Decoder::decode(&self.output_param_types(), data)
 	}
 }
 
 #[cfg(test)]
 mod tests {
+	use spec::{Param, ParamType};
 	use hex::FromHex;
-	use spec::{Function as FunctionInterface, ParamType, Param};
 	use token::Token;
 	use super::Function;
-	use super::type_check;
 
 	#[test]
 	fn test_function_encode_call() {
-		let interface = FunctionInterface {
+		let interface = Function {
 			name: "baz".to_owned(),
 			inputs: vec![Param {
 				name: "a".to_owned(),
@@ -92,38 +73,46 @@ mod tests {
 		let func = Function::from(interface);
 		let mut uint = [0u8; 32];
 		uint[31] = 69;
-		let encoded = func.encode_call(vec![Token::Uint(uint), Token::Bool(true)]).unwrap();
+		let encoded = func.encode_input(vec![Token::Uint(uint), Token::Bool(true)]).unwrap();
 		let expected = "cdcd77c000000000000000000000000000000000000000000000000000000000000000450000000000000000000000000000000000000000000000000000000000000001".from_hex().unwrap();
 		assert_eq!(encoded, expected);
 	}
-
-	#[test]
-	fn test_type_check() {
-		fn assert_type_check(tokens: Vec<Token>, param_types: Vec<ParamType>) {
-			assert!(type_check(&tokens, &param_types))
-		}
-
-		fn assert_not_type_check(tokens: Vec<Token>, param_types: Vec<ParamType>) {
-			assert!(!type_check(&tokens, &param_types))
-		}
-
-		assert_type_check(vec![Token::Uint([0u8; 32]), Token::Bool(false)], vec![ParamType::Uint(256), ParamType::Bool]);
-		assert_type_check(vec![Token::Uint([0u8; 32]), Token::Bool(false)], vec![ParamType::Uint(32), ParamType::Bool]);
-
-		assert_not_type_check(vec![Token::Uint([0u8; 32])], vec![ParamType::Uint(32), ParamType::Bool]);
-		assert_not_type_check(vec![Token::Uint([0u8; 32]), Token::Bool(false)], vec![ParamType::Uint(32)]);
-		assert_not_type_check(vec![Token::Bool(false), Token::Uint([0u8; 32])], vec![ParamType::Uint(32), ParamType::Bool]);
-
-		assert_type_check(vec![Token::FixedBytes(vec![0, 0, 0, 0])], vec![ParamType::FixedBytes(4)]);
-		assert_not_type_check(vec![Token::FixedBytes(vec![0, 0, 0, 0])], vec![ParamType::FixedBytes(3)]);
-
-		assert_type_check(vec![Token::Array(vec![Token::Bool(false), Token::Bool(true)])], vec![ParamType::Array(Box::new(ParamType::Bool))]);
-		assert_not_type_check(vec![Token::Array(vec![Token::Bool(false), Token::Uint([0u8; 32])])], vec![ParamType::Array(Box::new(ParamType::Bool))]);
-		assert_not_type_check(vec![Token::Array(vec![Token::Bool(false), Token::Bool(true)])], vec![ParamType::Array(Box::new(ParamType::Address))]);
-
-		assert_type_check(vec![Token::FixedArray(vec![Token::Bool(false), Token::Bool(true)])], vec![ParamType::FixedArray(Box::new(ParamType::Bool), 2)]);
-		assert_not_type_check(vec![Token::FixedArray(vec![Token::Bool(false), Token::Bool(true)])], vec![ParamType::FixedArray(Box::new(ParamType::Bool), 3)]);
-		assert_not_type_check(vec![Token::FixedArray(vec![Token::Bool(false), Token::Uint([0u8; 32])])], vec![ParamType::FixedArray(Box::new(ParamType::Bool), 2)]);
-		assert_not_type_check(vec![Token::FixedArray(vec![Token::Bool(false), Token::Bool(true)])], vec![ParamType::FixedArray(Box::new(ParamType::Address), 2)]);
-	}
 }
+
+// Contract function call builder.
+//#[derive(Clone, Debug, PartialEq)]
+//pub struct Function {
+	//interface: FunctionInterface,
+//}
+
+//impl From<FunctionInterface> for Function {
+	//fn from(interface: FunctionInterface) -> Self {
+		//Function {
+			//interface,
+		//}
+	//}
+//}
+
+//impl Function {
+	///// Returns function params.
+	//pub fn input_params(&self) -> Vec<Param> {
+		//self.interface.inputs.clone().into_iter().map(Into::into).collect()
+	//}
+
+	///// Return output params.
+	//pub fn output_params(&self) -> Vec<ParamType> {
+		//self.interface.output_param_types()
+	//}
+
+
+	///// Parses the ABI function output to list of tokens.
+	//pub fn decode_output(&self, data: Vec<u8>) -> Result<Vec<Token>, Error> {
+		//Decoder::decode(&self.interface.output_param_types(), data)
+	//}
+
+	///// Get the name of the function.
+	//pub fn name(&self) -> &str {
+		//&self.interface.name
+	//}
+//}
+

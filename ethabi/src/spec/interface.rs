@@ -7,7 +7,8 @@ use serde::{Deserialize, Deserializer};
 use serde::de::{Visitor, SeqAccess};
 use serde_json;
 use errors::Error;
-use super::{Operation, Constructor, Function, Event};
+use super::{Operation, Constructor, Event};
+use {Function};
 
 /// Contract interface.
 #[derive(Default, Clone, Debug, PartialEq)]

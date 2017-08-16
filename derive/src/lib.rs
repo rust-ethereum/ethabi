@@ -154,9 +154,9 @@ fn normalize_path(relative_path: &str) -> Result<PathBuf> {
 }
 
 fn impl_contract_function(function: &Function) -> quote::Tokens {
-	let query_name = string_ident(function.name());
-	let name = syn::Ident::new(function.name().to_snake_case());
-	let function_name = syn::Ident::new(function.name().to_camel_case());
+	let query_name = string_ident(&function.name);
+	let name = syn::Ident::new(function.name.to_snake_case());
+	let function_name = syn::Ident::new(function.name.to_camel_case());
 
 	quote! {
 		pub fn #name(&self) -> functions::#function_name {
@@ -367,8 +367,8 @@ fn declare_events(event: &Event) -> quote::Tokens {
 }
 
 fn declare_functions(function: &Function) -> quote::Tokens {
-	let name = syn::Ident::new(function.name().to_camel_case());
-	let names: Vec<_> = function.input_params()
+	let name = syn::Ident::new(function.name.to_camel_case());
+	let names: Vec<_> = function.inputs
 		.iter()
 		.enumerate()
 		.map(|(index, param)| if param.name.is_empty() {
@@ -376,14 +376,14 @@ fn declare_functions(function: &Function) -> quote::Tokens {
 		} else {
 			param.name.to_snake_case().into()
 		}).collect();
-	let kinds: Vec<_> = function.input_params()
+	let kinds: Vec<_> = function.inputs
 		.iter()
 		.map(|param| rust_type(&param.kind))
 		.collect();
 	let params: Vec<_> = names.iter().zip(kinds.iter())
 		.map(|(param_name, kind)| quote! { #param_name: #kind })
 		.collect();
-	let usage: Vec<_> = names.iter().zip(function.input_params().iter())
+	let usage: Vec<_> = names.iter().zip(function.inputs.iter())
 		.map(|(param_name, param)| to_token(param_name, &param.kind))
 		.collect();
 
@@ -404,7 +404,7 @@ fn declare_functions(function: &Function) -> quote::Tokens {
 		impl<'a> #name<'a> {
 			pub fn input(&self, #(#params),*) -> ethabi::Bytes {
 				let v: Vec<ethabi::Token> = vec![#(#usage),*];
-				self.function.encode_call(v).expect("encode_call not to fail; ethabi_derive bug")
+				self.function.encode_input(v).expect("encode_input not to fail; ethabi_derive bug")
 			}
 		}
 	}
