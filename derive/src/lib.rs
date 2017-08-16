@@ -183,13 +183,13 @@ fn to_token(name: &syn::Ident, kind: &ParamType) -> quote::Tokens {
 	match *kind {
 		ParamType::Address => quote! { ethabi::Token::Address(#name) },
 		ParamType::Bytes => quote! { ethabi::Token::Bytes(#name) },
-		ParamType::FixedBytes(_) => quote! { ethabi::Token::FixedBytes(#name.to_bytes()) },
+		ParamType::FixedBytes(_) => quote! { ethabi::Token::FixedBytes(#name.to_vec()) },
 		ParamType::Int(_) => quote! { ethabi::Token::Int(#name) },
 		ParamType::Uint(_) => quote! { ethabi::Token::Uint(#name) },
 		ParamType::Bool => quote! { ethabi::Token::Bool(#name) },
 		ParamType::String => quote! { ethabi::Token::String(#name) },
 		ParamType::Array(ref kind) => {
-			let inner_name: syn::Ident = format!("inner_{}", name).into();
+			let inner_name: syn::Ident = "inner".into();
 			let inner_loop = to_token(&inner_name, kind);
 			quote! {
 				// note the double {{
@@ -200,7 +200,7 @@ fn to_token(name: &syn::Ident, kind: &ParamType) -> quote::Tokens {
 			}
 		}
 		ParamType::FixedArray(ref kind, _) => {
-			let inner_name: syn::Ident = format!("inner_{}", name).into();
+			let inner_name: syn::Ident = "inner".into();
 			let inner_loop = to_token(&inner_name, kind);
 			quote! {
 				// note the double {{
@@ -224,7 +224,7 @@ fn from_token(kind: &ParamType, token: &syn::Ident) -> quote::Tokens {
 					let mut result = [0u8; #size];
 					let v = #token.to_fixed_bytes().unwrap();
 					result.copy_from_slice(&v);
-					v
+					result
 				}
 			}
 		},
@@ -233,22 +233,22 @@ fn from_token(kind: &ParamType, token: &syn::Ident) -> quote::Tokens {
 		ParamType::Bool => quote! { #token.to_bool().unwrap() },
 		ParamType::String => quote! { #token.to_string().unwrap() },
 		ParamType::Array(ref kind) => {
-			let inner: syn::Ident = format!("inner_{}", token).into();
+			let inner: syn::Ident = "inner".into();
 			let inner_loop = from_token(kind, &inner);
 			quote! {
 				#token.to_array().unwrap().into_iter()
-					map(|#inner| #inner_loop)
+					.map(|#inner| #inner_loop)
 					.collect()
 			}
 		},
 		ParamType::FixedArray(ref kind, size) => {
-			let inner: syn::Ident = format!("inner_{}", token).into();
+			let inner: syn::Ident = "inner".into();
 			let inner_loop = from_token(kind, &inner);
 			let to_array = vec![quote! { iter.next() }; size];
 			quote! {
 				{
 					let iter = #token.to_array().unwrap().into_iter()
-						map(|#inner| #inner_loop);
+						.map(|#inner| #inner_loop);
 					[#(#to_array),*]
 				}
 			}
