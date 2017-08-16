@@ -1,36 +1,73 @@
-use std::io;
+use std::{io, fmt};
 use std::collections::HashMap;
 use std::collections::hash_map::Values;
-use spec::Interface;
-use function::Function;
-use constructor::Constructor;
-use event::Event;
-use errors::{Error, ErrorKind};
+use serde::{Deserialize, Deserializer};
+use serde::de::{Visitor, SeqAccess};
+use serde_json;
+use operation::Operation;
+use {Error, ErrorKind, Event, Constructor, Function};
 
 /// API building calls to contracts ABI.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Contract {
-    constructor: Option<Constructor>,
-    functions: HashMap<String, Function>,
-    events: HashMap<String, Event>,
-	fallback: bool,
+	/// Contract constructor.
+	pub constructor: Option<Constructor>,
+	/// Contract functions.
+	pub functions: HashMap<String, Function>,
+	/// Contract events.
+	pub events: HashMap<String, Event>,
+	/// Contract has fallback function.
+	pub fallback: bool,
 }
 
-impl From<Interface> for Contract {
-	fn from(interface: Interface) -> Self {
-		Contract {
-			constructor: interface.constructor.map(Into::into),
-			events: interface.events.into_iter().map(|(name, event)| (name, event.into())).collect(),
-			functions: interface.functions.into_iter().map(|(name, func)| (name, func.into())).collect(),
-			fallback: interface.fallback,
+impl<'a> Deserialize<'a> for Contract {
+	fn deserialize<D>(deserializer: D) -> Result<Contract, D::Error> where D: Deserializer<'a> {
+		deserializer.deserialize_any(ContractVisitor)
+	}
+}
+
+struct ContractVisitor;
+
+impl<'a> Visitor<'a> for ContractVisitor {
+	type Value = Contract;
+
+	fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+		formatter.write_str("valid abi spec file")
+	}
+
+	fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error> where A: SeqAccess<'a> {
+		let mut result = Contract {
+			constructor: None,
+			functions: HashMap::default(),
+			events: HashMap::default(),
+			fallback: false,
+		};
+
+		while let Some(operation) = seq.next_element()? {
+			match operation {
+				Operation::Constructor(constructor) => {
+					result.constructor = Some(constructor);
+				},
+				Operation::Function(func) => {
+					result.functions.insert(func.name.clone(), func);
+				},
+				Operation::Event(event) => {
+					result.events.insert(event.name.clone(), event);
+				},
+				Operation::Fallback => {
+					result.fallback = true;
+				},
+			}
 		}
+
+		Ok(result)
 	}
 }
 
 impl Contract {
 	/// Loads contract from json.
 	pub fn load<T: io::Read>(reader: T) -> Result<Self, Error> {
-		Interface::load(reader).map(Into::into)
+		serde_json::from_reader(reader).map_err(From::from)
 	}
 
     /// Creates constructor call builder.

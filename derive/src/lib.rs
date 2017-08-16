@@ -11,8 +11,7 @@ use std::{env, fs};
 use std::path::PathBuf;
 use proc_macro::TokenStream;
 use heck::{SnakeCase, CamelCase};
-use ethabi::{Result, ResultExt, Contract, Event, Function};
-use ethabi::spec::ParamType;
+use ethabi::{Result, ResultExt, Contract, Event, Function, ParamType};
 
 #[proc_macro_derive(EthabiContract, attributes(ethabi_contract_options))]
 pub fn ethabi_derive(input: TokenStream) -> TokenStream {
@@ -258,9 +257,9 @@ fn from_token(kind: &ParamType, token: &syn::Ident) -> quote::Tokens {
 }
 
 fn impl_contract_event(event: &Event) -> quote::Tokens {
-	let query_name = string_ident(event.name());
-	let name = syn::Ident::new(event.name().to_snake_case());
-	let event_name = syn::Ident::new(event.name().to_camel_case());
+	let query_name = string_ident(&event.name);
+	let name = syn::Ident::new(event.name.to_snake_case());
+	let event_name = syn::Ident::new(event.name.to_camel_case());
 	quote! {
 		pub fn #name(&self) -> events::#event_name {
 			self.contract.event(#query_name).unwrap().into()
@@ -269,8 +268,8 @@ fn impl_contract_event(event: &Event) -> quote::Tokens {
 }
 
 fn declare_logs(event: &Event) -> quote::Tokens {
-	let name = syn::Ident::new(event.name().to_camel_case());
-	let names: Vec<_> = event.inputs()
+	let name = syn::Ident::new(event.name.to_camel_case());
+	let names: Vec<_> = event.inputs
 		.iter()
 		.enumerate()
 		.map(|(index, param)| if param.name.is_empty() {
@@ -278,7 +277,7 @@ fn declare_logs(event: &Event) -> quote::Tokens {
 		} else {
 			param.name.to_snake_case().into()
 		}).collect();
-	let kinds: Vec<_> = event.inputs()
+	let kinds: Vec<_> = event.inputs
 		.iter()
 		.map(|param| rust_type(&param.kind))
 		.collect();
@@ -294,8 +293,8 @@ fn declare_logs(event: &Event) -> quote::Tokens {
 }
 
 fn declare_events(event: &Event) -> quote::Tokens {
-	let name = syn::Ident::new(event.name().to_camel_case());
-	let names: Vec<_> = event.inputs()
+	let name = syn::Ident::new(event.name.to_camel_case());
+	let names: Vec<_> = event.inputs
 		.iter()
 		.enumerate()
 		.map(|(index, param)| if param.name.is_empty() {
@@ -303,7 +302,7 @@ fn declare_events(event: &Event) -> quote::Tokens {
 		} else {
 			param.name.to_snake_case().into()
 		}).collect();
-	let kinds: Vec<_> = event.inputs()
+	let kinds: Vec<_> = event.inputs
 		.iter()
 		.map(|param| rust_type(&param.kind))
 		.collect();
@@ -311,14 +310,14 @@ fn declare_events(event: &Event) -> quote::Tokens {
 		.map(|(param_name, kind)| quote! { #param_name: ethabi::Topic<#kind> })
 		.collect();
 	let iter = syn::Ident::new("log.next().unwrap().value");
-	let to_log: Vec<_> = event.inputs()
+	let to_log: Vec<_> = event.inputs
 		.iter()
 		.map(|param| from_token(&param.kind, &iter))
 		.collect();
 	let log_params: Vec<_> = names.iter().zip(to_log.iter())
 		.map(|(param_name, convert)| quote! { #param_name: #convert })
 		.collect();
-	let to_filter: Vec<_> = names.iter().zip(event.inputs().iter())
+	let to_filter: Vec<_> = names.iter().zip(event.inputs.iter())
 		.enumerate()
 		.take(3)
 		.map(|(index, (param_name, param))| {

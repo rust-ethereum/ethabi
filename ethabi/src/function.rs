@@ -1,8 +1,7 @@
 //! Contract function call builder.
 
-use spec::{Param, ParamType};
 use signature::short_signature;
-use {Token, Result, ErrorKind, Encoder, Bytes, Decoder};
+use {Param, Token, Result, ErrorKind, Encoder, Bytes, Decoder, ParamType};
 
 /// Contract function specification.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -51,10 +50,8 @@ impl Function {
 
 #[cfg(test)]
 mod tests {
-	use spec::{Param, ParamType};
 	use hex::FromHex;
-	use token::Token;
-	use super::Function;
+	use {Token, Param, Function, ParamType};
 
 	#[test]
 	fn test_function_encode_call() {
@@ -78,41 +75,3 @@ mod tests {
 		assert_eq!(encoded, expected);
 	}
 }
-
-// Contract function call builder.
-//#[derive(Clone, Debug, PartialEq)]
-//pub struct Function {
-	//interface: FunctionInterface,
-//}
-
-//impl From<FunctionInterface> for Function {
-	//fn from(interface: FunctionInterface) -> Self {
-		//Function {
-			//interface,
-		//}
-	//}
-//}
-
-//impl Function {
-	///// Returns function params.
-	//pub fn input_params(&self) -> Vec<Param> {
-		//self.interface.inputs.clone().into_iter().map(Into::into).collect()
-	//}
-
-	///// Return output params.
-	//pub fn output_params(&self) -> Vec<ParamType> {
-		//self.interface.output_param_types()
-	//}
-
-
-	///// Parses the ABI function output to list of tokens.
-	//pub fn decode_output(&self, data: Vec<u8>) -> Result<Vec<Token>, Error> {
-		//Decoder::decode(&self.interface.output_param_types(), data)
-	//}
-
-	///// Get the name of the function.
-	//pub fn name(&self) -> &str {
-		//&self.interface.name
-	//}
-//}
-

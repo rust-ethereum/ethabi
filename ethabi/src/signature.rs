@@ -1,6 +1,5 @@
 use tiny_keccak::Keccak;
-use spec::ParamType;
-use spec::param_type::Writer;
+use param_type::{Writer, ParamType};
 
 pub fn short_signature(name: &str, params: &[ParamType]) -> [u8; 4] {
 	let mut result = [0u8; 4];
@@ -30,8 +29,8 @@ fn fill_signature(name: &str, params: &[ParamType], result: &mut [u8]) {
 #[cfg(test)]
 mod tests {
 	use hex::FromHex;
-	use spec::ParamType;
 	use super::short_signature;
+	use {ParamType};
 
 	#[test]
 	fn test_signature() {

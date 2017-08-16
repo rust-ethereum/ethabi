@@ -1,9 +1,7 @@
 //! ABI decoder.
 
-use spec::ParamType;
-use errors::{ErrorKind, Error, ResultExt};
-use token::Token;
 use util::slice_data;
+use {Token, ErrorKind, Error, ResultExt, ParamType};
 
 /// ABI decoder.
 pub struct Decoder;

@@ -3,10 +3,9 @@
 mod lenient;
 mod strict;
 mod token;
-pub mod from_hex;
+mod from_hex;
 
-use spec::ParamType;
-use errors::{Error, ErrorKind, ResultExt};
+use {ParamType, Error, ErrorKind, ResultExt};
 pub use self::lenient::LenientTokenizer;
 pub use self::strict::StrictTokenizer;
 pub use self::token::Token;

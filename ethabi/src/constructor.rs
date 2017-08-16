@@ -1,29 +1,24 @@
 //! Contract constructor call builder.
+use {Param, Result, ErrorKind, Encoder, Token, ParamType};
 
-use spec::Constructor as ConstructorInterface;
-//use function::type_check;
-use token::Token;
-use errors::{Error, ErrorKind};
-use encoder::Encoder;
-
-/// Contract constructor call builder.
-#[derive(Clone, Debug, PartialEq)]
+/// Contract constructor specification.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct Constructor {
-	_interface: ConstructorInterface,
-}
-
-impl From<ConstructorInterface> for Constructor {
-	fn from(interface: ConstructorInterface) -> Self {
-		Constructor {
-			_interface: interface,
-		}
-	}
+	/// Constructor input.
+	pub inputs: Vec<Param>,
 }
 
 impl Constructor {
+	/// Returns all input params of given constructor.
+	fn param_types(&self) -> Vec<ParamType> {
+		self.inputs.iter()
+			.map(|p| p.kind.clone())
+			.collect()
+	}
+
 	/// Prepares ABI constructor call with given input params.
-	pub fn encode_call(&self, tokens: Vec<Token>) -> Result<Vec<u8>, Error> {
-		let params = self._interface.param_types();
+	pub fn encode_call(&self, tokens: Vec<Token>) -> Result<Vec<u8>> {
+		let params = self.param_types();
 
 		if Token::types_check(&tokens, &params) {
 			Ok(Encoder::encode(tokens))

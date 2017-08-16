@@ -2,33 +2,49 @@
 
 use std::collections::HashMap;
 use tiny_keccak::keccak256;
-use spec::{Event as EventInterface, ParamType, EventParam};
 use decoder::Decoder;
 use token::Token;
 use errors::{Error, ErrorKind};
 use signature::long_signature;
-use {Log, Hash, RawLog, LogParam, RawTopicFilter, TopicFilter, Topic};
-use Encoder;
+use {Log, Hash, RawLog, LogParam, RawTopicFilter, TopicFilter, Topic, ParamType, EventParam, Encoder};
 
 /// Contract event.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Deserialize)]
 pub struct Event {
-	/// spec::Event
-	interface: EventInterface,
-}
-
-impl From<EventInterface> for Event {
-	fn from(interface: EventInterface) -> Self {
-		Event {
-			interface,
-		}
-	}
+	/// Event name.
+	pub name: String,
+	/// Event input.
+	pub inputs: Vec<EventParam>,
+	/// If anonymous, event cannot be found using `from` filter.
+	pub anonymous: bool,
 }
 
 impl Event {
+	/// Returns names of all params.
+	fn params_names(&self) -> Vec<String> {
+		self.inputs.iter()
+			.map(|p| p.name.clone())
+			.collect()
+	}
+
+	/// Returns types of all params.
+	fn param_types(&self) -> Vec<ParamType> {
+		self.inputs.iter()
+			.map(|p| p.kind.clone())
+			.collect()
+	}
+
+	/// Returns all params of the event.
+	fn indexed_params(&self, indexed: bool) -> Vec<EventParam> {
+		self.inputs.iter()
+			.filter(|p| p.indexed == indexed)
+			.cloned()
+			.collect()
+	}
+
 	/// Event signature
 	pub fn signature(&self) -> Hash {
-		long_signature(&self.interface.name, &self.interface.param_types())
+		long_signature(&self.name, &self.param_types())
 	}
 
 	/// Creates topic filter
@@ -66,8 +82,8 @@ impl Event {
 			}
 		}
 
-		let kinds: Vec<_> = self.interface.indexed_params(true).into_iter().map(|param| param.kind).collect();
-		let result = if self.interface.anonymous {
+		let kinds: Vec<_> = self.indexed_params(true).into_iter().map(|param| param.kind).collect();
+		let result = if self.anonymous {
 			TopicFilter {
 				topic0: convert_topic(raw.topic0, kinds.get(0))?,
 				topic1: convert_topic(raw.topic1, kinds.get(1))?,
@@ -92,10 +108,10 @@ impl Event {
 		let data = log.data;
 		let topics_len = topics.len();
 		// obtains all params info
-		let topic_params = self.interface.indexed_params(true);
-		let data_params = self.interface.indexed_params(false);
+		let topic_params = self.indexed_params(true);
+		let data_params = self.indexed_params(false);
 		// then take first topic if event is not anonymous
-		let to_skip = if self.interface.anonymous {
+		let to_skip = if self.anonymous {
 			0
 		} else {
 			// verify
@@ -140,7 +156,7 @@ impl Event {
 			.chain(data_named_tokens)
 			.collect::<HashMap<String, Token>>();
 
-		let decoded_params = self.interface.params_names()
+		let decoded_params = self.params_names()
 			.into_iter()
 			.map(|name| LogParam {
 				name: name.clone(),
@@ -154,30 +170,19 @@ impl Event {
 
 		Ok(result)
 	}
-
-	/// Return the name of the event.
-	pub fn name(&self) -> &str {
-		&self.interface.name
-	}
-
-	/// Return the inputs of the event.
-	pub fn inputs(&self) -> &[EventParam] {
-		&self.interface.inputs
-	}
 }
 
 #[cfg(test)]
 mod tests {
 	use hex::FromHex;
-	use spec::{Event as EventInterface, EventParam, ParamType};
 	use token::{Token, TokenFromHex};
 	use signature::long_signature;
 	use log::{RawLog, Log};
-	use super::{Event, LogParam};
+	use {EventParam, ParamType, Event, LogParam};
 
 	#[test]
 	fn test_decoding_event() {
-		let i = EventInterface {
+		let event = Event {
 			name: "foo".to_owned(),
 			inputs: vec![EventParam {
 				name: "a".to_owned(),
@@ -198,8 +203,6 @@ mod tests {
 			}],
 			anonymous: false,
 		};
-
-		let event = Event::from(i);
 
 		let log = RawLog {
 			topics: vec![

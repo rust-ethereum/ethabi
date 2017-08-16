@@ -1,7 +1,7 @@
 //! Ethereum ABI params.
 use std::fmt;
-use spec::ParamType;
 use hex::ToHex;
+use {ParamType};
 
 /// Ethereum ABI params.
 #[derive(Debug, PartialEq, Clone)]
@@ -201,8 +201,7 @@ impl Token {
 
 #[cfg(test)]
 mod tests {
-	use spec::ParamType;
-	use {Token};
+	use {Token, ParamType};
 
 	#[test]
 	fn test_type_check() {

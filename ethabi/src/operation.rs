@@ -4,8 +4,7 @@ use serde::{Deserialize, Deserializer};
 use serde::de::{Error as SerdeError};
 use serde_json::Value;
 use serde_json::value::from_value;
-use super::{Event, Constructor};
-use {Function};
+use {Function, Constructor, Event};
 
 /// Operation type.
 #[derive(Clone, Debug, PartialEq)]
@@ -52,38 +51,12 @@ impl<'a> Deserialize<'a> for Operation {
 	}
 }
 
-impl Operation {
-	/// Return some if this operation is a `Constructor`.
-	pub fn constructor(&self) -> Option<&Constructor> {
-		match *self {
-			Operation::Constructor(ref f) => Some(f),
-			_ => None
-		}
-	}
-
-	/// Return some if this operation is a `Function`.
-	pub fn function(&self) -> Option<&Function> {
-		match *self {
-			Operation::Function(ref f) => Some(f),
-			_ => None
-		}
-	}
-
-	/// Return some if this operation is an `Event`.
-	pub fn event(&self) -> Option<&Event> {
-		match *self {
-			Operation::Event(ref e) => Some(e),
-			_ => None
-		}
-	}
-}
-
 #[cfg(test)]
 mod tests {
 	use serde_json;
 	use super::Operation;
-	use spec::{ParamType, Param};
-	use {Function};
+	use spec::{ParamType};
+	use {Function, Param};
 
 	#[test]
 	fn deserialize_operation() {

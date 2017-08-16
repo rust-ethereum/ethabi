@@ -13,7 +13,7 @@ extern crate serde_derive;
 #[macro_use]
 extern crate error_chain;
 
-pub mod spec;
+mod param_type;
 pub mod token;
 mod constructor;
 mod contract;
@@ -21,14 +21,16 @@ mod decoder;
 mod encoder;
 mod errors;
 mod event;
+mod event_param;
 mod filter;
 mod function;
 mod log;
+mod operation;
 mod param;
 mod signature;
 pub mod util;
 
-pub use spec::Interface;
+pub use param_type::ParamType;
 pub use constructor::Constructor;
 pub use contract::{Contract, Functions, Events};
 pub use token::Token;
@@ -40,6 +42,7 @@ pub use function::Function;
 pub use param::Param;
 pub use log::{Log, RawLog, LogParam};
 pub use event::Event;
+pub use event_param::EventParam;
 
 /// ABI address.
 pub type Address = [u8; 20];

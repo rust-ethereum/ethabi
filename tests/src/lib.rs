@@ -5,12 +5,11 @@ extern crate ethabi_derive;
 #[macro_use]
 extern crate ethabi_contract;
 
-use rustc_hex::{ToHex, FromHex};
-
 use_contract!(eip20, "Eip20", "../examples/eip20.json");
 
 #[test]
 fn encoding_input_works() {
+	use rustc_hex::{ToHex};
 	use eip20::Eip20;
 
 	let expected = "dd62ed3e00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000101010101010101010101010101010101010101".to_owned();
@@ -25,7 +24,7 @@ fn encoding_input_works() {
 	let to = [3u8; 20];
 	let to2 = [4u8; 20];
 	let _filter = contract.events().transfer().create_filter(
-		ethabi::Topic::This(owner),
+		ethabi::Topic::This(from),
 		ethabi::Topic::OneOf(vec![to, to2]),
 		ethabi::Topic::Any);
 }
