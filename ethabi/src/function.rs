@@ -1,7 +1,7 @@
 //! Contract function call builder.
 
 use signature::short_signature;
-use {Param, Token, Result, ErrorKind, Encoder, Bytes, Decoder, ParamType};
+use {Param, Token, Result, ErrorKind, Bytes, decode, ParamType, encode};
 
 /// Contract function specification.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -30,21 +30,21 @@ impl Function {
 	}
 
 	/// Prepares ABI function call with given input params.
-	pub fn encode_input(&self, tokens: Vec<Token>) -> Result<Bytes> {
+	pub fn encode_input(&self, tokens: &[Token]) -> Result<Bytes> {
 		let params = self.input_param_types();
 
-		if !Token::types_check(&tokens, &params) {
+		if !Token::types_check(tokens, &params) {
 			return Err(ErrorKind::InvalidData.into());
 		}
 
 		let signed = short_signature(&self.name, &params).to_vec();
-		let encoded = Encoder::encode(tokens);
+		let encoded = encode(tokens);
 		Ok(signed.into_iter().chain(encoded.into_iter()).collect())
 	}
 
 	/// Parses the ABI function output to list of tokens.
-	pub fn decode_output(&self, data: Bytes) -> Result<Vec<Token>> {
-		Decoder::decode(&self.output_param_types(), data)
+	pub fn decode_output(&self, data: &[u8]) -> Result<Vec<Token>> {
+		decode(&self.output_param_types(), &data)
 	}
 }
 
@@ -70,7 +70,7 @@ mod tests {
 		let func = Function::from(interface);
 		let mut uint = [0u8; 32];
 		uint[31] = 69;
-		let encoded = func.encode_input(vec![Token::Uint(uint), Token::Bool(true)]).unwrap();
+		let encoded = func.encode_input(&[Token::Uint(uint), Token::Bool(true)]).unwrap();
 		let expected = "cdcd77c000000000000000000000000000000000000000000000000000000000000000450000000000000000000000000000000000000000000000000000000000000001".from_hex().unwrap();
 		assert_eq!(encoded, expected);
 	}

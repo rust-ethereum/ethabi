@@ -1,4 +1,4 @@
-use super::ParamType;
+use ParamType;
 
 /// Output formatter for param type.
 pub struct Writer;
@@ -22,7 +22,7 @@ impl Writer {
 
 #[cfg(test)]
 mod tests {
-	use spec::ParamType;
+	use ParamType;
 	use super::Writer;
 
 	#[test]

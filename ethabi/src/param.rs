@@ -14,8 +14,7 @@ pub struct Param {
 #[cfg(test)]
 mod tests {
 	use serde_json;
-	use super::Param;
-	use spec::ParamType;
+	use {Param, ParamType};
 
 	#[test]
 	fn param_deserialization() {

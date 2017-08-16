@@ -55,8 +55,7 @@ impl<'a> Deserialize<'a> for Operation {
 mod tests {
 	use serde_json;
 	use super::Operation;
-	use spec::{ParamType};
-	use {Function, Param};
+	use {Function, Param, ParamType};
 
 	#[test]
 	fn deserialize_operation() {
@@ -98,7 +97,10 @@ mod tests {
 			}}"#, name);
 
 			let deserialized: Operation = serde_json::from_str(&s).unwrap();
-			let function = deserialized.function().unwrap();
+			let function = match deserialized {
+				Operation::Function(f) => f,
+				_ => panic!("expected funciton"),
+			};
 
 			assert_eq!(function.name, expected);
 		}
@@ -125,7 +127,10 @@ mod tests {
 			}}"#, name);
 
 			let deserialized: Operation = serde_json::from_str(&s).unwrap();
-			let event = deserialized.event().unwrap();
+			let event = match deserialized {
+				Operation::Event(e) => e,
+				_ => panic!("expected event!"),
+			};
 
 			assert_eq!(event.name, expected);
 		}

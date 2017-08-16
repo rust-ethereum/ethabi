@@ -15,7 +15,7 @@ use docopt::Docopt;
 use hex::{ToHex, FromHex};
 use ethabi::param_type::{ParamType, Reader};
 use ethabi::token::{Token, Tokenizer, StrictTokenizer, LenientTokenizer, TokenFromHex};
-use ethabi::{Encoder, Decoder, Contract, Function, Event};
+use ethabi::{encode, decode, Contract, Function, Event};
 use error::{Error, ResultExt};
 
 pub const ETHABI: &'static str = r#"
@@ -128,7 +128,7 @@ fn encode_input(path: &str, function: String, values: Vec<String>, lenient: bool
 		.collect();
 
 	let tokens = parse_tokens(&params, lenient)?;
-	let result = function.encode_input(tokens)?;
+	let result = function.encode_input(&tokens)?;
 
 	Ok(result.to_hex())
 }
@@ -145,7 +145,7 @@ fn encode_params(types: Vec<String>, values: Vec<String>, lenient: bool) -> Resu
 		.collect();
 
 	let tokens = parse_tokens(&params, lenient)?;
-	let result = Encoder::encode(tokens);
+	let result = encode(&tokens);
 
 	Ok(result.to_hex())
 }
@@ -153,7 +153,7 @@ fn encode_params(types: Vec<String>, values: Vec<String>, lenient: bool) -> Resu
 fn decode_call_output(path: &str, function: String, data: String) -> Result<String, Error> {
 	let function = load_function(path, function)?;
 	let data = data.from_hex().chain_err(|| "Expected <data> to be hex")?;
-	let tokens = function.decode_output(data)?;
+	let tokens = function.decode_output(&data)?;
 	let types = function.outputs;
 
 	assert_eq!(types.len(), tokens.len());
@@ -174,7 +174,7 @@ fn decode_params(types: Vec<String>, data: String) -> Result<String, Error> {
 
 	let data = data.from_hex().chain_err(|| "Expected <data> to be hex")?;
 
-	let tokens = try!(Decoder::decode(&types, data));
+	let tokens = decode(&types, &data)?;
 
 	assert_eq!(types.len(), tokens.len());
 

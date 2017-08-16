@@ -403,7 +403,7 @@ fn declare_functions(function: &Function) -> quote::Tokens {
 		impl<'a> #name<'a> {
 			pub fn input(&self, #(#params),*) -> ethabi::Bytes {
 				let v: Vec<ethabi::Token> = vec![#(#usage),*];
-				self.function.encode_input(v).expect("encode_input not to fail; ethabi_derive bug")
+				self.function.encode_input(&v).expect("encode_input not to fail; ethabi_derive bug")
 			}
 		}
 	}

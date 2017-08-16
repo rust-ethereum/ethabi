@@ -1,5 +1,5 @@
 //! Contract constructor call builder.
-use {Param, Result, ErrorKind, Encoder, Token, ParamType};
+use {Param, Result, ErrorKind, Token, ParamType, encode};
 
 /// Contract constructor specification.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -17,11 +17,11 @@ impl Constructor {
 	}
 
 	/// Prepares ABI constructor call with given input params.
-	pub fn encode_call(&self, tokens: Vec<Token>) -> Result<Vec<u8>> {
+	pub fn encode_call(&self, tokens: &[Token]) -> Result<Vec<u8>> {
 		let params = self.param_types();
 
-		if Token::types_check(&tokens, &params) {
-			Ok(Encoder::encode(tokens))
+		if Token::types_check(tokens, &params) {
+			Ok(encode(tokens))
 		} else {
 			Err(ErrorKind::InvalidData.into())
 		}

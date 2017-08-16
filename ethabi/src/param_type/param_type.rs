@@ -34,7 +34,7 @@ impl fmt::Display for ParamType {
 
 #[cfg(test)]
 mod tests {
-	use spec::ParamType;
+	use ParamType;
 
 	#[test]
 	fn test_param_type_display() {

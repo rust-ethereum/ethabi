@@ -70,7 +70,7 @@ impl Tokenizer for StrictTokenizer {
 
 #[cfg(test)]
 mod tests {
-	use spec::ParamType;
+	use ParamType;
 	use token::{Token, Tokenizer, StrictTokenizer};
 
 	#[test]

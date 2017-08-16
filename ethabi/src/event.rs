@@ -2,11 +2,12 @@
 
 use std::collections::HashMap;
 use tiny_keccak::keccak256;
-use decoder::Decoder;
-use token::Token;
-use errors::{Error, ErrorKind};
 use signature::long_signature;
-use {Log, Hash, RawLog, LogParam, RawTopicFilter, TopicFilter, Topic, ParamType, EventParam, Encoder};
+use {
+	Log, Hash, RawLog, LogParam, RawTopicFilter, TopicFilter,
+	Topic, ParamType, EventParam, encode, decode, Token,
+	Error, ErrorKind
+};
 
 /// Contract event.
 #[derive(Clone, Debug, PartialEq, Deserialize)]
@@ -53,7 +54,7 @@ impl Event {
 			if !token.type_check(kind) {
 				return Err(ErrorKind::InvalidData.into());
 			}
-			let encoded = Encoder::encode(vec![token]);
+			let encoded = encode(&[token]);
 			if encoded.len() == 32 {
 				let mut data = [0u8; 32];
 				data.copy_from_slice(&encoded);
@@ -131,7 +132,7 @@ impl Event {
 			.flat_map(|t| t.to_vec())
 			.collect::<Vec<u8>>();
 
-		let topic_tokens = try!(Decoder::decode(&topic_types, flat_topics));
+		let topic_tokens = try!(decode(&topic_types, &flat_topics));
 
 		// topic may be only a 32 bytes encoded token
 		if topic_tokens.len() != topics_len - to_skip {
@@ -146,7 +147,7 @@ impl Event {
 			.map(|p| p.kind.clone())
 			.collect::<Vec<ParamType>>();
 
-		let data_tokens = try!(Decoder::decode(&data_types, data));
+		let data_tokens = try!(decode(&data_types, &data));
 
 		let data_named_tokens = data_params.into_iter()
 			.map(|p| p.name)
