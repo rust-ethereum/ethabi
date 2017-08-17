@@ -159,7 +159,7 @@ fn impl_contract_function(function: &Function) -> quote::Tokens {
 
 	quote! {
 		pub fn #name(&self) -> functions::#function_name {
-			self.contract.function(#query_name).unwrap().into()
+			functions::#function_name::from_x(self.contract.function(#query_name).unwrap())
 		}
 	}
 }
@@ -262,7 +262,7 @@ fn impl_contract_event(event: &Event) -> quote::Tokens {
 	let event_name = syn::Ident::new(event.name.to_camel_case());
 	quote! {
 		pub fn #name(&self) -> events::#event_name {
-			self.contract.event(#query_name).unwrap().into()
+			events::#event_name::from_x(self.contract.event(#query_name).unwrap())
 		}
 	}
 }
@@ -360,16 +360,13 @@ fn declare_events(event: &Event) -> quote::Tokens {
 			event: &'a ethabi::Event,
 		}
 
-		#[doc(hidden)]
-		impl<'a> From<&'a ethabi::Event> for #name<'a> {
-			fn from(event: &'a ethabi::Event) -> Self {
+		impl<'a> #name<'a> {
+			pub(super) fn from_x(event: &'a ethabi::Event) -> Self {
 				#name {
 					event,
 				}
 			}
-		}
 
-		impl<'a> #name<'a> {
 			/// Parses log.
 			pub fn parse_log(&self, log: ethabi::RawLog) -> ethabi::Result<super::logs::#name> {
 				let mut log = self.event.parse_log(log)?.params.into_iter();
@@ -418,16 +415,13 @@ fn declare_functions(function: &Function) -> quote::Tokens {
 			function: &'a ethabi::Function,
 		}
 
-		#[doc(hidden)]
-		impl<'a> From<&'a ethabi::Function> for #name<'a> {
-			fn from(function: &'a ethabi::Function) -> Self {
+		impl<'a> #name<'a> {
+			pub(super) fn from_x(function: &'a ethabi::Function) -> Self {
 				#name {
 					function,
 				}
 			}
-		}
 
-		impl<'a> #name<'a> {
 			pub fn input(&self, #(#params),*) -> ethabi::Bytes {
 				let v: Vec<ethabi::Token> = vec![#(#usage),*];
 				self.function.encode_input(&v).expect("encode_input not to fail; ethabi_derive bug")
