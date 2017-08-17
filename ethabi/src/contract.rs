@@ -70,30 +70,30 @@ impl Contract {
 		serde_json::from_reader(reader).map_err(From::from)
 	}
 
-    /// Creates constructor call builder.
-    pub fn constructor(&self) -> Option<&Constructor> {
-        self.constructor.as_ref()
-    }
+	/// Creates constructor call builder.
+	pub fn constructor(&self) -> Option<&Constructor> {
+		self.constructor.as_ref()
+	}
 
-    /// Creates function call builder.
-    pub fn function(&self, name: &str) -> errors::Result<&Function> {
-        self.functions.get(name).ok_or_else(|| ErrorKind::InvalidName(name.to_owned()).into())
-    }
+	/// Creates function call builder.
+	pub fn function(&self, name: &str) -> errors::Result<&Function> {
+		self.functions.get(name).ok_or_else(|| ErrorKind::InvalidName(name.to_owned()).into())
+	}
 
-    /// Creates event decoder.
-    pub fn event(&self, name: &str) -> errors::Result<&Event> {
-        self.events.get(name).ok_or_else(|| ErrorKind::InvalidName(name.to_owned()).into())
-    }
+	/// Creates event decoder.
+	pub fn event(&self, name: &str) -> errors::Result<&Event> {
+		self.events.get(name).ok_or_else(|| ErrorKind::InvalidName(name.to_owned()).into())
+	}
 
-    /// Iterate over all functions of the contract in arbitrary order.
-    pub fn functions(&self) -> Functions {
-        Functions(self.functions.values())
-    }
+	/// Iterate over all functions of the contract in arbitrary order.
+	pub fn functions(&self) -> Functions {
+		Functions(self.functions.values())
+	}
 
-    /// Iterate over all events of the contract in arbitrary order.
-    pub fn events(&self) -> Events {
-        Events(self.events.values())
-    }
+	/// Iterate over all events of the contract in arbitrary order.
+	pub fn events(&self) -> Events {
+		Events(self.events.values())
+	}
 
 	/// Returns true if contract has fallback
 	pub fn fallback(&self) -> bool {
