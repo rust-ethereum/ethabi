@@ -11,7 +11,7 @@ use std::{env, fs};
 use std::path::PathBuf;
 use proc_macro::TokenStream;
 use heck::{SnakeCase, CamelCase};
-use ethabi::{Result, ResultExt, Contract, Event, Function, ParamType};
+use ethabi::{Result, ResultExt, Contract, Event, Function, ParamType, Constructor};
 
 #[proc_macro_derive(EthabiContract, attributes(ethabi_contract_options))]
 pub fn ethabi_derive(input: TokenStream) -> TokenStream {
@@ -31,6 +31,7 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 
 	let functions: Vec<_> = contract.functions().map(impl_contract_function).collect();
 	let events_impl: Vec<_> = contract.events().map(impl_contract_event).collect();
+	let constructor_impl = contract.constructor.as_ref().map(impl_contract_constructor);
 	let logs_structs: Vec<_> = contract.events().map(declare_logs).collect();
 	let events_structs: Vec<_> = contract.events().map(declare_events).collect();
 	let func_structs: Vec<_> = contract.functions().map(declare_functions).collect();
@@ -108,6 +109,8 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 					contract: &self.contract,
 				}
 			}
+
+			#constructor_impl
 		}
 
 	};
@@ -263,6 +266,34 @@ fn impl_contract_event(event: &Event) -> quote::Tokens {
 	quote! {
 		pub fn #name(&self) -> events::#event_name {
 			events::#event_name::from_x(self.contract.event(#query_name).unwrap())
+		}
+	}
+}
+
+fn impl_contract_constructor(constructor: &Constructor) -> quote::Tokens {
+	let names: Vec<_> = constructor.inputs
+		.iter()
+		.enumerate()
+		.map(|(index, param)| if param.name.is_empty() {
+			syn::Ident::new(format!("param{}", index))
+		} else {
+			param.name.to_snake_case().into()
+		}).collect();
+	let kinds: Vec<_> = constructor.inputs
+		.iter()
+		.map(|param| rust_type(&param.kind))
+		.collect();
+	let params: Vec<_> = names.iter().zip(kinds.iter())
+		.map(|(param_name, kind)| quote! { #param_name: #kind })
+		.collect();
+	let usage: Vec<_> = names.iter().zip(constructor.inputs.iter())
+		.map(|(param_name, param)| to_token(param_name, &param.kind))
+		.collect();
+
+	quote! {
+		pub fn constructor(&self, code: ethabi::Bytes, #(#params),* ) -> ethabi::Bytes {
+			let v: Vec<ethabi::Token> = vec![#(#usage),*];
+			self.contract.constructor.as_ref().unwrap().encode_input(code, &v).expect("encode_input not to fail; ethabi_derive bug")
 		}
 	}
 }

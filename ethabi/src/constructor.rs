@@ -17,11 +17,11 @@ impl Constructor {
 	}
 
 	/// Prepares ABI constructor call with given input params.
-	pub fn encode_input(&self, tokens: &[Token]) -> Result<Bytes> {
+	pub fn encode_input(&self, code: Bytes, tokens: &[Token]) -> Result<Bytes> {
 		let params = self.param_types();
 
 		if Token::types_check(tokens, &params) {
-			Ok(encode(tokens))
+			Ok(code.into_iter().chain(encode(tokens)).collect())
 		} else {
 			Err(ErrorKind::InvalidData.into())
 		}
