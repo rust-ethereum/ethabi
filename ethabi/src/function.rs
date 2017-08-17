@@ -12,6 +12,9 @@ pub struct Function {
 	pub inputs: Vec<Param>,
 	/// Function output.
 	pub outputs: Vec<Param>,
+	/// Constant function.
+	#[serde(default)]
+	pub constant: bool,
 }
 
 impl Function {

@@ -410,6 +410,55 @@ fn declare_functions(function: &Function) -> quote::Tokens {
 		.map(|(param_name, param)| to_token(param_name, &param.kind))
 		.collect();
 
+	let output_impl = if !function.constant {
+		quote! {}
+	} else {
+		let output_kinds = match function.outputs.len() {
+			0 => quote! {()},
+			1 => {
+				let t = rust_type(&function.outputs[0].kind);
+				quote! { #t }
+			},
+			_ => {
+				let outs: Vec<_> = function.outputs
+					.iter()
+					.map(|param| rust_type(&param.kind))
+					.collect();
+				quote! { (#(#outs),*) }
+			}
+		};
+
+		let o_impl = match function.outputs.len() {
+			0 => quote! { Ok(()) },
+			1 => {
+				let o = "out".into();
+				let from_first = from_token(&function.outputs[0].kind, &o);
+				quote! {
+					let out = self.function.decode_output(output)?.into_iter().next().unwrap();
+					Ok(#from_first)
+				}
+			},
+			_ => {
+				let o = "out.into_iter().next().unwrap()".into();
+				let outs: Vec<_> = function.outputs
+					.iter()
+					.map(|param| from_token(&param.kind, &o))
+					.collect();
+
+				quote! {
+					let out = self.function.decode_output(output)?.into_iter();
+					Ok(( #(#outs),* ))
+				}
+			},
+		};
+
+		quote! {
+			pub fn output(&self, output: &[u8]) -> ethabi::Result<#output_kinds> {
+				#o_impl
+			}
+		}
+	};
+
 	quote! {
 		pub struct #name<'a> {
 			function: &'a ethabi::Function,
@@ -426,6 +475,8 @@ fn declare_functions(function: &Function) -> quote::Tokens {
 				let v: Vec<ethabi::Token> = vec![#(#usage),*];
 				self.function.encode_input(&v).expect("encode_input not to fail; ethabi_derive bug")
 			}
+
+			#output_impl
 		}
 	}
 }
