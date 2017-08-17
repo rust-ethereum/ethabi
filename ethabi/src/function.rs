@@ -67,7 +67,8 @@ mod tests {
 				name: "b".to_owned(),
 				kind: ParamType::Bool,
 			}],
-			outputs: vec![]
+			outputs: vec![],
+			constant: false,
 		};
 
 		let func = Function::from(interface);

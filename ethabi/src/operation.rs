@@ -79,7 +79,8 @@ mod tests {
 					kind: ParamType::Address,
 				}
 			],
-			outputs: vec![]
+			outputs: vec![],
+			constant: false,
 		}));
 	}
 
