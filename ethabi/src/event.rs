@@ -103,7 +103,7 @@ impl Event {
 		Ok(result)
 	}
 
-	/// Decodes event indexed params and data.
+	/// Parses `RawLog` and retrieves all log params from it.
 	pub fn parse_log(&self, log: RawLog) -> Result<Log> {
 		let topics = log.topics;
 		let data = log.data;

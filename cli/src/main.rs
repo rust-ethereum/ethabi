@@ -81,37 +81,37 @@ fn execute<S, I>(command: I) -> Result<String, Error> where I: IntoIterator<Item
 		.and_then(|d| d.argv(command).deserialize())?;
 
 	if args.cmd_encode && args.cmd_function {
-		encode_input(&args.arg_abi_path, args.arg_function_name, args.arg_param, args.flag_lenient)
+		encode_input(&args.arg_abi_path, &args.arg_function_name, &args.arg_param, args.flag_lenient)
 	} else if args.cmd_encode && args.cmd_params {
-		encode_params(args.arg_type, args.arg_param, args.flag_lenient)
+		encode_params(&args.arg_type, &args.arg_param, args.flag_lenient)
 	} else if args.cmd_decode && args.cmd_function {
-		decode_call_output(&args.arg_abi_path, args.arg_function_name, args.arg_data)
+		decode_call_output(&args.arg_abi_path, &args.arg_function_name, &args.arg_data)
 	} else if args.cmd_decode && args.cmd_params {
-		decode_params(args.arg_type, args.arg_data)
+		decode_params(&args.arg_type, &args.arg_data)
 	} else if args.cmd_decode && args.cmd_log {
-		decode_log(&args.arg_abi_path, args.arg_event_name, args.arg_topic, args.arg_data)
+		decode_log(&args.arg_abi_path, &args.arg_event_name, &args.arg_topic, &args.arg_data)
 	} else {
 		unreachable!()
 	}
 }
 
-fn load_function(path: &str, function: String) -> Result<Function, Error> {
+fn load_function(path: &str, function: &str) -> Result<Function, Error> {
 	let file = File::open(path)?;
 	let contract = Contract::load(file)?;
-	let function = contract.function(&function)?.clone();
+	let function = contract.function(function)?.clone();
 	Ok(function)
 }
 
-fn load_event(path: &str, event: String) -> Result<Event, Error> {
+fn load_event(path: &str, event: &str) -> Result<Event, Error> {
 	let file = File::open(path)?;
 	let contract = Contract::load(file)?;
-	let event = contract.event(&event)?.clone();
+	let event = contract.event(event)?.clone();
 	Ok(event)
 }
 
-fn parse_tokens(params: &[(ParamType, String)], lenient: bool) -> Result<Vec<Token>, Error> {
+fn parse_tokens(params: &[(ParamType, &str)], lenient: bool) -> Result<Vec<Token>, Error> {
 	params.iter()
-		.map(|&(ref param, ref value)| match lenient {
+		.map(|&(ref param, value)| match lenient {
 			true => LenientTokenizer::tokenize(param, value),
 			false => StrictTokenizer::tokenize(param, value)
 		})
@@ -119,12 +119,12 @@ fn parse_tokens(params: &[(ParamType, String)], lenient: bool) -> Result<Vec<Tok
 		.map_err(From::from)
 }
 
-fn encode_input(path: &str, function: String, values: Vec<String>, lenient: bool) -> Result<String, Error> {
+fn encode_input(path: &str, function: &str, values: &[String], lenient: bool) -> Result<String, Error> {
 	let function = load_function(path, function)?;
 
 	let params: Vec<_> = function.inputs.iter()
 		.map(|param| param.kind.clone())
-		.zip(values.into_iter())
+		.zip(values.iter().map(|v| v as &str))
 		.collect();
 
 	let tokens = parse_tokens(&params, lenient)?;
@@ -133,7 +133,7 @@ fn encode_input(path: &str, function: String, values: Vec<String>, lenient: bool
 	Ok(result.to_hex())
 }
 
-fn encode_params(types: Vec<String>, values: Vec<String>, lenient: bool) -> Result<String, Error> {
+fn encode_params(types: &[String], values: &[String], lenient: bool) -> Result<String, Error> {
 	assert_eq!(types.len(), values.len());
 
 	let types: Vec<ParamType> = types.iter()
@@ -141,7 +141,7 @@ fn encode_params(types: Vec<String>, values: Vec<String>, lenient: bool) -> Resu
 		.collect::<Result<_, _>>()?;
 
 	let params: Vec<_> = types.into_iter()
-		.zip(values.into_iter())
+		.zip(values.iter().map(|v| v as &str))
 		.collect();
 
 	let tokens = parse_tokens(&params, lenient)?;
@@ -150,7 +150,7 @@ fn encode_params(types: Vec<String>, values: Vec<String>, lenient: bool) -> Resu
 	Ok(result.to_hex())
 }
 
-fn decode_call_output(path: &str, function: String, data: String) -> Result<String, Error> {
+fn decode_call_output(path: &str, function: &str, data: &str) -> Result<String, Error> {
 	let function = load_function(path, function)?;
 	let data = data.from_hex().chain_err(|| "Expected <data> to be hex")?;
 	let tokens = function.decode_output(&data)?;
@@ -167,7 +167,7 @@ fn decode_call_output(path: &str, function: String, data: String) -> Result<Stri
 	Ok(result)
 }
 
-fn decode_params(types: Vec<String>, data: String) -> Result<String, Error> {
+fn decode_params(types: &[String], data: &str) -> Result<String, Error> {
 	let types: Vec<ParamType> = types.iter()
 		.map(|s| Reader::read(s))
 		.collect::<Result<_, _>>()?;
@@ -187,7 +187,7 @@ fn decode_params(types: Vec<String>, data: String) -> Result<String, Error> {
 	Ok(result)
 }
 
-fn decode_log(path: &str, event: String, topics: Vec<String>, data: String) -> Result<String, Error> {
+fn decode_log(path: &str, event: &str, topics: &[String], data: &str) -> Result<String, Error> {
 	let event = load_event(path, event)?;
 	let topics: Vec<[u8; 32]> = topics.into_iter()
 		.map(|t| t.token_from_hex().map_err(From::from))

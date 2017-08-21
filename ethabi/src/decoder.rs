@@ -13,7 +13,7 @@ struct BytesTaken {
 	new_offset: usize,
 }
 
-fn as_u32(slice: &[u8; 32]) -> Result<u32, Error> {
+fn as_u32(slice: &Hash) -> Result<u32, Error> {
 	if !slice[..28].iter().all(|x| *x == 0) {
 		return Err(ErrorKind::InvalidData.into());
 	}
@@ -26,7 +26,7 @@ fn as_u32(slice: &[u8; 32]) -> Result<u32, Error> {
 	Ok(result)
 }
 
-fn as_bool(slice: &[u8; 32]) -> Result<bool, Error> {
+fn as_bool(slice: &Hash) -> Result<bool, Error> {
 	if !slice[..31].iter().all(|x| *x == 0) {
 		return Err(ErrorKind::InvalidData.into());
 	}
@@ -47,7 +47,7 @@ pub fn decode(types: &[ParamType], data: &[u8]) -> Result<Vec<Token>, Error> {
 	Ok(tokens)
 }
 
-fn peek(slices: &[Hash], position: usize) -> Result<&[u8; 32], Error> {
+fn peek(slices: &[Hash], position: usize) -> Result<&Hash, Error> {
 	slices.get(position).ok_or_else(|| ErrorKind::InvalidData.into())
 }
 
@@ -73,7 +73,7 @@ fn take_bytes(slices: &[Hash], position: usize, len: usize) -> Result<BytesTaken
 	Ok(taken)
 }
 
-fn decode_param(param: &ParamType, slices: &Vec<[u8; 32]>, offset: usize) -> Result<DecodeResult, Error> {
+fn decode_param(param: &ParamType, slices: &[Hash], offset: usize) -> Result<DecodeResult, Error> {
 	match *param {
 		ParamType::Address => {
 			let slice = try!(peek(slices, offset));
