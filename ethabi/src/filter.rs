@@ -83,6 +83,16 @@ impl<T> From<Vec<T>> for Topic<T> {
 	}
 }
 
+impl<T> Into<Vec<T>> for Topic<T> {
+	fn into(self: Self) -> Vec<T> {
+		match self {
+			Topic::Any => vec![],
+			Topic::This(topic) => vec![topic],
+			Topic::OneOf(topics) => topics,
+		}
+	}
+}
+
 impl Serialize for Topic<Hash> {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
 	where S: Serializer {
@@ -136,5 +146,21 @@ r#"["0x000000000000000000000000a94f5374fce5edbc8e2a8697c15331677e6ebf0b",null,["
 		assert_eq!(Topic::Any as Topic<u64>, None.into());
 		assert_eq!(Topic::This(10u64), 10u64.into());
 		assert_eq!(Topic::OneOf(vec![10u64, 20]), vec![10u64, 20].into());
+	}
+
+	#[test]
+	fn test_topic_into_vec() {
+		let expected: Vec<u64> = vec![];
+		let is: Vec<u64> = (Topic::Any as Topic<u64>).into();
+		assert_eq!(expected, is);
+		let expected: Vec<u64> = vec![10];
+		let is: Vec<u64> = Topic::This(10u64).into();
+		assert_eq!(expected, is);
+		let expected: Vec<u64> = vec![10, 20];
+		let is: Vec<u64> = Topic::OneOf(vec![10u64, 20]).into();
+		assert_eq!(expected, is);
+		//assert_eq!(expected, Topic::<u64>::into(t));
+		//assert_eq!(vec![10u64] as Vec<u64>, Topic::This(10u64).into());
+		//assert_eq!(vec![10u64, 20u64] as Vec<u64>, Topic::OneOf(vec![10u64, 20]).into());
 	}
 }
