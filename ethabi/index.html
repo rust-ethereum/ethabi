@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `ethabi` crate.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, ethabi">
+
+    <title>ethabi - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../normalize.css">
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc mod">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'>Crate ethabi</p><div class="block items"><ul><li><a href="#modules">Modules</a></li><li><a href="#structs">Structs</a></li><li><a href="#enums">Enums</a></li><li><a href="#traits">Traits</a></li><li><a href="#functions">Functions</a></li><li><a href="#types">Type Definitions</a></li></ul></div><p class='location'></p><script>window.sidebarCurrent = {name: 'ethabi', ty: 'mod', relpath: '../'};</script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content">
+<h1 class='fqn'><span class='in-band'>Crate <a class="mod" href=''>ethabi</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a class='srclink' href='../src/ethabi/lib.rs.html#1-63' title='goto source code'>[src]</a></span></h1>
+<div class='docblock'><p>Ethereum ABI encoding decoding library.</p>
+</div><h2 id='modules' class='section-header'><a href="#modules">Modules</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class="mod" href="param_type/index.html"
+                                  title='mod ethabi::param_type'>param_type</a></td>
+                           <td class='docblock-short'>
+                                <p>Function and event param types.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="mod" href="token/index.html"
+                                  title='mod ethabi::token'>token</a></td>
+                           <td class='docblock-short'>
+                                <p>ABI param and parsing for it.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="mod" href="util/index.html"
+                                  title='mod ethabi::util'>util</a></td>
+                           <td class='docblock-short'>
+                                <p>Utils used by different modules.</p>
+                           </td>
+                       </tr></table><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class="struct" href="struct.Constructor.html"
+                                  title='struct ethabi::Constructor'>Constructor</a></td>
+                           <td class='docblock-short'>
+                                <p>Contract constructor specification.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="struct" href="struct.Contract.html"
+                                  title='struct ethabi::Contract'>Contract</a></td>
+                           <td class='docblock-short'>
+                                <p>API building calls to contracts ABI.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="struct" href="struct.Error.html"
+                                  title='struct ethabi::Error'>Error</a></td>
+                           <td class='docblock-short'>
+                                <p>The Error type.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="struct" href="struct.Event.html"
+                                  title='struct ethabi::Event'>Event</a></td>
+                           <td class='docblock-short'>
+                                <p>Contract event.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="struct" href="struct.EventParam.html"
+                                  title='struct ethabi::EventParam'>EventParam</a></td>
+                           <td class='docblock-short'>
+                                <p>Event param specification.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="struct" href="struct.Events.html"
+                                  title='struct ethabi::Events'>Events</a></td>
+                           <td class='docblock-short'>
+                                <p>Contract events interator.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="struct" href="struct.Function.html"
+                                  title='struct ethabi::Function'>Function</a></td>
+                           <td class='docblock-short'>
+                                <p>Contract function specification.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="struct" href="struct.Functions.html"
+                                  title='struct ethabi::Functions'>Functions</a></td>
+                           <td class='docblock-short'>
+                                <p>Contract functions interator.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="struct" href="struct.Log.html"
+                                  title='struct ethabi::Log'>Log</a></td>
+                           <td class='docblock-short'>
+                                <p>Decoded log.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="struct" href="struct.LogParam.html"
+                                  title='struct ethabi::LogParam'>LogParam</a></td>
+                           <td class='docblock-short'>
+                                <p>Decoded log param.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="struct" href="struct.Param.html"
+                                  title='struct ethabi::Param'>Param</a></td>
+                           <td class='docblock-short'>
+                                <p>Function param.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="struct" href="struct.RawLog.html"
+                                  title='struct ethabi::RawLog'>RawLog</a></td>
+                           <td class='docblock-short'>
+                                <p>Ethereum log.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="struct" href="struct.RawTopicFilter.html"
+                                  title='struct ethabi::RawTopicFilter'>RawTopicFilter</a></td>
+                           <td class='docblock-short'>
+                                <p>Raw topic filter.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="struct" href="struct.TopicFilter.html"
+                                  title='struct ethabi::TopicFilter'>TopicFilter</a></td>
+                           <td class='docblock-short'>
+                                <p>Topic filter.</p>
+                           </td>
+                       </tr></table><h2 id='enums' class='section-header'><a href="#enums">Enums</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class="enum" href="enum.ErrorKind.html"
+                                  title='enum ethabi::ErrorKind'>ErrorKind</a></td>
+                           <td class='docblock-short'>
+                                <p>The kind of an error.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="enum" href="enum.ParamType.html"
+                                  title='enum ethabi::ParamType'>ParamType</a></td>
+                           <td class='docblock-short'>
+                                <p>Function and event param types.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="enum" href="enum.Token.html"
+                                  title='enum ethabi::Token'>Token</a></td>
+                           <td class='docblock-short'>
+                                <p>Ethereum ABI params.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="enum" href="enum.Topic.html"
+                                  title='enum ethabi::Topic'>Topic</a></td>
+                           <td class='docblock-short'>
+                                <p>Acceptable topic possibilities.</p>
+                           </td>
+                       </tr></table><h2 id='traits' class='section-header'><a href="#traits">Traits</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class="trait" href="trait.ResultExt.html"
+                                  title='trait ethabi::ResultExt'>ResultExt</a></td>
+                           <td class='docblock-short'>
+                                <p>Additional methods for <code>Result</code>, for easy interaction with this crate.</p>
+                           </td>
+                       </tr></table><h2 id='functions' class='section-header'><a href="#functions">Functions</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class="fn" href="fn.decode.html"
+                                  title='fn ethabi::decode'>decode</a></td>
+                           <td class='docblock-short'>
+                                <p>Decodes ABI compliant vector of bytes into vector of tokens described by types param.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="fn" href="fn.encode.html"
+                                  title='fn ethabi::encode'>encode</a></td>
+                           <td class='docblock-short'>
+                                <p>Encodes vector of tokens into ABI compliant vector of bytes.</p>
+                           </td>
+                       </tr></table><h2 id='types' class='section-header'><a href="#types">Type Definitions</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class="type" href="type.Address.html"
+                                  title='type ethabi::Address'>Address</a></td>
+                           <td class='docblock-short'>
+                                <p>ABI address.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="type" href="type.Bytes.html"
+                                  title='type ethabi::Bytes'>Bytes</a></td>
+                           <td class='docblock-short'>
+                                <p>ABI bytes.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="type" href="type.FixedBytes.html"
+                                  title='type ethabi::FixedBytes'>FixedBytes</a></td>
+                           <td class='docblock-short'>
+                                <p>ABI fixed bytes.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="type" href="type.Hash.html"
+                                  title='type ethabi::Hash'>Hash</a></td>
+                           <td class='docblock-short'>
+                                <p>Commonly used FixedBytes of size 32</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="type" href="type.Int.html"
+                                  title='type ethabi::Int'>Int</a></td>
+                           <td class='docblock-short'>
+                                <p>ABI signed integer.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="type" href="type.Result.html"
+                                  title='type ethabi::Result'>Result</a></td>
+                           <td class='docblock-short'>
+                                <p>Convenient wrapper around <code>std::Result</code>.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="type" href="type.Uint.html"
+                                  title='type ethabi::Uint'>Uint</a></td>
+                           <td class='docblock-short'>
+                                <p>ABI unsigned integer.</p>
+                           </td>
+                       </tr></table></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../";
+        window.currentCrate = "ethabi";
+    </script>
+    <script src="../main.js"></script>
+    <script defer src="../search-index.js"></script>
+</body>
+</html>

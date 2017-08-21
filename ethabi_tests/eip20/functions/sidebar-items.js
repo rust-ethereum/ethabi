@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["Allowance",""],["Approve",""],["BalanceOf",""],["TotalSupply",""],["Transfer",""],["TransferFrom",""]]});

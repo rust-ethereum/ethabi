@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `Token` enum in crate `ethabi`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, Token">
+
+    <title>ethabi::token::Token - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../normalize.css">
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc enum">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'>Enum Token</p><div class="block items"><ul><li><a href="#variants">Variants</a></li><li><a href="#methods">Methods</a></li><li><a href="#implementations">Trait Implementations</a></li></ul></div><p class='location'><a href='../index.html'>ethabi</a>::<wbr><a href='index.html'>token</a></p><script>window.sidebarCurrent = {name: 'Token', ty: 'enum', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content">
+<h1 class='fqn'><span class='in-band'>Enum <a href='../index.html'>ethabi</a>::<wbr><a href='index.html'>token</a>::<wbr><a class="enum" href=''>Token</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a class='srclink' href='../../src/ethabi/token/token.rs.html#8-53' title='goto source code'>[src]</a></span></h1>
+<pre class='rust enum'>pub enum Token {
+    Address(<a class="type" href="../../ethabi/type.Address.html" title="type ethabi::Address">Address</a>),
+    FixedBytes(<a class="type" href="../../ethabi/type.FixedBytes.html" title="type ethabi::FixedBytes">FixedBytes</a>),
+    Bytes(<a class="type" href="../../ethabi/type.Bytes.html" title="type ethabi::Bytes">Bytes</a>),
+    Int(<a class="type" href="../../ethabi/type.Hash.html" title="type ethabi::Hash">Hash</a>),
+    Uint(<a class="type" href="../../ethabi/type.Hash.html" title="type ethabi::Hash">Hash</a>),
+    Bool(<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>),
+    String(<a class="struct" href="https://doc.rust-lang.org/nightly/collections/string/struct.String.html" title="struct collections::string::String">String</a>),
+    FixedArray(<a class="struct" href="https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html" title="struct collections::vec::Vec">Vec</a>&lt;<a class="enum" href="../../ethabi/enum.Token.html" title="enum ethabi::Token">Token</a>&gt;),
+    Array(<a class="struct" href="https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html" title="struct collections::vec::Vec">Vec</a>&lt;<a class="enum" href="../../ethabi/enum.Token.html" title="enum ethabi::Token">Token</a>&gt;),
+}</pre><div class='docblock'><p>Ethereum ABI params.</p>
+</div><h2 id='variants' class='variants'>Variants</h2>
+<span id='variant.Address' class='variant'><span id='Address.v' class='invisible'><code>Address(<a class="type" href="../../ethabi/type.Address.html" title="type ethabi::Address">Address</a>)</code></span></span><div class='docblock'><p>Address.</p>
+
+<p>solidity name: address
+Encoded to left padded [0u8; 32].</p>
+</div><span id='variant.FixedBytes' class='variant'><span id='FixedBytes.v' class='invisible'><code>FixedBytes(<a class="type" href="../../ethabi/type.FixedBytes.html" title="type ethabi::FixedBytes">FixedBytes</a>)</code></span></span><div class='docblock'><p>Vector of bytes with known size.</p>
+
+<p>solidity name eg.: bytes8, bytes32, bytes64, bytes1024
+Encoded to right padded [0u8; ((N + 31) / 32) * 32].</p>
+</div><span id='variant.Bytes' class='variant'><span id='Bytes.v' class='invisible'><code>Bytes(<a class="type" href="../../ethabi/type.Bytes.html" title="type ethabi::Bytes">Bytes</a>)</code></span></span><div class='docblock'><p>Vector of bytes of unknown size.</p>
+
+<p>solidity name: bytes
+Encoded in two parts.
+Init part: offset of &#39;closing part`.
+Closing part: encoded length followed by encoded right padded bytes.</p>
+</div><span id='variant.Int' class='variant'><span id='Int.v' class='invisible'><code>Int(<a class="type" href="../../ethabi/type.Hash.html" title="type ethabi::Hash">Hash</a>)</code></span></span><div class='docblock'><p>Signed integer.</p>
+
+<p>solidity name: int</p>
+</div><span id='variant.Uint' class='variant'><span id='Uint.v' class='invisible'><code>Uint(<a class="type" href="../../ethabi/type.Hash.html" title="type ethabi::Hash">Hash</a>)</code></span></span><div class='docblock'><p>Unisnged integer.</p>
+
+<p>solidity name: uint</p>
+</div><span id='variant.Bool' class='variant'><span id='Bool.v' class='invisible'><code>Bool(<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>)</code></span></span><div class='docblock'><p>Boolean value.</p>
+
+<p>solidity name: bool
+Encoded as left padded [0u8; 32], where last bit represents boolean value.</p>
+</div><span id='variant.String' class='variant'><span id='String.v' class='invisible'><code>String(<a class="struct" href="https://doc.rust-lang.org/nightly/collections/string/struct.String.html" title="struct collections::string::String">String</a>)</code></span></span><div class='docblock'><p>String.</p>
+
+<p>solidity name: string
+Encoded in the same way as bytes. Must be utf8 compliant.</p>
+</div><span id='variant.FixedArray' class='variant'><span id='FixedArray.v' class='invisible'><code>FixedArray(<a class="struct" href="https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html" title="struct collections::vec::Vec">Vec</a>&lt;<a class="enum" href="../../ethabi/enum.Token.html" title="enum ethabi::Token">Token</a>&gt;)</code></span></span><div class='docblock'><p>Array with known size.</p>
+
+<p>solidity name eg.: int[3], bool[3], address[][8]
+Encoding of array is equal to encoding of consecutive elements of array.</p>
+</div><span id='variant.Array' class='variant'><span id='Array.v' class='invisible'><code>Array(<a class="struct" href="https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html" title="struct collections::vec::Vec">Vec</a>&lt;<a class="enum" href="../../ethabi/enum.Token.html" title="enum ethabi::Token">Token</a>&gt;)</code></span></span><div class='docblock'><p>Array of params with unknown size.</p>
+
+<p>solidity name eg. int[], bool[], address[5][]</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl <a class="enum" href="../../ethabi/enum.Token.html" title="enum ethabi::Token">Token</a></code></span><span class='out-of-band'><div class='ghost'></div><a class='srclink' href='../../src/ethabi/token/token.rs.html#75-199' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.type_check' class="method"><span id='type_check.v' class='invisible'><code>fn <a href='#method.type_check' class='fnname'>type_check</a>(&amp;self, param_type: &amp;<a class="enum" href="../../ethabi/enum.ParamType.html" title="enum ethabi::ParamType">ParamType</a>) -&gt; <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a></code></span></h4>
+<div class='docblock'><p>Check whether the type of the token matches the given parameter type.</p>
+
+<p>Numeric types (<code>Int</code> and <code>Uint</code>) type check if the size of the token
+type is of greater or equal size than the provided parameter type.</p>
+</div><h4 id='method.to_address' class="method"><span id='to_address.v' class='invisible'><code>fn <a href='#method.to_address' class='fnname'>to_address</a>(self) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.array.html">[</a><a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a><a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.array.html">; 20]</a>&gt;</code></span></h4>
+<div class='docblock'><p>Converts token to...</p>
+</div><h4 id='method.to_fixed_bytes' class="method"><span id='to_fixed_bytes.v' class='invisible'><code>fn <a href='#method.to_fixed_bytes' class='fnname'>to_fixed_bytes</a>(self) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="struct" href="https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html" title="struct collections::vec::Vec">Vec</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>&gt;&gt;</code></span></h4>
+<div class='docblock'><p>Converts token to...</p>
+</div><h4 id='method.to_bytes' class="method"><span id='to_bytes.v' class='invisible'><code>fn <a href='#method.to_bytes' class='fnname'>to_bytes</a>(self) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="struct" href="https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html" title="struct collections::vec::Vec">Vec</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>&gt;&gt;</code></span></h4>
+<div class='docblock'><p>Converts token to...</p>
+</div><h4 id='method.to_int' class="method"><span id='to_int.v' class='invisible'><code>fn <a href='#method.to_int' class='fnname'>to_int</a>(self) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.array.html">[</a><a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a><a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.array.html">; 32]</a>&gt;</code></span></h4>
+<div class='docblock'><p>Converts token to...</p>
+</div><h4 id='method.to_uint' class="method"><span id='to_uint.v' class='invisible'><code>fn <a href='#method.to_uint' class='fnname'>to_uint</a>(self) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.array.html">[</a><a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a><a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.array.html">; 32]</a>&gt;</code></span></h4>
+<div class='docblock'><p>Converts token to...</p>
+</div><h4 id='method.to_bool' class="method"><span id='to_bool.v' class='invisible'><code>fn <a href='#method.to_bool' class='fnname'>to_bool</a>(self) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>&gt;</code></span></h4>
+<div class='docblock'><p>Converts token to...</p>
+</div><h4 id='method.to_string' class="method"><span id='to_string.v' class='invisible'><code>fn <a href='#method.to_string' class='fnname'>to_string</a>(self) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="struct" href="https://doc.rust-lang.org/nightly/collections/string/struct.String.html" title="struct collections::string::String">String</a>&gt;</code></span></h4>
+<div class='docblock'><p>Converts token to...</p>
+</div><h4 id='method.to_fixed_array' class="method"><span id='to_fixed_array.v' class='invisible'><code>fn <a href='#method.to_fixed_array' class='fnname'>to_fixed_array</a>(self) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="struct" href="https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html" title="struct collections::vec::Vec">Vec</a>&lt;<a class="enum" href="../../ethabi/enum.Token.html" title="enum ethabi::Token">Token</a>&gt;&gt;</code></span></h4>
+<div class='docblock'><p>Converts token to...</p>
+</div><h4 id='method.to_array' class="method"><span id='to_array.v' class='invisible'><code>fn <a href='#method.to_array' class='fnname'>to_array</a>(self) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="struct" href="https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html" title="struct collections::vec::Vec">Vec</a>&lt;<a class="enum" href="../../ethabi/enum.Token.html" title="enum ethabi::Token">Token</a>&gt;&gt;</code></span></h4>
+<div class='docblock'><p>Converts token to...</p>
+</div><h4 id='method.types_check' class="method"><span id='types_check.v' class='invisible'><code>fn <a href='#method.types_check' class='fnname'>types_check</a>(tokens: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.slice.html">&amp;[</a><a class="enum" href="../../ethabi/enum.Token.html" title="enum ethabi::Token">Token</a><a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.slice.html">]</a>, param_types: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.slice.html">&amp;[</a><a class="enum" href="../../ethabi/enum.ParamType.html" title="enum ethabi::ParamType">ParamType</a><a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.slice.html">]</a>) -&gt; <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a></code></span></h4>
+<div class='docblock'><p>Check if all the types of the tokens match the given parameter types.</p>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl <a class="trait" href="https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html" title="trait core::fmt::Debug">Debug</a> for <a class="enum" href="../../ethabi/enum.Token.html" title="enum ethabi::Token">Token</a></code></span><span class='out-of-band'><div class='ghost'></div><a class='srclink' href='../../src/ethabi/token/token.rs.html#7' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.fmt' class="method"><span id='fmt.v' class='invisible'><code>fn <a href='https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html#tymethod.fmt' class='fnname'>fmt</a>(&amp;self, __arg_0: &amp;mut <a class="struct" href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html" title="struct core::fmt::Formatter">Formatter</a>) -&gt; <a class="type" href="https://doc.rust-lang.org/nightly/core/fmt/type.Result.html" title="type core::fmt::Result">Result</a></code></span></h4>
+<div class='docblock'><p>Formats the value using the given formatter.</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class="trait" href="https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html" title="trait core::cmp::PartialEq">PartialEq</a> for <a class="enum" href="../../ethabi/enum.Token.html" title="enum ethabi::Token">Token</a></code></span><span class='out-of-band'><div class='ghost'></div><a class='srclink' href='../../src/ethabi/token/token.rs.html#7' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.eq' class="method"><span id='eq.v' class='invisible'><code>fn <a href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html#tymethod.eq' class='fnname'>eq</a>(&amp;self, __arg_0: &amp;<a class="enum" href="../../ethabi/enum.Token.html" title="enum ethabi::Token">Token</a>) -&gt; <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a></code></span></h4>
+<div class='docblock'><p>This method tests for <code>self</code> and <code>other</code> values to be equal, and is used by <code>==</code>. <a href="https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html#tymethod.eq">Read more</a></p>
+</div><h4 id='method.ne' class="method"><span id='ne.v' class='invisible'><code>fn <a href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html#method.ne' class='fnname'>ne</a>(&amp;self, __arg_0: &amp;<a class="enum" href="../../ethabi/enum.Token.html" title="enum ethabi::Token">Token</a>) -&gt; <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a></code></span></h4>
+<div class='docblock'><p>This method tests for <code>!=</code>.</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class="trait" href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html" title="trait core::clone::Clone">Clone</a> for <a class="enum" href="../../ethabi/enum.Token.html" title="enum ethabi::Token">Token</a></code></span><span class='out-of-band'><div class='ghost'></div><a class='srclink' href='../../src/ethabi/token/token.rs.html#7' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.clone' class="method"><span id='clone.v' class='invisible'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone' class='fnname'>clone</a>(&amp;self) -&gt; <a class="enum" href="../../ethabi/enum.Token.html" title="enum ethabi::Token">Token</a></code></span></h4>
+<div class='docblock'><p>Returns a copy of the value. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone">Read more</a></p>
+</div><h4 id='method.clone_from' class="method"><span id='clone_from.v' class='invisible'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from' class='fnname'>clone_from</a>(&amp;mut self, source: &amp;Self)</code><div class='since' title='Stable since Rust version 1.0.0'>1.0.0</div></span></h4>
+<div class='docblock'><p>Performs copy-assignment from <code>source</code>. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from">Read more</a></p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class="trait" href="https://doc.rust-lang.org/nightly/core/fmt/trait.Display.html" title="trait core::fmt::Display">Display</a> for <a class="enum" href="../../ethabi/enum.Token.html" title="enum ethabi::Token">Token</a></code></span><span class='out-of-band'><div class='ghost'></div><a class='srclink' href='../../src/ethabi/token/token.rs.html#55-73' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.fmt-1' class="method"><span id='fmt.v-1' class='invisible'><code>fn <a href='https://doc.rust-lang.org/nightly/core/fmt/trait.Display.html#tymethod.fmt' class='fnname'>fmt</a>(&amp;self, f: &amp;mut <a class="struct" href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html" title="struct core::fmt::Formatter">Formatter</a>) -&gt; <a class="type" href="https://doc.rust-lang.org/nightly/core/fmt/type.Result.html" title="type core::fmt::Result">Result</a></code></span></h4>
+<div class='docblock'><p>Formats the value using the given formatter. <a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Display.html#tymethod.fmt">Read more</a></p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "ethabi";
+    </script>
+    <script src="../../main.js"></script>
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

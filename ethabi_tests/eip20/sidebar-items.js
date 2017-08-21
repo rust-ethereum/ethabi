@@ -1,0 +1,1 @@
+initSidebarItems({"mod":[["events",""],["functions",""],["logs",""]],"struct":[["Eip20","Contract"],["Eip20Events",""],["Eip20Functions",""]]});
