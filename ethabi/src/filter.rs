@@ -62,6 +62,27 @@ impl<T> Default for Topic<T> {
 	}
 }
 
+impl<T> From<Option<T>> for Topic<T> {
+	fn from(o: Option<T>) -> Self {
+		match o {
+			Some(topic) => Topic::This(topic),
+			None => Topic::Any,
+		}
+	}
+}
+
+impl<T> From<T> for Topic<T> {
+	fn from(topic: T) -> Self {
+		Topic::This(topic)
+	}
+}
+
+impl<T> From<Vec<T>> for Topic<T> {
+	fn from(topics: Vec<T>) -> Self {
+		Topic::OneOf(topics)
+	}
+}
+
 impl Serialize for Topic<Hash> {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
 	where S: Serializer {
@@ -108,5 +129,12 @@ r#"["0x000000000000000000000000a94f5374fce5edbc8e2a8697c15331677e6ebf0b",null,["
 
 		let topic_str = serde_json::to_string(&topic).unwrap();
 		assert_eq!(expected, &topic_str);
+	}
+
+	#[test]
+	fn test_topic_from() {
+		assert_eq!(Topic::Any as Topic<u64>, None.into());
+		assert_eq!(Topic::This(10u64), 10u64.into());
+		assert_eq!(Topic::OneOf(vec![10u64, 20]), vec![10u64, 20].into());
 	}
 }
