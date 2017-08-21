@@ -1,2 +1,2 @@
 [workspace]
-members = ["ethabi", "cli", "derive", "tests", "contract"]
+members = ["ethabi", "cli"]
