@@ -1,7 +1,7 @@
 //! Ethereum ABI params.
 use std::fmt;
-use spec::ParamType;
 use hex::ToHex;
+use {ParamType, Hash, Address, FixedBytes, Bytes};
 
 /// Ethereum ABI params.
 #[derive(Debug, PartialEq, Clone)]
@@ -10,27 +10,27 @@ pub enum Token {
 	///
 	/// solidity name: address
 	/// Encoded to left padded [0u8; 32].
-	Address([u8;20]),
+	Address(Address),
 	/// Vector of bytes with known size.
 	///
 	/// solidity name eg.: bytes8, bytes32, bytes64, bytes1024
 	/// Encoded to right padded [0u8; ((N + 31) / 32) * 32].
-	FixedBytes(Vec<u8>),
+	FixedBytes(FixedBytes),
 	/// Vector of bytes of unknown size.
 	///
 	/// solidity name: bytes
 	/// Encoded in two parts.
 	/// Init part: offset of 'closing part`.
 	/// Closing part: encoded length followed by encoded right padded bytes.
-	Bytes(Vec<u8>),
+	Bytes(Bytes),
 	/// Signed integer.
 	///
 	/// solidity name: int
-	Int([u8;32]),
+	Int(Hash),
 	/// Unisnged integer.
 	///
 	/// solidity name: uint
-	Uint([u8;32]),
+	Uint(Hash),
 	/// Boolean value.
 	///
 	/// solidity name: bool
@@ -186,5 +186,50 @@ impl Token {
 			Token::Array(arr) => Some(arr),
 			_ => None,
 		}
+	}
+
+	/// Check if all the types of the tokens match the given parameter types.
+	pub fn types_check(tokens: &[Token], param_types: &[ParamType]) -> bool {
+		param_types.len() == tokens.len() && {
+			param_types.iter().zip(tokens).all(|(param_type, token)| {
+				token.type_check(param_type)
+			})
+		}
+	}
+}
+
+
+#[cfg(test)]
+mod tests {
+	use {Token, ParamType};
+
+	#[test]
+	fn test_type_check() {
+		fn assert_type_check(tokens: Vec<Token>, param_types: Vec<ParamType>) {
+			assert!(Token::types_check(&tokens, &param_types))
+		}
+
+		fn assert_not_type_check(tokens: Vec<Token>, param_types: Vec<ParamType>) {
+			assert!(!Token::types_check(&tokens, &param_types))
+		}
+
+		assert_type_check(vec![Token::Uint([0u8; 32]), Token::Bool(false)], vec![ParamType::Uint(256), ParamType::Bool]);
+		assert_type_check(vec![Token::Uint([0u8; 32]), Token::Bool(false)], vec![ParamType::Uint(32), ParamType::Bool]);
+
+		assert_not_type_check(vec![Token::Uint([0u8; 32])], vec![ParamType::Uint(32), ParamType::Bool]);
+		assert_not_type_check(vec![Token::Uint([0u8; 32]), Token::Bool(false)], vec![ParamType::Uint(32)]);
+		assert_not_type_check(vec![Token::Bool(false), Token::Uint([0u8; 32])], vec![ParamType::Uint(32), ParamType::Bool]);
+
+		assert_type_check(vec![Token::FixedBytes(vec![0, 0, 0, 0])], vec![ParamType::FixedBytes(4)]);
+		assert_not_type_check(vec![Token::FixedBytes(vec![0, 0, 0, 0])], vec![ParamType::FixedBytes(3)]);
+
+		assert_type_check(vec![Token::Array(vec![Token::Bool(false), Token::Bool(true)])], vec![ParamType::Array(Box::new(ParamType::Bool))]);
+		assert_not_type_check(vec![Token::Array(vec![Token::Bool(false), Token::Uint([0u8; 32])])], vec![ParamType::Array(Box::new(ParamType::Bool))]);
+		assert_not_type_check(vec![Token::Array(vec![Token::Bool(false), Token::Bool(true)])], vec![ParamType::Array(Box::new(ParamType::Address))]);
+
+		assert_type_check(vec![Token::FixedArray(vec![Token::Bool(false), Token::Bool(true)])], vec![ParamType::FixedArray(Box::new(ParamType::Bool), 2)]);
+		assert_not_type_check(vec![Token::FixedArray(vec![Token::Bool(false), Token::Bool(true)])], vec![ParamType::FixedArray(Box::new(ParamType::Bool), 3)]);
+		assert_not_type_check(vec![Token::FixedArray(vec![Token::Bool(false), Token::Uint([0u8; 32])])], vec![ParamType::FixedArray(Box::new(ParamType::Bool), 2)]);
+		assert_not_type_check(vec![Token::FixedArray(vec![Token::Bool(false), Token::Bool(true)])], vec![ParamType::FixedArray(Box::new(ParamType::Address), 2)]);
 	}
 }

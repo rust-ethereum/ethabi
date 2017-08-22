@@ -4,7 +4,7 @@ use serde::{Deserialize, Deserializer};
 use serde::de::{Error as SerdeError};
 use serde_json::Value;
 use serde_json::value::from_value;
-use super::{Function, Event, Constructor};
+use {Function, Constructor, Event};
 
 /// Operation type.
 #[derive(Clone, Debug, PartialEq)]
@@ -51,37 +51,11 @@ impl<'a> Deserialize<'a> for Operation {
 	}
 }
 
-impl Operation {
-	/// Return some if this operation is a `Constructor`.
-	pub fn constructor(&self) -> Option<&Constructor> {
-		match *self {
-			Operation::Constructor(ref f) => Some(f),
-			_ => None
-		}
-	}
-
-	/// Return some if this operation is a `Function`.
-	pub fn function(&self) -> Option<&Function> {
-		match *self {
-			Operation::Function(ref f) => Some(f),
-			_ => None
-		}
-	}
-
-	/// Return some if this operation is an `Event`.
-	pub fn event(&self) -> Option<&Event> {
-		match *self {
-			Operation::Event(ref e) => Some(e),
-			_ => None
-		}
-	}
-}
-
 #[cfg(test)]
 mod tests {
 	use serde_json;
 	use super::Operation;
-	use spec::{ParamType, Function, Param};
+	use {Function, Param, ParamType};
 
 	#[test]
 	fn deserialize_operation() {
@@ -105,7 +79,8 @@ mod tests {
 					kind: ParamType::Address,
 				}
 			],
-			outputs: vec![]
+			outputs: vec![],
+			constant: false,
 		}));
 	}
 
@@ -123,7 +98,10 @@ mod tests {
 			}}"#, name);
 
 			let deserialized: Operation = serde_json::from_str(&s).unwrap();
-			let function = deserialized.function().unwrap();
+			let function = match deserialized {
+				Operation::Function(f) => f,
+				_ => panic!("expected funciton"),
+			};
 
 			assert_eq!(function.name, expected);
 		}
@@ -150,7 +128,10 @@ mod tests {
 			}}"#, name);
 
 			let deserialized: Operation = serde_json::from_str(&s).unwrap();
-			let event = deserialized.event().unwrap();
+			let event = match deserialized {
+				Operation::Event(e) => e,
+				_ => panic!("expected event!"),
+			};
 
 			assert_eq!(event.name, expected);
 		}

@@ -1,6 +1,5 @@
 //! Function param.
-
-use super::ParamType;
+use ParamType;
 
 /// Function param.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -15,8 +14,7 @@ pub struct Param {
 #[cfg(test)]
 mod tests {
 	use serde_json;
-	use super::Param;
-	use spec::ParamType;
+	use {Param, ParamType};
 
 	#[test]
 	fn param_deserialization() {
@@ -24,7 +22,7 @@ mod tests {
 			"name": "foo",
 			"type": "address"
 		}"#;
-		
+
 		let deserialized: Param = serde_json::from_str(s).unwrap();
 
 		assert_eq!(deserialized, Param {

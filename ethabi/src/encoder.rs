@@ -1,15 +1,15 @@
 //! ABI encoder.
 
-use token::Token;
 use util::pad_u32;
+use {Token, Hash, Bytes};
 
-fn pad_bytes(bytes: Vec<u8>) -> Vec<[u8; 32]> {
+fn pad_bytes(bytes: &[u8]) -> Vec<Hash> {
 	let mut result = vec![pad_u32(bytes.len() as u32)];
 	result.extend(pad_fixed_bytes(bytes));
 	result
 }
 
-fn pad_fixed_bytes(bytes: Vec<u8>) -> Vec<[u8; 32]> {
+fn pad_fixed_bytes(bytes: &[u8]) -> Vec<Hash> {
 	let mut result = vec![];
 	let len = (bytes.len() + 31) / 32;
 	for i in 0..len {
@@ -33,8 +33,8 @@ fn pad_fixed_bytes(bytes: Vec<u8>) -> Vec<[u8; 32]> {
 
 #[derive(Debug)]
 enum Mediate {
-	Raw(Vec<[u8; 32]>),
-	Prefixed(Vec<[u8; 32]>),
+	Raw(Vec<Hash>),
+	Prefixed(Vec<Hash>),
 	FixedArray(Vec<Mediate>),
 	Array(Vec<Mediate>),
 }
@@ -65,7 +65,7 @@ impl Mediate {
 		mediates[0..position].iter().fold(init_len, |acc, m| acc + m.closing_len())
 	}
 
-	fn init(&self, suffix_offset: u32) -> Vec<[u8; 32]> {
+	fn init(&self, suffix_offset: u32) -> Vec<Hash> {
 		match *self {
 			Mediate::Raw(ref raw) => raw.clone(),
 			Mediate::FixedArray(ref nes) => {
@@ -80,7 +80,7 @@ impl Mediate {
 		}
 	}
 
-	fn closing(&self, offset: u32) -> Vec<[u8; 32]> {
+	fn closing(&self, offset: u32) -> Vec<Hash> {
 		match *self {
 			Mediate::Raw(_) => vec![],
 			Mediate::Prefixed(ref pre) => pre.clone(),
@@ -110,74 +110,68 @@ impl Mediate {
 	}
 }
 
-/// ABI encoder.
-pub struct Encoder;
+/// Encodes vector of tokens into ABI compliant vector of bytes.
+pub fn encode(tokens: &[Token]) -> Bytes {
+	let mediates: Vec<Mediate> = tokens.iter()
+		.map(encode_token)
+		.collect();
 
-impl Encoder {
-	/// Encodes vector of tokens into ABI compliant vector of bytes.
-	pub fn encode(tokens: Vec<Token>) -> Vec<u8> {
-		let mediates: Vec<Mediate> = tokens.into_iter()
-			.map(Self::encode_token)
-			.collect();
+	let inits = mediates.iter()
+		.enumerate()
+		.flat_map(|(i, m)| m.init(Mediate::offset_for(&mediates, i)));
 
-		let inits = mediates.iter()
-			.enumerate()
-			.flat_map(|(i, m)| m.init(Mediate::offset_for(&mediates, i)));
+	let closings = mediates.iter()
+		.enumerate()
+		.flat_map(|(i, m)| m.closing(Mediate::offset_for(&mediates, i)));
 
-		let closings = mediates.iter()
-			.enumerate()
-			.flat_map(|(i, m)| m.closing(Mediate::offset_for(&mediates, i)));
+	inits.chain(closings)
+		.flat_map(|item| item.to_vec())
+		.collect()
+}
 
-		inits.chain(closings)
-			.flat_map(|item| item.to_vec())
-			.collect()
-	}
+fn encode_token(token: &Token) -> Mediate {
+	match *token {
+		Token::Address(ref address) => {
+			let mut padded = [0u8; 32];
+			padded[12..].copy_from_slice(address);
+			Mediate::Raw(vec![padded])
+		},
+		Token::Bytes(ref bytes) => Mediate::Prefixed(pad_bytes(bytes)),
+		Token::String(ref s) => Mediate::Prefixed(pad_bytes(s.as_bytes())),
+		Token::FixedBytes(ref bytes) => Mediate::Raw(pad_fixed_bytes(bytes)),
+		Token::Int(ref int) => Mediate::Raw(vec![int.clone()]),
+		Token::Uint(ref uint) => Mediate::Raw(vec![uint.clone()]),
+		Token::Bool(b) => {
+			let value = if b { 1 } else { 0 };
+			Mediate::Raw(vec![pad_u32(value)])
+		},
+		Token::Array(ref tokens) => {
+			let mediates = tokens.iter()
+				.map(encode_token)
+				.collect();
 
-	fn encode_token(token: Token) -> Mediate {
-		match token {
-			Token::Address(address) => {
-				let mut padded = [0u8; 32];
-				padded[12..].copy_from_slice(&address);
-				Mediate::Raw(vec![padded])
-			},
-			Token::Bytes(bytes) => Mediate::Prefixed(pad_bytes(bytes)),
-			Token::String(s) => Mediate::Prefixed(pad_bytes(s.into_bytes())),
-			Token::FixedBytes(bytes) => Mediate::Raw(pad_fixed_bytes(bytes)),
-			Token::Int(int) => Mediate::Raw(vec![int]),
-			Token::Uint(uint) => Mediate::Raw(vec![uint]),
-			Token::Bool(b) => {
-				let value = if b { 1 } else { 0 };
-				Mediate::Raw(vec![pad_u32(value)])
-			},
-			Token::Array(tokens) => {
-				let mediates = tokens.into_iter()
-					.map(Encoder::encode_token)
-					.collect();
+			Mediate::Array(mediates)
+		},
+		Token::FixedArray(ref tokens) => {
+			let mediates = tokens.iter()
+				.map(encode_token)
+				.collect();
 
-				Mediate::Array(mediates)
-			},
-			Token::FixedArray(tokens) => {
-				let mediates = tokens.into_iter()
-					.map(Encoder::encode_token)
-					.collect();
-
-				Mediate::FixedArray(mediates)
-			},
-		}
+			Mediate::FixedArray(mediates)
+		},
 	}
 }
 
 #[cfg(test)]
 mod tests {
 	use hex::FromHex;
-	use token::Token;
-	use super::Encoder;
 	use util::pad_u32;
+	use {Token, encode};
 
 	#[test]
 	fn encode_address() {
 		let address = Token::Address([0x11u8; 20]);
-		let encoded = Encoder::encode(vec![address]);
+		let encoded = encode(&vec![address]);
 		let expected = "0000000000000000000000001111111111111111111111111111111111111111".from_hex().unwrap();
 		assert_eq!(encoded, expected);
 	}
@@ -187,7 +181,7 @@ mod tests {
 		let address1 = Token::Address([0x11u8; 20]);
 		let address2 = Token::Address([0x22u8; 20]);
 		let addresses = Token::Array(vec![address1, address2]);
-		let encoded = Encoder::encode(vec![addresses]);
+		let encoded = encode(&vec![addresses]);
 		let expected = ("".to_owned() +
 			"0000000000000000000000000000000000000000000000000000000000000020" +
 			"0000000000000000000000000000000000000000000000000000000000000002" +
@@ -201,7 +195,7 @@ mod tests {
 		let address1 = Token::Address([0x11u8; 20]);
 		let address2 = Token::Address([0x22u8; 20]);
 		let addresses = Token::FixedArray(vec![address1, address2]);
-		let encoded = Encoder::encode(vec![addresses]);
+		let encoded = encode(&vec![addresses]);
 		let expected = ("".to_owned() +
 			"0000000000000000000000001111111111111111111111111111111111111111" +
 			"0000000000000000000000002222222222222222222222222222222222222222").from_hex().unwrap();
@@ -212,7 +206,7 @@ mod tests {
 	fn encode_two_addresses() {
 		let address1 = Token::Address([0x11u8; 20]);
 		let address2 = Token::Address([0x22u8; 20]);
-		let encoded = Encoder::encode(vec![address1, address2]);
+		let encoded = encode(&vec![address1, address2]);
 		let expected = ("".to_owned() +
 			"0000000000000000000000001111111111111111111111111111111111111111" +
 			"0000000000000000000000002222222222222222222222222222222222222222").from_hex().unwrap();
@@ -228,7 +222,7 @@ mod tests {
 		let array0 = Token::Array(vec![address1, address2]);
 		let array1 = Token::Array(vec![address3, address4]);
 		let fixed = Token::FixedArray(vec![array0, array1]);
-		let encoded = Encoder::encode(vec![fixed]);
+		let encoded = encode(&vec![fixed]);
 		let expected = ("".to_owned() +
 			"0000000000000000000000000000000000000000000000000000000000000040" +
 			"00000000000000000000000000000000000000000000000000000000000000a0" +
@@ -250,7 +244,7 @@ mod tests {
 		let array0 = Token::FixedArray(vec![address1, address2]);
 		let array1 = Token::FixedArray(vec![address3, address4]);
 		let dynamic = Token::Array(vec![array0, array1]);
-		let encoded = Encoder::encode(vec![dynamic]);
+		let encoded = encode(&vec![dynamic]);
 		let expected = ("".to_owned() +
 			"0000000000000000000000000000000000000000000000000000000000000020" +
 			"0000000000000000000000000000000000000000000000000000000000000002" +
@@ -268,7 +262,7 @@ mod tests {
 		let array0 = Token::Array(vec![address1]);
 		let array1 = Token::Array(vec![address2]);
 		let dynamic = Token::Array(vec![array0, array1]);
-		let encoded = Encoder::encode(vec![dynamic]);
+		let encoded = encode(&vec![dynamic]);
 		let expected = ("".to_owned() +
 			"0000000000000000000000000000000000000000000000000000000000000020" +
 			"0000000000000000000000000000000000000000000000000000000000000002" +
@@ -290,7 +284,7 @@ mod tests {
 		let array0 = Token::Array(vec![address1, address2]);
 		let array1 = Token::Array(vec![address3, address4]);
 		let dynamic = Token::Array(vec![array0, array1]);
-		let encoded = Encoder::encode(vec![dynamic]);
+		let encoded = encode(&vec![dynamic]);
 		let expected = ("".to_owned() +
 			"0000000000000000000000000000000000000000000000000000000000000020" +
 			"0000000000000000000000000000000000000000000000000000000000000002" +
@@ -314,7 +308,7 @@ mod tests {
 		let array0 = Token::FixedArray(vec![address1, address2]);
 		let array1 = Token::FixedArray(vec![address3, address4]);
 		let fixed = Token::FixedArray(vec![array0, array1]);
-		let encoded = Encoder::encode(vec![fixed]);
+		let encoded = encode(&vec![fixed]);
 		let expected = ("".to_owned() +
 			"0000000000000000000000001111111111111111111111111111111111111111" +
 			"0000000000000000000000002222222222222222222222222222222222222222" +
@@ -326,7 +320,7 @@ mod tests {
 	#[test]
 	fn encode_bytes() {
 		let bytes = Token::Bytes(vec![0x12, 0x34]);
-		let encoded = Encoder::encode(vec![bytes]);
+		let encoded = encode(&vec![bytes]);
 		let expected = ("".to_owned() +
 			"0000000000000000000000000000000000000000000000000000000000000020" +
 			"0000000000000000000000000000000000000000000000000000000000000002" +
@@ -337,7 +331,7 @@ mod tests {
 	#[test]
 	fn encode_fixed_bytes() {
 		let bytes = Token::FixedBytes(vec![0x12, 0x34]);
-		let encoded = Encoder::encode(vec![bytes]);
+		let encoded = encode(&vec![bytes]);
 		let expected = ("".to_owned() +
 			"1234000000000000000000000000000000000000000000000000000000000000").from_hex().unwrap();
 		assert_eq!(encoded, expected);
@@ -346,7 +340,7 @@ mod tests {
 	#[test]
 	fn encode_string() {
 		let s = Token::String("gavofyork".to_owned());
-		let encoded = Encoder::encode(vec![s]);
+		let encoded = encode(&vec![s]);
 		let expected = ("".to_owned() +
 			"0000000000000000000000000000000000000000000000000000000000000020" +
 			"0000000000000000000000000000000000000000000000000000000000000009" +
@@ -357,7 +351,7 @@ mod tests {
 	#[test]
 	fn encode_bytes2() {
 		let bytes = Token::Bytes("10000000000000000000000000000000000000000000000000000000000002".from_hex().unwrap());
-		let encoded = Encoder::encode(vec![bytes]);
+		let encoded = encode(&vec![bytes]);
 		let expected = ("".to_owned() +
 			"0000000000000000000000000000000000000000000000000000000000000020" +
 			"000000000000000000000000000000000000000000000000000000000000001f" +
@@ -370,7 +364,7 @@ mod tests {
 		let bytes = Token::Bytes(("".to_owned() +
 			"1000000000000000000000000000000000000000000000000000000000000000" +
 			"1000000000000000000000000000000000000000000000000000000000000000").from_hex().unwrap());
-		let encoded = Encoder::encode(vec![bytes]);
+		let encoded = encode(&vec![bytes]);
 		let expected = ("".to_owned() +
 			"0000000000000000000000000000000000000000000000000000000000000020" +
 			"0000000000000000000000000000000000000000000000000000000000000040" +
@@ -383,7 +377,7 @@ mod tests {
 	fn encode_two_bytes() {
 		let bytes1 = Token::Bytes("10000000000000000000000000000000000000000000000000000000000002".from_hex().unwrap());
 		let bytes2 = Token::Bytes("0010000000000000000000000000000000000000000000000000000000000002".from_hex().unwrap());
-		let encoded = Encoder::encode(vec![bytes1, bytes2]);
+		let encoded = encode(&vec![bytes1, bytes2]);
 		let expected = ("".to_owned() +
 			"0000000000000000000000000000000000000000000000000000000000000040" +
 			"0000000000000000000000000000000000000000000000000000000000000080" +
@@ -398,7 +392,7 @@ mod tests {
 	fn encode_uint() {
 		let mut uint = [0u8; 32];
 		uint[31] = 4;
-		let encoded = Encoder::encode(vec![Token::Uint(uint)]);
+		let encoded = encode(&vec![Token::Uint(uint)]);
 		let expected = ("".to_owned() +
 			"0000000000000000000000000000000000000000000000000000000000000004").from_hex().unwrap();
 		assert_eq!(encoded, expected);
@@ -408,7 +402,7 @@ mod tests {
 	fn encode_int() {
 		let mut int = [0u8; 32];
 		int[31] = 4;
-		let encoded = Encoder::encode(vec![Token::Int(int)]);
+		let encoded = encode(&vec![Token::Int(int)]);
 		let expected = ("".to_owned() +
 			"0000000000000000000000000000000000000000000000000000000000000004").from_hex().unwrap();
 		assert_eq!(encoded, expected);
@@ -416,7 +410,7 @@ mod tests {
 
 	#[test]
 	fn encode_bool() {
-		let encoded = Encoder::encode(vec![Token::Bool(true)]);
+		let encoded = encode(&vec![Token::Bool(true)]);
 		let expected = ("".to_owned() +
 			"0000000000000000000000000000000000000000000000000000000000000001").from_hex().unwrap();
 		assert_eq!(encoded, expected);
@@ -424,7 +418,7 @@ mod tests {
 
 	#[test]
 	fn encode_bool2() {
-		let encoded = Encoder::encode(vec![Token::Bool(false)]);
+		let encoded = encode(&vec![Token::Bool(false)]);
 		let expected = ("".to_owned() +
 			"0000000000000000000000000000000000000000000000000000000000000000").from_hex().unwrap();
 		assert_eq!(encoded, expected);
@@ -435,7 +429,7 @@ mod tests {
 		let bytes = ("".to_owned() +
 			"131a3afc00d1b1e3461b955e53fc866dcf303b3eb9f4c16f89e388930f48134b" +
 			"131a3afc00d1b1e3461b955e53fc866dcf303b3eb9f4c16f89e388930f48134b").from_hex().unwrap();
-		let encoded = Encoder::encode(vec![
+		let encoded = encode(&vec![
 			Token::Int(pad_u32(5)),
 			Token::Bytes(bytes.clone()),
 			Token::Int(pad_u32(3)),
@@ -465,7 +459,7 @@ mod tests {
 
 	#[test]
 	fn comprehensive_test2() {
-		let encoded = Encoder::encode(vec![
+		let encoded = encode(&vec![
 			Token::Int(pad_u32(1)),
 			Token::String("gavofyork".to_owned()),
 			Token::Int(pad_u32(2)),

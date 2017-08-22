@@ -1,5 +1,4 @@
-use super::ParamType;
-use errors::{Error, ErrorKind};
+use {ParamType, Error, ErrorKind};
 
 /// Used to convert param type represented as a string to rust structure.
 pub struct Reader;
@@ -62,7 +61,7 @@ impl Reader {
 
 #[cfg(test)]
 mod tests {
-	use spec::ParamType;
+	use ParamType;
 	use super::Reader;
 
 	#[test]
