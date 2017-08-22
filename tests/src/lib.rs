@@ -6,6 +6,7 @@ extern crate ethabi_derive;
 extern crate ethabi_contract;
 
 use_contract!(eip20, "Eip20", "../examples/eip20.json");
+use_contract!(construtor, "Constructor", "../examples/con.json");
 
 #[test]
 fn encoding_input_works() {
@@ -23,8 +24,6 @@ fn encoding_input_works() {
 	let from = [2u8; 20];
 	let to = [3u8; 20];
 	let to2 = [4u8; 20];
-	let _filter = contract.events().transfer().create_filter(
-		ethabi::Topic::This(from),
-		ethabi::Topic::OneOf(vec![to, to2])
-	);
+	let _filter = contract.events().transfer().create_filter(from, vec![to, to2]);
+	let _filter = contract.events().transfer().create_filter(None, None);
 }

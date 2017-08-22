@@ -283,15 +283,21 @@ fn impl_contract_constructor(constructor: &Constructor) -> quote::Tokens {
 		.iter()
 		.map(|param| rust_type(&param.kind))
 		.collect();
-	let params: Vec<_> = names.iter().zip(kinds.iter())
-		.map(|(param_name, kind)| quote! { #param_name: #kind })
+	let template_names: Vec<_> = kinds.iter().enumerate()
+		.map(|(index, _)| syn::Ident::new(format!("T{}", index)))
+		.collect();
+	let template_params: Vec<_> = kinds.iter().zip(template_names.iter())
+		.map(|(kind, template_name)| quote! { #template_name: Into<#kind> })
+		.collect();
+	let params: Vec<_> = names.iter().zip(template_names.iter())
+		.map(|(param_name, template_name)| quote! { #param_name: #template_name })
 		.collect();
 	let usage: Vec<_> = names.iter().zip(constructor.inputs.iter())
-		.map(|(param_name, param)| to_token(param_name, &param.kind))
+		.map(|(param_name, param)| to_token(&format!("{}.into()", param_name).into(), &param.kind))
 		.collect();
 
 	quote! {
-		pub fn constructor(&self, code: ethabi::Bytes, #(#params),* ) -> ethabi::Bytes {
+		pub fn constructor<#(#template_params),*>(&self, code: ethabi::Bytes, #(#params),* ) -> ethabi::Bytes {
 			let v: Vec<ethabi::Token> = vec![#(#usage),*];
 			self.contract.constructor
 				.as_ref()
@@ -375,8 +381,16 @@ fn declare_events(event: &Event) -> quote::Tokens {
 		.map(|param| rust_type(&param.kind))
 		.collect();
 
-	let params: Vec<_> = topic_names.iter().zip(topic_kinds.iter())
-		.map(|(param_name, kind)| quote! { #param_name: ethabi::Topic<#kind> })
+	let template_names: Vec<_> = topic_kinds.iter().enumerate()
+		.map(|(index, _)| syn::Ident::new(format!("T{}", index)))
+		.collect();
+
+	let params: Vec<_> = topic_names.iter().zip(template_names.iter())
+		.map(|(param_name, template_name)| quote! { #param_name: #template_name })
+		.collect();
+
+	let template_params: Vec<_> = topic_kinds.iter().zip(template_names.iter())
+		.map(|(kind, template_name)| quote! { #template_name: Into<ethabi::Topic<#kind>> })
 		.collect();
 
 	let to_filter: Vec<_> = topic_names.iter().zip(event.inputs.iter().filter(|p| p.indexed))
@@ -386,7 +400,7 @@ fn declare_events(event: &Event) -> quote::Tokens {
 			let topic = syn::Ident::new(format!("topic{}", index));
 			let i = "i".into();
 			let to_token = to_token(&i, &param.kind);
-			quote! { #topic: #param_name.map(|#i| #to_token), }
+			quote! { #topic: #param_name.into().map(|#i| #to_token), }
 		})
 		.collect();
 
@@ -412,7 +426,7 @@ fn declare_events(event: &Event) -> quote::Tokens {
 			}
 
 			/// Creates topic filter.
-			pub fn create_filter(&self, #(#params),*) -> ethabi::TopicFilter {
+			pub fn create_filter<#(#template_params),*>(&self, #(#params),*) -> ethabi::TopicFilter {
 				let raw = ethabi::RawTopicFilter {
 					#(#to_filter)*
 					..Default::default()
@@ -438,11 +452,17 @@ fn declare_functions(function: &Function) -> quote::Tokens {
 		.iter()
 		.map(|param| rust_type(&param.kind))
 		.collect();
-	let params: Vec<_> = names.iter().zip(kinds.iter())
-		.map(|(param_name, kind)| quote! { #param_name: #kind })
+	let template_names: Vec<_> = kinds.iter().enumerate()
+		.map(|(index, _)| syn::Ident::new(format!("T{}", index)))
+		.collect();
+	let template_params: Vec<_> = kinds.iter().zip(template_names.iter())
+		.map(|(kind, template_name)| quote! { #template_name: Into<#kind> })
+		.collect();
+	let params: Vec<_> = names.iter().zip(template_names.iter())
+		.map(|(param_name, template_name)| quote! { #param_name: #template_name })
 		.collect();
 	let usage: Vec<_> = names.iter().zip(function.inputs.iter())
-		.map(|(param_name, param)| to_token(param_name, &param.kind))
+		.map(|(param_name, param)| to_token(&format!("{}.into()", param_name).into(), &param.kind))
 		.collect();
 
 	let output_impl = if !function.constant {
@@ -506,7 +526,7 @@ fn declare_functions(function: &Function) -> quote::Tokens {
 				}
 			}
 
-			pub fn input(&self, #(#params),*) -> ethabi::Bytes {
+			pub fn input<#(#template_params),*>(&self, #(#params),*) -> ethabi::Bytes {
 				let v: Vec<ethabi::Token> = vec![#(#usage),*];
 				self.function.encode_input(&v).expect("encode_input not to fail; ethabi_derive bug")
 			}
