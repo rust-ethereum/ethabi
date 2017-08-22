@@ -13,12 +13,14 @@ use proc_macro::TokenStream;
 use heck::{SnakeCase, CamelCase};
 use ethabi::{Result, ResultExt, Contract, Event, Function, ParamType, Constructor};
 
+const ERROR_MSG: &'static str = "`derive(EthabiContract)` failed";
+
 #[proc_macro_derive(EthabiContract, attributes(ethabi_contract_options))]
 pub fn ethabi_derive(input: TokenStream) -> TokenStream {
 	let s = input.to_string();
-	let ast = syn::parse_derive_input(&s).unwrap();
-	let gen = impl_ethabi_derive(&ast).expect("`derive(EthabiContract)` failed");
-	gen.parse().unwrap()
+	let ast = syn::parse_derive_input(&s).expect(ERROR_MSG);
+	let gen = impl_ethabi_derive(&ast).expect(ERROR_MSG);
+	gen.parse().expect(ERROR_MSG)
 }
 
 fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
@@ -45,6 +47,8 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 
 	let result = quote! {
 		use ethabi;
+
+		const INTERNAL_ERR: &'static str = "`ethabi_derive` internal error";
 
 		pub mod logs {
 			use ethabi;
@@ -86,18 +90,14 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 
 		impl Default for #name {
 			fn default() -> Self {
-				#name::new()
-			}
-		}
-
-		impl #name {
-			pub fn new() -> Self {
-				let contract = ethabi::Contract::load(include_bytes!(#file_path) as &[u8]).unwrap();
+				let contract = ethabi::Contract::load(include_bytes!(#file_path) as &[u8]).expect(INTERNAL_ERR);
 				#name {
 					contract,
 				}
 			}
+		}
 
+		impl #name {
 			pub fn functions(&self) -> #functions_name {
 				#functions_name {
 					contract: &self.contract,
@@ -162,7 +162,7 @@ fn impl_contract_function(function: &Function) -> quote::Tokens {
 
 	quote! {
 		pub fn #name(&self) -> functions::#function_name {
-			functions::#function_name::from_x(self.contract.function(#query_name).unwrap())
+			functions::#function_name::from_x(self.contract.function(#query_name).expect(INTERNAL_ERR))
 		}
 	}
 }
@@ -218,28 +218,28 @@ fn to_token(name: &syn::Ident, kind: &ParamType) -> quote::Tokens {
 
 fn from_token(kind: &ParamType, token: &syn::Ident) -> quote::Tokens {
 	match *kind {
-		ParamType::Address => quote! { #token.to_address().unwrap() },
-		ParamType::Bytes => quote! { #token.to_bytes().unwrap() },
+		ParamType::Address => quote! { #token.to_address().expect(super::INTERNAL_ERR) },
+		ParamType::Bytes => quote! { #token.to_bytes().expect(super::INTERNAL_ERR) },
 		ParamType::FixedBytes(size) => {
 			let size: syn::Ident = format!("{}", size).into();
 			quote! {
 				{
 					let mut result = [0u8; #size];
-					let v = #token.to_fixed_bytes().unwrap();
+					let v = #token.to_fixed_bytes().expect(super::INTERNAL_ERR);
 					result.copy_from_slice(&v);
 					result
 				}
 			}
 		},
-		ParamType::Int(_) => quote! { #token.to_int().unwrap() },
-		ParamType::Uint(_) => quote! { #token.to_uint().unwrap() },
-		ParamType::Bool => quote! { #token.to_bool().unwrap() },
-		ParamType::String => quote! { #token.to_string().unwrap() },
+		ParamType::Int(_) => quote! { #token.to_int().expect(super::INTERNAL_ERR) },
+		ParamType::Uint(_) => quote! { #token.to_uint().expect(super::INTERNAL_ERR) },
+		ParamType::Bool => quote! { #token.to_bool().expect(super::INTERNAL_ERR) },
+		ParamType::String => quote! { #token.to_string().expect(super::INTERNAL_ERR) },
 		ParamType::Array(ref kind) => {
 			let inner: syn::Ident = "inner".into();
 			let inner_loop = from_token(kind, &inner);
 			quote! {
-				#token.to_array().unwrap().into_iter()
+				#token.to_array().expect(super::INTERNAL_ERR).into_iter()
 					.map(|#inner| #inner_loop)
 					.collect()
 			}
@@ -250,7 +250,7 @@ fn from_token(kind: &ParamType, token: &syn::Ident) -> quote::Tokens {
 			let to_array = vec![quote! { iter.next() }; size];
 			quote! {
 				{
-					let iter = #token.to_array().unwrap().into_iter()
+					let iter = #token.to_array().expect(super::INTERNAL_ERR).into_iter()
 						.map(|#inner| #inner_loop);
 					[#(#to_array),*]
 				}
@@ -265,7 +265,7 @@ fn impl_contract_event(event: &Event) -> quote::Tokens {
 	let event_name = syn::Ident::new(event.name.to_camel_case());
 	quote! {
 		pub fn #name(&self) -> events::#event_name {
-			events::#event_name::from_x(self.contract.event(#query_name).unwrap())
+			events::#event_name::from_x(self.contract.event(#query_name).expect(INTERNAL_ERR))
 		}
 	}
 }
@@ -293,7 +293,11 @@ fn impl_contract_constructor(constructor: &Constructor) -> quote::Tokens {
 	quote! {
 		pub fn constructor(&self, code: ethabi::Bytes, #(#params),* ) -> ethabi::Bytes {
 			let v: Vec<ethabi::Token> = vec![#(#usage),*];
-			self.contract.constructor.as_ref().unwrap().encode_input(code, &v).expect("encode_input not to fail; ethabi_derive bug")
+			self.contract.constructor
+				.as_ref()
+				.expect(INTERNAL_ERR)
+				.encode_input(code, &v)
+				.expect("encode_input not to fail; ethabi_derive bug")
 		}
 	}
 }
@@ -341,7 +345,7 @@ fn declare_events(event: &Event) -> quote::Tokens {
 			param.name.to_snake_case().into()
 		}).collect();
 
-	let log_iter = syn::Ident::new("log.next().unwrap().value");
+	let log_iter = syn::Ident::new("log.next().expect(super::INTERNAL_ERR).value");
 
 	let to_log: Vec<_> = event.inputs
 		.iter()
@@ -414,7 +418,7 @@ fn declare_events(event: &Event) -> quote::Tokens {
 					..Default::default()
 				};
 
-				self.event.create_filter(raw).unwrap()
+				self.event.create_filter(raw).expect(super::INTERNAL_ERR)
 			}
 		}
 	}
@@ -465,12 +469,12 @@ fn declare_functions(function: &Function) -> quote::Tokens {
 				let o = "out".into();
 				let from_first = from_token(&function.outputs[0].kind, &o);
 				quote! {
-					let out = self.function.decode_output(output)?.into_iter().next().unwrap();
+					let out = self.function.decode_output(output)?.into_iter().next().expect(super::INTERNAL_ERR);
 					Ok(#from_first)
 				}
 			},
 			_ => {
-				let o = "out.into_iter().next().unwrap()".into();
+				let o = "out.into_iter().next().expect(super::INTERNAL_ERR)".into();
 				let outs: Vec<_> = function.outputs
 					.iter()
 					.map(|param| from_token(&param.kind, &o))
