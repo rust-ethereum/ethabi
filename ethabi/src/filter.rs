@@ -159,8 +159,5 @@ r#"["0x000000000000000000000000a94f5374fce5edbc8e2a8697c15331677e6ebf0b",null,["
 		let expected: Vec<u64> = vec![10, 20];
 		let is: Vec<u64> = Topic::OneOf(vec![10u64, 20]).into();
 		assert_eq!(expected, is);
-		//assert_eq!(expected, Topic::<u64>::into(t));
-		//assert_eq!(vec![10u64] as Vec<u64>, Topic::This(10u64).into());
-		//assert_eq!(vec![10u64, 20u64] as Vec<u64>, Topic::OneOf(vec![10u64, 20]).into());
 	}
 }
