@@ -556,6 +556,30 @@
 <span id="511">511</span>
 <span id="512">512</span>
 <span id="513">513</span>
+<span id="514">514</span>
+<span id="515">515</span>
+<span id="516">516</span>
+<span id="517">517</span>
+<span id="518">518</span>
+<span id="519">519</span>
+<span id="520">520</span>
+<span id="521">521</span>
+<span id="522">522</span>
+<span id="523">523</span>
+<span id="524">524</span>
+<span id="525">525</span>
+<span id="526">526</span>
+<span id="527">527</span>
+<span id="528">528</span>
+<span id="529">529</span>
+<span id="530">530</span>
+<span id="531">531</span>
+<span id="532">532</span>
+<span id="533">533</span>
+<span id="534">534</span>
+<span id="535">535</span>
+<span id="536">536</span>
+<span id="537">537</span>
 </pre><pre class="rust ">
 <span class="attribute">#<span class="op">!</span>[<span class="ident">recursion_limit</span><span class="op">=</span><span class="string">&quot;256&quot;</span>]</span>
 
@@ -572,12 +596,14 @@
 <span class="kw">use</span> <span class="ident">heck</span>::{<span class="ident">SnakeCase</span>, <span class="ident">CamelCase</span>};
 <span class="kw">use</span> <span class="ident">ethabi</span>::{<span class="prelude-ty">Result</span>, <span class="ident">ResultExt</span>, <span class="ident">Contract</span>, <span class="ident">Event</span>, <span class="ident">Function</span>, <span class="ident">ParamType</span>, <span class="ident">Constructor</span>};
 
+<span class="kw">const</span> <span class="ident">ERROR_MSG</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;`derive(EthabiContract)` failed&quot;</span>;
+
 <span class="attribute">#[<span class="ident">proc_macro_derive</span>(<span class="ident">EthabiContract</span>, <span class="ident">attributes</span>(<span class="ident">ethabi_contract_options</span>))]</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">ethabi_derive</span>(<span class="ident">input</span>: <span class="ident">TokenStream</span>) <span class="op">-&gt;</span> <span class="ident">TokenStream</span> {
 	<span class="kw">let</span> <span class="ident">s</span> <span class="op">=</span> <span class="ident">input</span>.<span class="ident">to_string</span>();
-	<span class="kw">let</span> <span class="ident">ast</span> <span class="op">=</span> <span class="ident">syn</span>::<span class="ident">parse_derive_input</span>(<span class="kw-2">&amp;</span><span class="ident">s</span>).<span class="ident">unwrap</span>();
-	<span class="kw">let</span> <span class="ident">gen</span> <span class="op">=</span> <span class="ident">impl_ethabi_derive</span>(<span class="kw-2">&amp;</span><span class="ident">ast</span>).<span class="ident">expect</span>(<span class="string">&quot;`derive(EthabiContract)` failed&quot;</span>);
-	<span class="ident">gen</span>.<span class="ident">parse</span>().<span class="ident">unwrap</span>()
+	<span class="kw">let</span> <span class="ident">ast</span> <span class="op">=</span> <span class="ident">syn</span>::<span class="ident">parse_derive_input</span>(<span class="kw-2">&amp;</span><span class="ident">s</span>).<span class="ident">expect</span>(<span class="ident">ERROR_MSG</span>);
+	<span class="kw">let</span> <span class="ident">gen</span> <span class="op">=</span> <span class="ident">impl_ethabi_derive</span>(<span class="kw-2">&amp;</span><span class="ident">ast</span>).<span class="ident">expect</span>(<span class="ident">ERROR_MSG</span>);
+	<span class="ident">gen</span>.<span class="ident">parse</span>().<span class="ident">expect</span>(<span class="ident">ERROR_MSG</span>)
 }
 
 <span class="kw">fn</span> <span class="ident">impl_ethabi_derive</span>(<span class="ident">ast</span>: <span class="kw-2">&amp;</span><span class="ident">syn</span>::<span class="ident">DeriveInput</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">quote</span>::<span class="ident">Tokens</span><span class="op">&gt;</span> {
@@ -604,6 +630,8 @@
 
 	<span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="macro">quote</span><span class="macro">!</span> {
 		<span class="kw">use</span> <span class="ident">ethabi</span>;
+
+		<span class="kw">const</span> <span class="ident">INTERNAL_ERR</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;`ethabi_derive` internal error&quot;</span>;
 
 		<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">logs</span> {
 			<span class="kw">use</span> <span class="ident">ethabi</span>;
@@ -645,18 +673,14 @@
 
 		<span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="attribute">#<span class="ident">name</span> {
 			<span class="kw">fn</span> <span class="ident">default</span>() <span class="op">-&gt;</span> <span class="self">Self</span> {
-				<span class="attribute">#<span class="ident">name</span>::<span class="ident">new</span>()
-			}
-		}
-
-		<span class="kw">impl</span> <span class="attribute">#<span class="ident">name</span> {
-			<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>() <span class="op">-&gt;</span> <span class="self">Self</span> {
-				<span class="kw">let</span> <span class="ident">contract</span> <span class="op">=</span> <span class="ident">ethabi</span>::<span class="ident">Contract</span>::<span class="ident">load</span>(<span class="macro">include_bytes</span><span class="macro">!</span>(<span class="attribute">#<span class="ident">file_path</span>) <span class="kw">as</span> <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]</span>).<span class="ident">unwrap</span>();
+				<span class="kw">let</span> <span class="ident">contract</span> <span class="op">=</span> <span class="ident">ethabi</span>::<span class="ident">Contract</span>::<span class="ident">load</span>(<span class="macro">include_bytes</span><span class="macro">!</span>(<span class="attribute">#<span class="ident">file_path</span>) <span class="kw">as</span> <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]</span>).<span class="ident">expect</span>(<span class="ident">INTERNAL_ERR</span>);
 				<span class="attribute">#<span class="ident">name</span> {
 					<span class="ident">contract</span>,
 				}
 			}
+		}
 
+		<span class="kw">impl</span> <span class="attribute">#<span class="ident">name</span> {
 			<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">functions</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="attribute">#<span class="ident">functions_name</span> {
 				<span class="attribute">#<span class="ident">functions_name</span> {
 					<span class="ident">contract</span>: <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">contract</span>,
@@ -721,7 +745,7 @@
 
 	<span class="macro">quote</span><span class="macro">!</span> {
 		<span class="kw">pub</span> <span class="kw">fn</span> <span class="attribute">#<span class="ident">name</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">functions</span>::<span class="attribute">#<span class="ident">function_name</span> {
-			<span class="ident">functions</span>::<span class="attribute">#<span class="ident">function_name</span>::<span class="ident">from_x</span>(<span class="self">self</span>.<span class="ident">contract</span>.<span class="ident">function</span>(<span class="attribute">#<span class="ident">query_name</span>).<span class="ident">unwrap</span>())
+			<span class="ident">functions</span>::<span class="attribute">#<span class="ident">function_name</span>::<span class="ident">from_x</span>(<span class="self">self</span>.<span class="ident">contract</span>.<span class="ident">function</span>(<span class="attribute">#<span class="ident">query_name</span>).<span class="ident">expect</span>(<span class="ident">INTERNAL_ERR</span>))
 		}
 	}
 }
@@ -777,28 +801,28 @@
 
 <span class="kw">fn</span> <span class="ident">from_token</span>(<span class="ident">kind</span>: <span class="kw-2">&amp;</span><span class="ident">ParamType</span>, <span class="ident">token</span>: <span class="kw-2">&amp;</span><span class="ident">syn</span>::<span class="ident">Ident</span>) <span class="op">-&gt;</span> <span class="ident">quote</span>::<span class="ident">Tokens</span> {
 	<span class="kw">match</span> <span class="kw-2">*</span><span class="ident">kind</span> {
-		<span class="ident">ParamType</span>::<span class="ident">Address</span> <span class="op">=&gt;</span> <span class="macro">quote</span><span class="macro">!</span> { <span class="attribute">#<span class="ident">token</span>.<span class="ident">to_address</span>().<span class="ident">unwrap</span>() },
-		<span class="ident">ParamType</span>::<span class="ident">Bytes</span> <span class="op">=&gt;</span> <span class="macro">quote</span><span class="macro">!</span> { <span class="attribute">#<span class="ident">token</span>.<span class="ident">to_bytes</span>().<span class="ident">unwrap</span>() },
+		<span class="ident">ParamType</span>::<span class="ident">Address</span> <span class="op">=&gt;</span> <span class="macro">quote</span><span class="macro">!</span> { <span class="attribute">#<span class="ident">token</span>.<span class="ident">to_address</span>().<span class="ident">expect</span>(<span class="kw">super</span>::<span class="ident">INTERNAL_ERR</span>) },
+		<span class="ident">ParamType</span>::<span class="ident">Bytes</span> <span class="op">=&gt;</span> <span class="macro">quote</span><span class="macro">!</span> { <span class="attribute">#<span class="ident">token</span>.<span class="ident">to_bytes</span>().<span class="ident">expect</span>(<span class="kw">super</span>::<span class="ident">INTERNAL_ERR</span>) },
 		<span class="ident">ParamType</span>::<span class="ident">FixedBytes</span>(<span class="ident">size</span>) <span class="op">=&gt;</span> {
 			<span class="kw">let</span> <span class="ident">size</span>: <span class="ident">syn</span>::<span class="ident">Ident</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{}&quot;</span>, <span class="ident">size</span>).<span class="ident">into</span>();
 			<span class="macro">quote</span><span class="macro">!</span> {
 				{
 					<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">result</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="attribute">#<span class="ident">size</span>]</span>;
-					<span class="kw">let</span> <span class="ident">v</span> <span class="op">=</span> <span class="attribute">#<span class="ident">token</span>.<span class="ident">to_fixed_bytes</span>().<span class="ident">unwrap</span>();
+					<span class="kw">let</span> <span class="ident">v</span> <span class="op">=</span> <span class="attribute">#<span class="ident">token</span>.<span class="ident">to_fixed_bytes</span>().<span class="ident">expect</span>(<span class="kw">super</span>::<span class="ident">INTERNAL_ERR</span>);
 					<span class="ident">result</span>.<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">v</span>);
 					<span class="ident">result</span>
 				}
 			}
 		},
-		<span class="ident">ParamType</span>::<span class="ident">Int</span>(_) <span class="op">=&gt;</span> <span class="macro">quote</span><span class="macro">!</span> { <span class="attribute">#<span class="ident">token</span>.<span class="ident">to_int</span>().<span class="ident">unwrap</span>() },
-		<span class="ident">ParamType</span>::<span class="ident">Uint</span>(_) <span class="op">=&gt;</span> <span class="macro">quote</span><span class="macro">!</span> { <span class="attribute">#<span class="ident">token</span>.<span class="ident">to_uint</span>().<span class="ident">unwrap</span>() },
-		<span class="ident">ParamType</span>::<span class="ident">Bool</span> <span class="op">=&gt;</span> <span class="macro">quote</span><span class="macro">!</span> { <span class="attribute">#<span class="ident">token</span>.<span class="ident">to_bool</span>().<span class="ident">unwrap</span>() },
-		<span class="ident">ParamType</span>::<span class="ident">String</span> <span class="op">=&gt;</span> <span class="macro">quote</span><span class="macro">!</span> { <span class="attribute">#<span class="ident">token</span>.<span class="ident">to_string</span>().<span class="ident">unwrap</span>() },
+		<span class="ident">ParamType</span>::<span class="ident">Int</span>(_) <span class="op">=&gt;</span> <span class="macro">quote</span><span class="macro">!</span> { <span class="attribute">#<span class="ident">token</span>.<span class="ident">to_int</span>().<span class="ident">expect</span>(<span class="kw">super</span>::<span class="ident">INTERNAL_ERR</span>) },
+		<span class="ident">ParamType</span>::<span class="ident">Uint</span>(_) <span class="op">=&gt;</span> <span class="macro">quote</span><span class="macro">!</span> { <span class="attribute">#<span class="ident">token</span>.<span class="ident">to_uint</span>().<span class="ident">expect</span>(<span class="kw">super</span>::<span class="ident">INTERNAL_ERR</span>) },
+		<span class="ident">ParamType</span>::<span class="ident">Bool</span> <span class="op">=&gt;</span> <span class="macro">quote</span><span class="macro">!</span> { <span class="attribute">#<span class="ident">token</span>.<span class="ident">to_bool</span>().<span class="ident">expect</span>(<span class="kw">super</span>::<span class="ident">INTERNAL_ERR</span>) },
+		<span class="ident">ParamType</span>::<span class="ident">String</span> <span class="op">=&gt;</span> <span class="macro">quote</span><span class="macro">!</span> { <span class="attribute">#<span class="ident">token</span>.<span class="ident">to_string</span>().<span class="ident">expect</span>(<span class="kw">super</span>::<span class="ident">INTERNAL_ERR</span>) },
 		<span class="ident">ParamType</span>::<span class="ident">Array</span>(<span class="kw-2">ref</span> <span class="ident">kind</span>) <span class="op">=&gt;</span> {
 			<span class="kw">let</span> <span class="ident">inner</span>: <span class="ident">syn</span>::<span class="ident">Ident</span> <span class="op">=</span> <span class="string">&quot;inner&quot;</span>.<span class="ident">into</span>();
 			<span class="kw">let</span> <span class="ident">inner_loop</span> <span class="op">=</span> <span class="ident">from_token</span>(<span class="ident">kind</span>, <span class="kw-2">&amp;</span><span class="ident">inner</span>);
 			<span class="macro">quote</span><span class="macro">!</span> {
-				<span class="attribute">#<span class="ident">token</span>.<span class="ident">to_array</span>().<span class="ident">unwrap</span>().<span class="ident">into_iter</span>()
+				<span class="attribute">#<span class="ident">token</span>.<span class="ident">to_array</span>().<span class="ident">expect</span>(<span class="kw">super</span>::<span class="ident">INTERNAL_ERR</span>).<span class="ident">into_iter</span>()
 					.<span class="ident">map</span>(<span class="op">|</span><span class="attribute">#<span class="ident">inner</span><span class="op">|</span> <span class="attribute">#<span class="ident">inner_loop</span>)
 					.<span class="ident">collect</span>()
 			}
@@ -809,7 +833,7 @@
 			<span class="kw">let</span> <span class="ident">to_array</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[<span class="macro">quote</span><span class="macro">!</span> { <span class="ident">iter</span>.<span class="ident">next</span>() }; <span class="ident">size</span>]</span>;
 			<span class="macro">quote</span><span class="macro">!</span> {
 				{
-					<span class="kw">let</span> <span class="ident">iter</span> <span class="op">=</span> <span class="attribute">#<span class="ident">token</span>.<span class="ident">to_array</span>().<span class="ident">unwrap</span>().<span class="ident">into_iter</span>()
+					<span class="kw">let</span> <span class="ident">iter</span> <span class="op">=</span> <span class="attribute">#<span class="ident">token</span>.<span class="ident">to_array</span>().<span class="ident">expect</span>(<span class="kw">super</span>::<span class="ident">INTERNAL_ERR</span>).<span class="ident">into_iter</span>()
 						.<span class="ident">map</span>(<span class="op">|</span><span class="attribute">#<span class="ident">inner</span><span class="op">|</span> <span class="attribute">#<span class="ident">inner_loop</span>);
 					[<span class="attribute">#(<span class="attribute">#<span class="ident">to_array</span>),<span class="kw-2">*</span>]</span>
 				}
@@ -824,7 +848,7 @@
 	<span class="kw">let</span> <span class="ident">event_name</span> <span class="op">=</span> <span class="ident">syn</span>::<span class="ident">Ident</span>::<span class="ident">new</span>(<span class="ident">event</span>.<span class="ident">name</span>.<span class="ident">to_camel_case</span>());
 	<span class="macro">quote</span><span class="macro">!</span> {
 		<span class="kw">pub</span> <span class="kw">fn</span> <span class="attribute">#<span class="ident">name</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">events</span>::<span class="attribute">#<span class="ident">event_name</span> {
-			<span class="ident">events</span>::<span class="attribute">#<span class="ident">event_name</span>::<span class="ident">from_x</span>(<span class="self">self</span>.<span class="ident">contract</span>.<span class="ident">event</span>(<span class="attribute">#<span class="ident">query_name</span>).<span class="ident">unwrap</span>())
+			<span class="ident">events</span>::<span class="attribute">#<span class="ident">event_name</span>::<span class="ident">from_x</span>(<span class="self">self</span>.<span class="ident">contract</span>.<span class="ident">event</span>(<span class="attribute">#<span class="ident">query_name</span>).<span class="ident">expect</span>(<span class="ident">INTERNAL_ERR</span>))
 		}
 	}
 }
@@ -842,17 +866,27 @@
 		.<span class="ident">iter</span>()
 		.<span class="ident">map</span>(<span class="op">|</span><span class="ident">param</span><span class="op">|</span> <span class="ident">rust_type</span>(<span class="kw-2">&amp;</span><span class="ident">param</span>.<span class="ident">kind</span>))
 		.<span class="ident">collect</span>();
-	<span class="kw">let</span> <span class="ident">params</span>: <span class="ident">Vec</span><span class="op">&lt;</span>_<span class="op">&gt;</span> <span class="op">=</span> <span class="ident">names</span>.<span class="ident">iter</span>().<span class="ident">zip</span>(<span class="ident">kinds</span>.<span class="ident">iter</span>())
-		.<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">param_name</span>, <span class="ident">kind</span>)<span class="op">|</span> <span class="macro">quote</span><span class="macro">!</span> { <span class="attribute">#<span class="ident">param_name</span>: <span class="attribute">#<span class="ident">kind</span> })
+	<span class="kw">let</span> <span class="ident">template_names</span>: <span class="ident">Vec</span><span class="op">&lt;</span>_<span class="op">&gt;</span> <span class="op">=</span> <span class="ident">kinds</span>.<span class="ident">iter</span>().<span class="ident">enumerate</span>()
+		.<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">index</span>, _)<span class="op">|</span> <span class="ident">syn</span>::<span class="ident">Ident</span>::<span class="ident">new</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;T{}&quot;</span>, <span class="ident">index</span>)))
+		.<span class="ident">collect</span>();
+	<span class="kw">let</span> <span class="ident">template_params</span>: <span class="ident">Vec</span><span class="op">&lt;</span>_<span class="op">&gt;</span> <span class="op">=</span> <span class="ident">kinds</span>.<span class="ident">iter</span>().<span class="ident">zip</span>(<span class="ident">template_names</span>.<span class="ident">iter</span>())
+		.<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">kind</span>, <span class="ident">template_name</span>)<span class="op">|</span> <span class="macro">quote</span><span class="macro">!</span> { <span class="attribute">#<span class="ident">template_name</span>: <span class="ident">Into</span><span class="op">&lt;</span><span class="attribute">#<span class="ident">kind</span><span class="op">&gt;</span> })
+		.<span class="ident">collect</span>();
+	<span class="kw">let</span> <span class="ident">params</span>: <span class="ident">Vec</span><span class="op">&lt;</span>_<span class="op">&gt;</span> <span class="op">=</span> <span class="ident">names</span>.<span class="ident">iter</span>().<span class="ident">zip</span>(<span class="ident">template_names</span>.<span class="ident">iter</span>())
+		.<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">param_name</span>, <span class="ident">template_name</span>)<span class="op">|</span> <span class="macro">quote</span><span class="macro">!</span> { <span class="attribute">#<span class="ident">param_name</span>: <span class="attribute">#<span class="ident">template_name</span> })
 		.<span class="ident">collect</span>();
 	<span class="kw">let</span> <span class="ident">usage</span>: <span class="ident">Vec</span><span class="op">&lt;</span>_<span class="op">&gt;</span> <span class="op">=</span> <span class="ident">names</span>.<span class="ident">iter</span>().<span class="ident">zip</span>(<span class="ident">constructor</span>.<span class="ident">inputs</span>.<span class="ident">iter</span>())
-		.<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">param_name</span>, <span class="ident">param</span>)<span class="op">|</span> <span class="ident">to_token</span>(<span class="ident">param_name</span>, <span class="kw-2">&amp;</span><span class="ident">param</span>.<span class="ident">kind</span>))
+		.<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">param_name</span>, <span class="ident">param</span>)<span class="op">|</span> <span class="ident">to_token</span>(<span class="kw-2">&amp;</span><span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{}.into()&quot;</span>, <span class="ident">param_name</span>).<span class="ident">into</span>(), <span class="kw-2">&amp;</span><span class="ident">param</span>.<span class="ident">kind</span>))
 		.<span class="ident">collect</span>();
 
 	<span class="macro">quote</span><span class="macro">!</span> {
-		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">constructor</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">code</span>: <span class="ident">ethabi</span>::<span class="ident">Bytes</span>, <span class="attribute">#(<span class="attribute">#<span class="ident">params</span>),<span class="op">*</span> ) <span class="op">-&gt;</span> <span class="ident">ethabi</span>::<span class="ident">Bytes</span> {
+		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">constructor</span><span class="op">&lt;</span><span class="attribute">#(<span class="attribute">#<span class="ident">template_params</span>),<span class="kw-2">*</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">code</span>: <span class="ident">ethabi</span>::<span class="ident">Bytes</span>, <span class="attribute">#(<span class="attribute">#<span class="ident">params</span>),<span class="op">*</span> ) <span class="op">-&gt;</span> <span class="ident">ethabi</span>::<span class="ident">Bytes</span> {
 			<span class="kw">let</span> <span class="ident">v</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ethabi</span>::<span class="ident">Token</span><span class="op">&gt;</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[<span class="attribute">#(<span class="attribute">#<span class="ident">usage</span>),<span class="kw-2">*</span>]</span>;
-			<span class="self">self</span>.<span class="ident">contract</span>.<span class="ident">constructor</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap</span>().<span class="ident">encode_input</span>(<span class="ident">code</span>, <span class="kw-2">&amp;</span><span class="ident">v</span>).<span class="ident">expect</span>(<span class="string">&quot;encode_input not to fail; ethabi_derive bug&quot;</span>)
+			<span class="self">self</span>.<span class="ident">contract</span>.<span class="ident">constructor</span>
+				.<span class="ident">as_ref</span>()
+				.<span class="ident">expect</span>(<span class="ident">INTERNAL_ERR</span>)
+				.<span class="ident">encode_input</span>(<span class="ident">code</span>, <span class="kw-2">&amp;</span><span class="ident">v</span>)
+				.<span class="ident">expect</span>(<span class="string">&quot;encode_input not to fail; ethabi_derive bug&quot;</span>)
 		}
 	}
 }
@@ -900,7 +934,7 @@
 			<span class="ident">param</span>.<span class="ident">name</span>.<span class="ident">to_snake_case</span>().<span class="ident">into</span>()
 		}).<span class="ident">collect</span>();
 
-	<span class="kw">let</span> <span class="ident">log_iter</span> <span class="op">=</span> <span class="ident">syn</span>::<span class="ident">Ident</span>::<span class="ident">new</span>(<span class="string">&quot;log.next().unwrap().value&quot;</span>);
+	<span class="kw">let</span> <span class="ident">log_iter</span> <span class="op">=</span> <span class="ident">syn</span>::<span class="ident">Ident</span>::<span class="ident">new</span>(<span class="string">&quot;log.next().expect(super::INTERNAL_ERR).value&quot;</span>);
 
 	<span class="kw">let</span> <span class="ident">to_log</span>: <span class="ident">Vec</span><span class="op">&lt;</span>_<span class="op">&gt;</span> <span class="op">=</span> <span class="ident">event</span>.<span class="ident">inputs</span>
 		.<span class="ident">iter</span>()
@@ -930,8 +964,16 @@
 		.<span class="ident">map</span>(<span class="op">|</span><span class="ident">param</span><span class="op">|</span> <span class="ident">rust_type</span>(<span class="kw-2">&amp;</span><span class="ident">param</span>.<span class="ident">kind</span>))
 		.<span class="ident">collect</span>();
 
-	<span class="kw">let</span> <span class="ident">params</span>: <span class="ident">Vec</span><span class="op">&lt;</span>_<span class="op">&gt;</span> <span class="op">=</span> <span class="ident">topic_names</span>.<span class="ident">iter</span>().<span class="ident">zip</span>(<span class="ident">topic_kinds</span>.<span class="ident">iter</span>())
-		.<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">param_name</span>, <span class="ident">kind</span>)<span class="op">|</span> <span class="macro">quote</span><span class="macro">!</span> { <span class="attribute">#<span class="ident">param_name</span>: <span class="ident">ethabi</span>::<span class="ident">Topic</span><span class="op">&lt;</span><span class="attribute">#<span class="ident">kind</span><span class="op">&gt;</span> })
+	<span class="kw">let</span> <span class="ident">template_names</span>: <span class="ident">Vec</span><span class="op">&lt;</span>_<span class="op">&gt;</span> <span class="op">=</span> <span class="ident">topic_kinds</span>.<span class="ident">iter</span>().<span class="ident">enumerate</span>()
+		.<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">index</span>, _)<span class="op">|</span> <span class="ident">syn</span>::<span class="ident">Ident</span>::<span class="ident">new</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;T{}&quot;</span>, <span class="ident">index</span>)))
+		.<span class="ident">collect</span>();
+
+	<span class="kw">let</span> <span class="ident">params</span>: <span class="ident">Vec</span><span class="op">&lt;</span>_<span class="op">&gt;</span> <span class="op">=</span> <span class="ident">topic_names</span>.<span class="ident">iter</span>().<span class="ident">zip</span>(<span class="ident">template_names</span>.<span class="ident">iter</span>())
+		.<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">param_name</span>, <span class="ident">template_name</span>)<span class="op">|</span> <span class="macro">quote</span><span class="macro">!</span> { <span class="attribute">#<span class="ident">param_name</span>: <span class="attribute">#<span class="ident">template_name</span> })
+		.<span class="ident">collect</span>();
+
+	<span class="kw">let</span> <span class="ident">template_params</span>: <span class="ident">Vec</span><span class="op">&lt;</span>_<span class="op">&gt;</span> <span class="op">=</span> <span class="ident">topic_kinds</span>.<span class="ident">iter</span>().<span class="ident">zip</span>(<span class="ident">template_names</span>.<span class="ident">iter</span>())
+		.<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">kind</span>, <span class="ident">template_name</span>)<span class="op">|</span> <span class="macro">quote</span><span class="macro">!</span> { <span class="attribute">#<span class="ident">template_name</span>: <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">ethabi</span>::<span class="ident">Topic</span><span class="op">&lt;</span><span class="attribute">#<span class="ident">kind</span><span class="op">&gt;&gt;</span> })
 		.<span class="ident">collect</span>();
 
 	<span class="kw">let</span> <span class="ident">to_filter</span>: <span class="ident">Vec</span><span class="op">&lt;</span>_<span class="op">&gt;</span> <span class="op">=</span> <span class="ident">topic_names</span>.<span class="ident">iter</span>().<span class="ident">zip</span>(<span class="ident">event</span>.<span class="ident">inputs</span>.<span class="ident">iter</span>().<span class="ident">filter</span>(<span class="op">|</span><span class="ident">p</span><span class="op">|</span> <span class="ident">p</span>.<span class="ident">indexed</span>))
@@ -941,7 +983,7 @@
 			<span class="kw">let</span> <span class="ident">topic</span> <span class="op">=</span> <span class="ident">syn</span>::<span class="ident">Ident</span>::<span class="ident">new</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;topic{}&quot;</span>, <span class="ident">index</span>));
 			<span class="kw">let</span> <span class="ident">i</span> <span class="op">=</span> <span class="string">&quot;i&quot;</span>.<span class="ident">into</span>();
 			<span class="kw">let</span> <span class="ident">to_token</span> <span class="op">=</span> <span class="ident">to_token</span>(<span class="kw-2">&amp;</span><span class="ident">i</span>, <span class="kw-2">&amp;</span><span class="ident">param</span>.<span class="ident">kind</span>);
-			<span class="macro">quote</span><span class="macro">!</span> { <span class="attribute">#<span class="ident">topic</span>: <span class="attribute">#<span class="ident">param_name</span>.<span class="ident">map</span>(<span class="op">|</span><span class="attribute">#<span class="ident">i</span><span class="op">|</span> <span class="attribute">#<span class="ident">to_token</span>), }
+			<span class="macro">quote</span><span class="macro">!</span> { <span class="attribute">#<span class="ident">topic</span>: <span class="attribute">#<span class="ident">param_name</span>.<span class="ident">into</span>().<span class="ident">map</span>(<span class="op">|</span><span class="attribute">#<span class="ident">i</span><span class="op">|</span> <span class="attribute">#<span class="ident">to_token</span>), }
 		})
 		.<span class="ident">collect</span>();
 
@@ -967,13 +1009,13 @@
 			}
 
 			<span class="doccomment">/// Creates topic filter.</span>
-			<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">create_filter</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="attribute">#(<span class="attribute">#<span class="ident">params</span>),<span class="kw-2">*</span>) <span class="op">-&gt;</span> <span class="ident">ethabi</span>::<span class="ident">TopicFilter</span> {
+			<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">create_filter</span><span class="op">&lt;</span><span class="attribute">#(<span class="attribute">#<span class="ident">template_params</span>),<span class="kw-2">*</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="attribute">#(<span class="attribute">#<span class="ident">params</span>),<span class="kw-2">*</span>) <span class="op">-&gt;</span> <span class="ident">ethabi</span>::<span class="ident">TopicFilter</span> {
 				<span class="kw">let</span> <span class="ident">raw</span> <span class="op">=</span> <span class="ident">ethabi</span>::<span class="ident">RawTopicFilter</span> {
 					<span class="attribute">#(<span class="attribute">#<span class="ident">to_filter</span>)<span class="op">*</span>
 					..<span class="ident">Default</span>::<span class="ident">default</span>()
 				};
 
-				<span class="self">self</span>.<span class="ident">event</span>.<span class="ident">create_filter</span>(<span class="ident">raw</span>).<span class="ident">unwrap</span>()
+				<span class="self">self</span>.<span class="ident">event</span>.<span class="ident">create_filter</span>(<span class="ident">raw</span>).<span class="ident">expect</span>(<span class="kw">super</span>::<span class="ident">INTERNAL_ERR</span>)
 			}
 		}
 	}
@@ -993,11 +1035,17 @@
 		.<span class="ident">iter</span>()
 		.<span class="ident">map</span>(<span class="op">|</span><span class="ident">param</span><span class="op">|</span> <span class="ident">rust_type</span>(<span class="kw-2">&amp;</span><span class="ident">param</span>.<span class="ident">kind</span>))
 		.<span class="ident">collect</span>();
-	<span class="kw">let</span> <span class="ident">params</span>: <span class="ident">Vec</span><span class="op">&lt;</span>_<span class="op">&gt;</span> <span class="op">=</span> <span class="ident">names</span>.<span class="ident">iter</span>().<span class="ident">zip</span>(<span class="ident">kinds</span>.<span class="ident">iter</span>())
-		.<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">param_name</span>, <span class="ident">kind</span>)<span class="op">|</span> <span class="macro">quote</span><span class="macro">!</span> { <span class="attribute">#<span class="ident">param_name</span>: <span class="attribute">#<span class="ident">kind</span> })
+	<span class="kw">let</span> <span class="ident">template_names</span>: <span class="ident">Vec</span><span class="op">&lt;</span>_<span class="op">&gt;</span> <span class="op">=</span> <span class="ident">kinds</span>.<span class="ident">iter</span>().<span class="ident">enumerate</span>()
+		.<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">index</span>, _)<span class="op">|</span> <span class="ident">syn</span>::<span class="ident">Ident</span>::<span class="ident">new</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;T{}&quot;</span>, <span class="ident">index</span>)))
+		.<span class="ident">collect</span>();
+	<span class="kw">let</span> <span class="ident">template_params</span>: <span class="ident">Vec</span><span class="op">&lt;</span>_<span class="op">&gt;</span> <span class="op">=</span> <span class="ident">kinds</span>.<span class="ident">iter</span>().<span class="ident">zip</span>(<span class="ident">template_names</span>.<span class="ident">iter</span>())
+		.<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">kind</span>, <span class="ident">template_name</span>)<span class="op">|</span> <span class="macro">quote</span><span class="macro">!</span> { <span class="attribute">#<span class="ident">template_name</span>: <span class="ident">Into</span><span class="op">&lt;</span><span class="attribute">#<span class="ident">kind</span><span class="op">&gt;</span> })
+		.<span class="ident">collect</span>();
+	<span class="kw">let</span> <span class="ident">params</span>: <span class="ident">Vec</span><span class="op">&lt;</span>_<span class="op">&gt;</span> <span class="op">=</span> <span class="ident">names</span>.<span class="ident">iter</span>().<span class="ident">zip</span>(<span class="ident">template_names</span>.<span class="ident">iter</span>())
+		.<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">param_name</span>, <span class="ident">template_name</span>)<span class="op">|</span> <span class="macro">quote</span><span class="macro">!</span> { <span class="attribute">#<span class="ident">param_name</span>: <span class="attribute">#<span class="ident">template_name</span> })
 		.<span class="ident">collect</span>();
 	<span class="kw">let</span> <span class="ident">usage</span>: <span class="ident">Vec</span><span class="op">&lt;</span>_<span class="op">&gt;</span> <span class="op">=</span> <span class="ident">names</span>.<span class="ident">iter</span>().<span class="ident">zip</span>(<span class="ident">function</span>.<span class="ident">inputs</span>.<span class="ident">iter</span>())
-		.<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">param_name</span>, <span class="ident">param</span>)<span class="op">|</span> <span class="ident">to_token</span>(<span class="ident">param_name</span>, <span class="kw-2">&amp;</span><span class="ident">param</span>.<span class="ident">kind</span>))
+		.<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">param_name</span>, <span class="ident">param</span>)<span class="op">|</span> <span class="ident">to_token</span>(<span class="kw-2">&amp;</span><span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{}.into()&quot;</span>, <span class="ident">param_name</span>).<span class="ident">into</span>(), <span class="kw-2">&amp;</span><span class="ident">param</span>.<span class="ident">kind</span>))
 		.<span class="ident">collect</span>();
 
 	<span class="kw">let</span> <span class="ident">output_impl</span> <span class="op">=</span> <span class="kw">if</span> <span class="op">!</span><span class="ident">function</span>.<span class="ident">constant</span> {
@@ -1024,12 +1072,12 @@
 				<span class="kw">let</span> <span class="ident">o</span> <span class="op">=</span> <span class="string">&quot;out&quot;</span>.<span class="ident">into</span>();
 				<span class="kw">let</span> <span class="ident">from_first</span> <span class="op">=</span> <span class="ident">from_token</span>(<span class="kw-2">&amp;</span><span class="ident">function</span>.<span class="ident">outputs</span>[<span class="number">0</span>]</span>.<span class="ident">kind</span>, <span class="kw-2">&amp;</span><span class="ident">o</span>);
 				<span class="macro">quote</span><span class="macro">!</span> {
-					<span class="kw">let</span> <span class="ident">out</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">function</span>.<span class="ident">decode_output</span>(<span class="ident">output</span>)<span class="question-mark">?</span>.<span class="ident">into_iter</span>().<span class="ident">next</span>().<span class="ident">unwrap</span>();
+					<span class="kw">let</span> <span class="ident">out</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">function</span>.<span class="ident">decode_output</span>(<span class="ident">output</span>)<span class="question-mark">?</span>.<span class="ident">into_iter</span>().<span class="ident">next</span>().<span class="ident">expect</span>(<span class="kw">super</span>::<span class="ident">INTERNAL_ERR</span>);
 					<span class="prelude-val">Ok</span>(<span class="attribute">#<span class="ident">from_first</span>)
 				}
 			},
 			_ <span class="op">=&gt;</span> {
-				<span class="kw">let</span> <span class="ident">o</span> <span class="op">=</span> <span class="string">&quot;out.into_iter().next().unwrap()&quot;</span>.<span class="ident">into</span>();
+				<span class="kw">let</span> <span class="ident">o</span> <span class="op">=</span> <span class="string">&quot;out.into_iter().next().expect(super::INTERNAL_ERR)&quot;</span>.<span class="ident">into</span>();
 				<span class="kw">let</span> <span class="ident">outs</span>: <span class="ident">Vec</span><span class="op">&lt;</span>_<span class="op">&gt;</span> <span class="op">=</span> <span class="ident">function</span>.<span class="ident">outputs</span>
 					.<span class="ident">iter</span>()
 					.<span class="ident">map</span>(<span class="op">|</span><span class="ident">param</span><span class="op">|</span> <span class="ident">from_token</span>(<span class="kw-2">&amp;</span><span class="ident">param</span>.<span class="ident">kind</span>, <span class="kw-2">&amp;</span><span class="ident">o</span>))
@@ -1061,7 +1109,7 @@
 				}
 			}
 
-			<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">input</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="attribute">#(<span class="attribute">#<span class="ident">params</span>),<span class="kw-2">*</span>) <span class="op">-&gt;</span> <span class="ident">ethabi</span>::<span class="ident">Bytes</span> {
+			<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">input</span><span class="op">&lt;</span><span class="attribute">#(<span class="attribute">#<span class="ident">template_params</span>),<span class="kw-2">*</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="attribute">#(<span class="attribute">#<span class="ident">params</span>),<span class="kw-2">*</span>) <span class="op">-&gt;</span> <span class="ident">ethabi</span>::<span class="ident">Bytes</span> {
 				<span class="kw">let</span> <span class="ident">v</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ethabi</span>::<span class="ident">Token</span><span class="op">&gt;</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[<span class="attribute">#(<span class="attribute">#<span class="ident">usage</span>),<span class="kw-2">*</span>]</span>;
 				<span class="self">self</span>.<span class="ident">function</span>.<span class="ident">encode_input</span>(<span class="kw-2">&amp;</span><span class="ident">v</span>).<span class="ident">expect</span>(<span class="string">&quot;encode_input not to fail; ethabi_derive bug&quot;</span>)
 			}

@@ -72,7 +72,6 @@
 <span id="27">27</span>
 <span id="28">28</span>
 <span id="29">29</span>
-<span id="30">30</span>
 </pre><pre class="rust ">
 <span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">rustc_hex</span>;
 <span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">ethabi</span>;
@@ -82,6 +81,7 @@
 <span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">ethabi_contract</span>;
 
 <span class="macro">use_contract</span><span class="macro">!</span>(<span class="ident">eip20</span>, <span class="string">&quot;Eip20&quot;</span>, <span class="string">&quot;../examples/eip20.json&quot;</span>);
+<span class="macro">use_contract</span><span class="macro">!</span>(<span class="ident">construtor</span>, <span class="string">&quot;Constructor&quot;</span>, <span class="string">&quot;../examples/con.json&quot;</span>);
 
 <span class="attribute">#[<span class="ident">test</span>]</span>
 <span class="kw">fn</span> <span class="ident">encoding_input_works</span>() {
@@ -99,10 +99,8 @@
 	<span class="kw">let</span> <span class="ident">from</span> <span class="op">=</span> [<span class="number">2u8</span>; <span class="number">20</span>];
 	<span class="kw">let</span> <span class="ident">to</span> <span class="op">=</span> [<span class="number">3u8</span>; <span class="number">20</span>];
 	<span class="kw">let</span> <span class="ident">to2</span> <span class="op">=</span> [<span class="number">4u8</span>; <span class="number">20</span>];
-	<span class="kw">let</span> <span class="ident">_filter</span> <span class="op">=</span> <span class="ident">contract</span>.<span class="ident">events</span>().<span class="ident">transfer</span>().<span class="ident">create_filter</span>(
-		<span class="ident">ethabi</span>::<span class="ident">Topic</span>::<span class="ident">This</span>(<span class="ident">from</span>),
-		<span class="ident">ethabi</span>::<span class="ident">Topic</span>::<span class="ident">OneOf</span>(<span class="macro">vec</span><span class="macro">!</span>[<span class="ident">to</span>, <span class="ident">to2</span>])
-	);
+	<span class="kw">let</span> <span class="ident">_filter</span> <span class="op">=</span> <span class="ident">contract</span>.<span class="ident">events</span>().<span class="ident">transfer</span>().<span class="ident">create_filter</span>(<span class="ident">from</span>, <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">to</span>, <span class="ident">to2</span>]);
+	<span class="kw">let</span> <span class="ident">_filter</span> <span class="op">=</span> <span class="ident">contract</span>.<span class="ident">events</span>().<span class="ident">transfer</span>().<span class="ident">create_filter</span>(<span class="prelude-val">None</span>, <span class="prelude-val">None</span>);
 }
 </pre>
 </section>

@@ -377,7 +377,7 @@
 		<span class="prelude-val">Ok</span>(<span class="ident">result</span>)
 	}
 
-	<span class="doccomment">/// Decodes event indexed params and data.</span>
+	<span class="doccomment">/// Parses `RawLog` and retrieves all log params from it.</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">parse_log</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">log</span>: <span class="ident">RawLog</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Log</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="ident">topics</span> <span class="op">=</span> <span class="ident">log</span>.<span class="ident">topics</span>;
 		<span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="ident">log</span>.<span class="ident">data</span>;

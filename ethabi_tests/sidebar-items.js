@@ -1,1 +1,1 @@
-initSidebarItems({"mod":[["eip20",""]]});
+initSidebarItems({"mod":[["construtor",""],["eip20",""]]});
