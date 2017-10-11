@@ -239,7 +239,7 @@ mod tests {
 
 	#[test]
 	fn abi_encode() {
-		let command = "ethabi encode function ../examples/test.json foo -p 1".split(" ");
+		let command = "ethabi encode function ../res/test.abi foo -p 1".split(" ");
 		let expected = "455575780000000000000000000000000000000000000000000000000000000000000001";
 		assert_eq!(execute(command).unwrap(), expected);
 	}
@@ -277,14 +277,14 @@ bool false";
 
 	#[test]
 	fn abi_decode() {
-		let command = "ethabi decode function ../examples/foo.json bar 0000000000000000000000000000000000000000000000000000000000000001".split(" ");
+		let command = "ethabi decode function ../res/foo.abi bar 0000000000000000000000000000000000000000000000000000000000000001".split(" ");
 		let expected = "bool true";
 		assert_eq!(execute(command).unwrap(), expected);
 	}
 
 	#[test]
 	fn log_decode() {
-		let command = "ethabi decode log ../examples/event.json Event -l 0000000000000000000000000000000000000000000000000000000000000001 0000000000000000000000004444444444444444444444444444444444444444".split(" ");
+		let command = "ethabi decode log ../res/event.abi Event -l 0000000000000000000000000000000000000000000000000000000000000001 0000000000000000000000004444444444444444444444444444444444444444".split(" ");
 		let expected =
 "a true
 b 4444444444444444444444444444444444444444";

@@ -182,6 +182,29 @@ fn rust_type(input: &ParamType) -> syn::Ident {
 	}
 }
 
+fn template_param_type(input: &ParamType, index: usize) -> syn::Ident {
+	match *input {
+		ParamType::Address => format!("T{}: Into<ethabi::Address>", index).into(),
+		ParamType::Bytes => format!("T{}: Into<ethabi::Bytes>", index).into(),
+		ParamType::FixedBytes(32) => format!("T{}: Into<ethabi::Hash>", index).into(),
+		ParamType::FixedBytes(size) => format!("T{}: Into<[u8; {}]>", index, size).into(),
+		ParamType::Int(_) => format!("T{}: Into<ethabi::Int>", index).into(),
+		ParamType::Uint(_) => format!("T{}: Into<ethabi::Uint>", index).into(),
+		ParamType::Bool => format!("T{}: Into<bool>", index).into(),
+		ParamType::String => format!("T{}: Into<String>", index).into(),
+		ParamType::Array(ref kind) => format!("T{}: IntoIterator<Item = U{}>, U{}: Into<{}>", index, index, index, rust_type(&*kind)).into(),
+		ParamType::FixedArray(ref kind, size) => format!("T{}: Into<[U{}; {}]>, U{}: Into<{}>", index, index, size, index, rust_type(&*kind)).into(),
+	}
+}
+
+fn from_template_param(input: &ParamType, name: &syn::Ident) -> syn::Ident {
+	match *input {
+		ParamType::Array(_) => format!("{}.into_iter().map(Into::into).collect::<Vec<_>>()", name).into(),
+		ParamType::FixedArray(_, _) => format!("(Box::new({}.into()) as Box<[_]>).into_vec().into_iter().map(Into::into).collect::<Vec<_>>()", name).into(),
+		_ => format!("{}.into()", name).into(),
+	}
+}
+
 fn to_token(name: &syn::Ident, kind: &ParamType) -> quote::Tokens {
 	match *kind {
 		ParamType::Address => quote! { ethabi::Token::Address(#name) },
@@ -208,7 +231,7 @@ fn to_token(name: &syn::Ident, kind: &ParamType) -> quote::Tokens {
 			quote! {
 				// note the double {{
 				{
-					let v = #name.to_vec().into_iter().map(|#inner_name| #inner_loop).collect();
+					let v = #name.into_iter().map(|#inner_name| #inner_loop).collect();
 					ethabi::Token::FixedArray(v)
 				}
 			}
@@ -271,6 +294,7 @@ fn impl_contract_event(event: &Event) -> quote::Tokens {
 }
 
 fn impl_contract_constructor(constructor: &Constructor) -> quote::Tokens {
+	// [param0, hello_world, param2]
 	let names: Vec<_> = constructor.inputs
 		.iter()
 		.enumerate()
@@ -279,21 +303,36 @@ fn impl_contract_constructor(constructor: &Constructor) -> quote::Tokens {
 		} else {
 			param.name.to_snake_case().into()
 		}).collect();
+
+	// [Uint, Bytes, Vec<Uint>]
 	let kinds: Vec<_> = constructor.inputs
 		.iter()
 		.map(|param| rust_type(&param.kind))
 		.collect();
+
+	// [T0, T1, T2]
 	let template_names: Vec<_> = kinds.iter().enumerate()
 		.map(|(index, _)| syn::Ident::new(format!("T{}", index)))
 		.collect();
-	let template_params: Vec<_> = kinds.iter().zip(template_names.iter())
-		.map(|(kind, template_name)| quote! { #template_name: Into<#kind> })
+
+	// [T0: Into<Uint>, T1: Into<Bytes>, T2: Into<Vec<Uint>>]
+	//let template_params: Vec<_> = kinds.iter().zip(template_names.iter())
+		//.map(|(kind, template_name)| quote! { #template_name: Into<#kind> })
+		//.collect();
+
+	// [T0: Into<Uint>, T1: Into<Bytes>, T2: IntoIterator<Item = U2>, U2 = Into<Uint>]
+	let template_params: Vec<_> = constructor.inputs.iter().enumerate()
+		.map(|(index, param)| template_param_type(&param.kind, index))
 		.collect();
+
+	// [param0: T0, hello_world: T1, param2: T2]
 	let params: Vec<_> = names.iter().zip(template_names.iter())
 		.map(|(param_name, template_name)| quote! { #param_name: #template_name })
 		.collect();
+
+	// [Token::Uint(param0.into()), Token::Bytes(hello_world.into()), Token::Array(param2.into())]
 	let usage: Vec<_> = names.iter().zip(constructor.inputs.iter())
-		.map(|(param_name, param)| to_token(&format!("{}.into()", param_name).into(), &param.kind))
+		.map(|(param_name, param)| to_token(&from_template_param(&param.kind, param_name), &param.kind))
 		.collect();
 
 	quote! {
@@ -381,6 +420,7 @@ fn declare_events(event: &Event) -> quote::Tokens {
 		.map(|param| rust_type(&param.kind))
 		.collect();
 
+	// [T0, T1, T2]
 	let template_names: Vec<_> = topic_kinds.iter().enumerate()
 		.map(|(index, _)| syn::Ident::new(format!("T{}", index)))
 		.collect();
@@ -440,6 +480,8 @@ fn declare_events(event: &Event) -> quote::Tokens {
 
 fn declare_functions(function: &Function) -> quote::Tokens {
 	let name = syn::Ident::new(function.name.to_camel_case());
+
+	// [param0, hello_world, param2]
 	let names: Vec<_> = function.inputs
 		.iter()
 		.enumerate()
@@ -448,21 +490,31 @@ fn declare_functions(function: &Function) -> quote::Tokens {
 		} else {
 			param.name.to_snake_case().into()
 		}).collect();
+
+	// [Uint, Bytes, Vec<Uint>]
 	let kinds: Vec<_> = function.inputs
 		.iter()
 		.map(|param| rust_type(&param.kind))
 		.collect();
+
+	// [T0, T1, T2]
 	let template_names: Vec<_> = kinds.iter().enumerate()
 		.map(|(index, _)| syn::Ident::new(format!("T{}", index)))
 		.collect();
-	let template_params: Vec<_> = kinds.iter().zip(template_names.iter())
-		.map(|(kind, template_name)| quote! { #template_name: Into<#kind> })
+
+	// [T0: Into<Uint>, T1: Into<Bytes>, T2: IntoIterator<Item = U2>, U2 = Into<Uint>]
+	let template_params: Vec<_> = function.inputs.iter().enumerate()
+		.map(|(index, param)| template_param_type(&param.kind, index))
 		.collect();
+
+	// [param0: T0, hello_world: T1, param2: T2]
 	let params: Vec<_> = names.iter().zip(template_names.iter())
 		.map(|(param_name, template_name)| quote! { #param_name: #template_name })
 		.collect();
+
+	// [Token::Uint(param0.into()), Token::Bytes(hello_world.into()), Token::Array(param2.into_iter().map(Into::into).collect())]
 	let usage: Vec<_> = names.iter().zip(function.inputs.iter())
-		.map(|(param_name, param)| to_token(&format!("{}.into()", param_name).into(), &param.kind))
+		.map(|(param_name, param)| to_token(&from_template_param(&param.kind, param_name), &param.kind))
 		.collect();
 
 	let output_impl = if !function.constant {
