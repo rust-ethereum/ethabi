@@ -315,11 +315,6 @@ fn impl_contract_constructor(constructor: &Constructor) -> quote::Tokens {
 		.map(|(index, _)| syn::Ident::new(format!("T{}", index)))
 		.collect();
 
-	// [T0: Into<Uint>, T1: Into<Bytes>, T2: Into<Vec<Uint>>]
-	//let template_params: Vec<_> = kinds.iter().zip(template_names.iter())
-		//.map(|(kind, template_name)| quote! { #template_name: Into<#kind> })
-		//.collect();
-
 	// [T0: Into<Uint>, T1: Into<Bytes>, T2: IntoIterator<Item = U2>, U2 = Into<Uint>]
 	let template_params: Vec<_> = constructor.inputs.iter().enumerate()
 		.map(|(index, param)| template_param_type(&param.kind, index))
