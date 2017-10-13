@@ -1,3 +1,5 @@
+#![deny(warnings)]
+
 extern crate rustc_hex;
 extern crate ethabi;
 #[macro_use]
@@ -6,7 +8,7 @@ extern crate ethabi_derive;
 extern crate ethabi_contract;
 
 use_contract!(eip20, "Eip20", "../res/eip20.abi");
-use_contract!(construtor, "Constructor", "../res/con.abi");
+use_contract!(constructor, "Constructor", "../res/con.abi");
 use_contract!(validators, "Validators", "../res/Validators.abi");
 
 #[cfg(test)]

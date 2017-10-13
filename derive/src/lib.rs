@@ -45,43 +45,71 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 
 	let file_path = string_ident(&normalized_path.display().to_string());
 
+	let events_and_logs_quote = if events_structs.is_empty() {
+		quote! {}
+	} else {
+		quote! {
+			pub mod events {
+				use ethabi;
+
+				#(#events_structs)*
+			}
+
+			pub mod logs {
+				use ethabi;
+
+				#(#logs_structs)*
+			}
+
+			pub struct #events_name<'a> {
+				contract: &'a ethabi::Contract,
+			}
+
+			impl<'a> #events_name<'a> {
+				#(#events_impl)*
+			}
+
+			impl #name {
+				pub fn events(&self) -> #events_name {
+					#events_name {
+						contract: &self.contract,
+					}
+				}
+			}
+		}
+	};
+
+	let functions_quote = if func_structs.is_empty() {
+		quote! {}
+	} else {
+		quote! {
+			pub mod functions {
+				use ethabi;
+
+				#(#func_structs)*
+			}
+
+			pub struct #functions_name<'a> {
+				contract: &'a ethabi::Contract,
+			}
+			impl<'a> #functions_name<'a> {
+				#(#functions)*
+			}
+			impl #name {
+				pub fn functions(&self) -> #functions_name {
+					#functions_name {
+						contract: &self.contract,
+					}
+				}
+			}
+
+		}
+	};
+
 	let result = quote! {
 		use ethabi;
 
 		const INTERNAL_ERR: &'static str = "`ethabi_derive` internal error";
-
-		pub mod logs {
-			use ethabi;
-			#(#logs_structs)*
-		}
-
-		pub mod events {
-			use ethabi;
-
-			#(#events_structs)*
-		}
-
-		pub mod functions {
-			use ethabi;
-
-			#(#func_structs)*
-		}
-
-		pub struct #functions_name<'a> {
-			contract: &'a ethabi::Contract,
-		}
-
-		impl<'a> #functions_name<'a> {
-			#(#functions)*
-		}
-
-		pub struct #events_name<'a> {
-			contract: &'a ethabi::Contract,
-		}
-
-		impl<'a> #events_name<'a> {
-			#(#events_impl)*
-		}
 
 		/// Contract
 		pub struct #name {
@@ -98,22 +126,14 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 		}
 
 		impl #name {
-			pub fn functions(&self) -> #functions_name {
-				#functions_name {
-					contract: &self.contract,
-				}
-			}
-
-			pub fn events(&self) -> #events_name {
-				#events_name {
-					contract: &self.contract,
-				}
-			}
-
 			#constructor_impl
 		}
 
+		#events_and_logs_quote
+
+		#functions_quote
 	};
+
 	Ok(result)
 }
 
