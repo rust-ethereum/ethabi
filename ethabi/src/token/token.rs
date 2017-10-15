@@ -81,15 +81,15 @@ impl Token {
 		match *self {
 			Token::Address(_) => *param_type == ParamType::Address,
 			Token::Bytes(_) => *param_type == ParamType::Bytes,
-			Token::Int(bytes) =>
-				if let ParamType::Int(size) = *param_type {
-					size <= bytes.len() * 8
+			Token::Int(_) =>
+				if let ParamType::Int(_) = *param_type {
+					true
 				} else {
 					false
 				},
-			Token::Uint(bytes) =>
-				if let ParamType::Uint(size) = *param_type {
-					size <= bytes.len() * 8
+			Token::Uint(_) =>
+				if let ParamType::Uint(_) = *param_type {
+					true
 				} else {
 					false
 				},
@@ -97,7 +97,7 @@ impl Token {
 			Token::String(_) => *param_type == ParamType::String,
 			Token::FixedBytes(ref bytes) =>
 				if let ParamType::FixedBytes(size) = *param_type {
-					size == bytes.len()
+					size >= bytes.len()
 				} else {
 					false
 				},
@@ -221,6 +221,7 @@ mod tests {
 		assert_not_type_check(vec![Token::Bool(false), Token::Uint([0u8; 32])], vec![ParamType::Uint(32), ParamType::Bool]);
 
 		assert_type_check(vec![Token::FixedBytes(vec![0, 0, 0, 0])], vec![ParamType::FixedBytes(4)]);
+		assert_type_check(vec![Token::FixedBytes(vec![0, 0, 0])], vec![ParamType::FixedBytes(4)]);
 		assert_not_type_check(vec![Token::FixedBytes(vec![0, 0, 0, 0])], vec![ParamType::FixedBytes(3)]);
 
 		assert_type_check(vec![Token::Array(vec![Token::Bool(false), Token::Bool(true)])], vec![ParamType::Array(Box::new(ParamType::Bool))]);
