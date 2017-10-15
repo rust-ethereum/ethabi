@@ -2,7 +2,7 @@
 name = "ethabi-tests"
 version = "0.1.0"
 dependencies = [
- "ethabi 4.0.0",
+ "ethabi 4.0.1",
  "ethabi-contract 4.0.0",
  "ethabi-derive 4.0.0",
  "rustc-hex 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -85,7 +85,7 @@ dependencies = [
 
 [[package]]
 name = "ethabi"
-version = "4.0.0"
+version = "4.0.1"
 dependencies = [
  "error-chain 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-hex 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -101,7 +101,7 @@ version = "4.0.0"
 dependencies = [
  "docopt 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "error-chain 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "ethabi 4.0.0",
+ "ethabi 4.0.1",
  "rustc-hex 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.15 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.15 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -115,7 +115,7 @@ version = "4.0.0"
 name = "ethabi-derive"
 version = "4.0.0"
 dependencies = [
- "ethabi 4.0.0",
+ "ethabi 4.0.1",
  "heck 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "quote 0.3.15 (registry+https://github.com/rust-lang/crates.io-index)",
  "syn 0.11.11 (registry+https://github.com/rust-lang/crates.io-index)",
