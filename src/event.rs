@@ -39,13 +39,6 @@ impl Event {
 
 	/// Creates topic filter
 	pub fn create_topics_filter(&self, topics: Vec<Token>) -> Result<Vec<[u8; 32]>, Error> {
-		let topic_params = self.interface.indexed_params(true);
-		let equal_len = topics.len() == topic_params.len();
-		let equal_types = topics.iter().zip(topic_params.iter()).all(|(topic, param)| topic.type_check(&param.kind));
-		if !equal_len || !equal_types {
-			return Err(Error::InvalidData);
-		}
-
 		let mut result = topics.into_iter()
 			.map(|topic| {
 				let encoded = Encoder::encode(vec![topic]);
