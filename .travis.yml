@@ -28,7 +28,7 @@ matrix:
 
 before_script:
   - export PATH=$HOME/.cargo/bin:$PATH
-  - cargo install cargo-travis || echo "cargo-travis already installed"
+  - cargo install --git https://github.com/roblabla/cargo-travis --branch cargo22 || echo "cargo-travis already installed"
 
 script:
   - cargo test
