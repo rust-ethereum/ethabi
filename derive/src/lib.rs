@@ -130,12 +130,6 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 	Ok(result)
 }
 
-/*
-fn string_ident(s: &str) -> syn::Ident {
-	syn::Ident::new(format!("\"{}\"", s))
-}
-*/
-
 fn get_options(attrs: &[syn::Attribute], name: &str) -> Result<Vec<syn::MetaItem>> {
 	let options = attrs.iter().find(|a| a.name() == name).map(|a| &a.value);
 	match options {
@@ -378,7 +372,7 @@ fn impl_contract_constructor(constructor: &Constructor) -> quote::Tokens {
 				inputs: #constructor_inputs
 			}
 			.encode_input(code, &v)
-			.expect("encode_input not to fail; ethabi_derive bug")
+			.expect(INTERNAL_ERR)
 		}
 	}
 }
@@ -661,7 +655,7 @@ fn declare_functions(function: &Function) -> quote::Tokens {
 
 			pub fn input<#(#template_params),*>(&self, #(#params),*) -> ethabi::Bytes {
 				let v: Vec<ethabi::Token> = vec![#(#usage),*];
-				self.function.encode_input(&v).expect("encode_input not to fail; ethabi_derive bug")
+				self.function.encode_input(&v).expect(super::INTERNAL_ERR)
 			}
 
 			#output_impl
