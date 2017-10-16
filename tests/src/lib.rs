@@ -113,4 +113,19 @@ mod tests {
 		let _filter = contract.events().transfer().create_filter(from, vec![to, to2]);
 		let _filter = contract.events().transfer().create_filter(None, None);
 	}
+
+	#[test]
+	fn test_calling_function() {
+		use eip20::Eip20;
+
+		let contract = Eip20::default();
+		let address_param = [0u8; 20];
+		let result = contract.functions().balance_of().call(address_param, move |data| {
+			assert_eq!(data, "70a082310000000000000000000000000000000000000000000000000000000000000000".from_hex().unwrap());
+			Ok("000000000000000000000000000000000000000000000000000000000036455b".from_hex().unwrap())
+        });
+		assert_eq!(result.unwrap().to_hex(), "000000000000000000000000000000000000000000000000000000000036455b");
+	}
+
 }
+
