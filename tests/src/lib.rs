@@ -13,7 +13,7 @@ use_contract!(validators, "Validators", "../res/Validators.abi");
 
 #[cfg(test)]
 mod tests {
-	use rustc_hex::{ToHex};
+	use rustc_hex::{ToHex, FromHex};
 
 	struct Wrapper([u8; 20]);
 
@@ -42,6 +42,19 @@ mod tests {
 		assert_eq!(expected, encoded_from_vec.to_hex());
 		assert_eq!(expected, encoded_from_vec_iter.to_hex());
 		assert_eq!(expected, encoded_from_vec_wrapped.to_hex());
+	}
+
+	#[test]
+	fn test_decoding_function_output() {
+		// Make sure that the output param type of the derived contract is correct
+
+		use eip20::Eip20;
+
+		let contract = Eip20::default();
+		let output = "000000000000000000000000000000000000000000000000000000000036455B".from_hex().unwrap();
+		let decoded_output = contract.functions().total_supply().output(&output).unwrap();
+		let expected_output = output.clone();
+		assert_eq!(expected_output, decoded_output);
 	}
 
 	#[test]
