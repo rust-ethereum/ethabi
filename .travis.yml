@@ -28,10 +28,10 @@ matrix:
 
 before_script:
   - export PATH=$HOME/.cargo/bin:$PATH
-  - cargo install --force --git https://github.com/roblabla/cargo-travis --branch cargo22 || echo "cargo-travis already installed"
+  - cargo install cargo-travis || echo "cargo-travis already installed"
 
 script:
   - cargo test
 
 after_success:
-  - cargo coveralls --exclude-pattern cli/,res/,snap/,target/,tests/,tools/
+  - cargo coveralls --exclude-pattern cli/,res/,snap/,target/,tests/,tools/,derive
