@@ -595,14 +595,14 @@ fn declare_functions(function: &Function) -> quote::Tokens {
 				}
 			},
 			_ => {
-				let o = "out.into_iter().next().expect(super::INTERNAL_ERR)".into();
+				let o = "out.next().expect(super::INTERNAL_ERR)".into();
 				let outs: Vec<_> = function.outputs
 					.iter()
 					.map(|param| from_token(&param.kind, &o))
 					.collect();
 
 				quote! {
-					let out = self.function.decode_output(output)?.into_iter();
+					let mut out = self.function.decode_output(output)?.into_iter();
 					Ok(( #(#outs),* ))
 				}
 			},
