@@ -1,9 +1,11 @@
 # ethabi
 
-[![Build Status][travis-image]][travis-url]
+[![Build Status][travis-image]][travis-url][![Build coverage][coveralls-image]][coveralls-url]
 
 [travis-image]: https://travis-ci.org/paritytech/ethabi.svg?branch=master
 [travis-url]: https://travis-ci.org/paritytech/ethabi
+[coveralls-image]: https://coveralls.io/repos/github/paritytech/ethabi/badge.svg?branch=master
+[coveralls-url]: http://coveralls.io/github/paritytech/ethabi?branch=master
 
 The ABI, Application Binary Interface, is basically how you call functions in a contract and get data back.
 
