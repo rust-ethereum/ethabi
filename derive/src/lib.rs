@@ -613,10 +613,17 @@ fn declare_functions(function: &Function) -> quote::Tokens {
 				#o_impl
 			}
 
-			pub fn call<F: FnOnce(ethabi::Bytes) -> ethabi::Result<ethabi::Bytes>, #(#template_params),*>(&self, #(#params ,)* call: F) -> ethabi::Result<#output_kinds>
+			pub fn call<#(#template_params),*>(&self, #(#params ,)* call: &Fn(ethabi::Bytes) -> Result<ethabi::Bytes, String>) -> ethabi::Result<#output_kinds>
 			{
 				let encoded_input = self.input(#(#names),*);
-				call(encoded_input).and_then(|encoded_output| self.output(&encoded_output))
+
+				// convert to ethabi::Result<ethabi::Bytes>
+				// match call(encoded_input) {
+				// 	Result::Ok(x) => ethabi::Result::Ok(x),
+				// 	Result::Err(x) => ethabi::Result::Err(x)
+				// }.and_then(|encoded_output| self.output(&encoded_output))
+
+				call(encoded_input).map_err(|x|	ethabi::Error::from_kind(ethabi::ErrorKind::CallError)).and_then(|encoded_output| self.output(&encoded_output))
 			}
 		}
 	};
