@@ -618,7 +618,7 @@ fn declare_functions(function: &Function) -> quote::Tokens {
 				let encoded_input = self.input(#(#names),*);
 
 				do_call(encoded_input)
-					.map_err(|x| ethabi::Error::with_chain(x, ethabi::ErrorKind::CallError))
+					.map_err(|x| ethabi::Error::with_chain(ethabi::Error::from(x), ethabi::ErrorKind::CallError))
 					.and_then(|encoded_output| self.output(&encoded_output))
 			}
 		}
