@@ -22,5 +22,10 @@ error_chain! {
 			description("Invalid data"),
 			display("Invalid data"),
 		}
+
+		CallError {
+			description("Call error"),
+			display("Call error"),
+		}
 	}
 }

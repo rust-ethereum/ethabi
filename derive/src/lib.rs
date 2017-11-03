@@ -531,7 +531,7 @@ fn declare_functions(function: &Function) -> quote::Tokens {
 	let name = syn::Ident::new(function.name.to_camel_case());
 
 	// [param0, hello_world, param2]
-	let names: Vec<_> = function.inputs
+	let ref names: Vec<_> = function.inputs
 		.iter()
 		.enumerate()
 		.map(|(index, param)| if param.name.is_empty() {
@@ -552,12 +552,12 @@ fn declare_functions(function: &Function) -> quote::Tokens {
 		.collect();
 
 	// [T0: Into<Uint>, T1: Into<Bytes>, T2: IntoIterator<Item = U2>, U2 = Into<Uint>]
-	let template_params: Vec<_> = function.inputs.iter().enumerate()
+	let ref template_params: Vec<_> = function.inputs.iter().enumerate()
 		.map(|(index, param)| template_param_type(&param.kind, index))
 		.collect();
 
 	// [param0: T0, hello_world: T1, param2: T2]
-	let params: Vec<_> = names.iter().zip(template_names.iter())
+	let ref params: Vec<_> = names.iter().zip(template_names.iter())
 		.map(|(param_name, template_name)| quote! { #param_name: #template_name })
 		.collect();
 
@@ -566,7 +566,7 @@ fn declare_functions(function: &Function) -> quote::Tokens {
 		.map(|(param_name, param)| to_token(&from_template_param(&param.kind, param_name), &param.kind))
 		.collect();
 
-	let output_impl = if !function.constant {
+	let output_call_impl = if !function.constant {
 		quote! {}
 	} else {
 		let output_kinds = match function.outputs.len() {
@@ -595,14 +595,14 @@ fn declare_functions(function: &Function) -> quote::Tokens {
 				}
 			},
 			_ => {
-				let o = "out.into_iter().next().expect(super::INTERNAL_ERR)".into();
+				let o = "out.next().expect(super::INTERNAL_ERR)".into();
 				let outs: Vec<_> = function.outputs
 					.iter()
 					.map(|param| from_token(&param.kind, &o))
 					.collect();
 
 				quote! {
-					let out = self.function.decode_output(output)?.into_iter();
+					let mut out = self.function.decode_output(output)?.into_iter();
 					Ok(( #(#outs),* ))
 				}
 			},
@@ -611,6 +611,15 @@ fn declare_functions(function: &Function) -> quote::Tokens {
 		quote! {
 			pub fn output(&self, output: &[u8]) -> ethabi::Result<#output_kinds> {
 				#o_impl
+			}
+
+			pub fn call<#(#template_params),*>(&self, #(#params ,)* do_call: &Fn(ethabi::Bytes) -> Result<ethabi::Bytes, String>) -> ethabi::Result<#output_kinds>
+			{
+				let encoded_input = self.input(#(#names),*);
+
+				do_call(encoded_input)
+					.map_err(|x| ethabi::Error::with_chain(ethabi::Error::from(x), ethabi::ErrorKind::CallError))
+					.and_then(|encoded_output| self.output(&encoded_output))
 			}
 		}
 	};
@@ -621,14 +630,14 @@ fn declare_functions(function: &Function) -> quote::Tokens {
 		let name = &x.name;
 		let kind = to_syntax_string(&x.kind);
 		format!(r##"ethabi::Param {{ name: "{}".to_owned(), kind: {} }}"##, name, kind).into()
-	}).collect::<Vec<syn::Ident>>(); // match ?
+	}).collect::<Vec<syn::Ident>>();
 	let function_inputs = quote! { vec![ #(#function_inputs),* ] };
 
 	let function_outputs = &function.outputs.iter().map(|x| {
 		let name = &x.name;
 		let kind = to_syntax_string(&x.kind);
 		format!(r##"ethabi::Param {{ name: "{}".to_owned(), kind: {} }}"##, name, kind).into()
-	}).collect::<Vec<syn::Ident>>(); // match ?
+	}).collect::<Vec<syn::Ident>>();
 	let function_outputs = quote! { vec![ #(#function_outputs),* ] };
 
 	let function_constant = &function.constant;
@@ -658,7 +667,7 @@ fn declare_functions(function: &Function) -> quote::Tokens {
 				self.function.encode_input(&v).expect(super::INTERNAL_ERR)
 			}
 
-			#output_impl
+			#output_call_impl
 		}
 	}
 }
