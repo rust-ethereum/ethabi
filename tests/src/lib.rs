@@ -1,16 +1,13 @@
 #![deny(warnings)]
 
 extern crate rustc_hex;
+extern crate futures;
 #[allow(unused_imports)]
 extern crate ethabi;
 #[macro_use]
 extern crate ethabi_derive;
 #[macro_use]
 extern crate ethabi_contract;
-
-extern crate futures;
-
-// include!("cc.rs");
 
 use_contract!(eip20, "Eip20", "../res/eip20.abi");
 use_contract_futures!(eip20_futures, "Eip20Futures", "../res/eip20.abi");
