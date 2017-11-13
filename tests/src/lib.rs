@@ -1,13 +1,19 @@
 #![deny(warnings)]
 
 extern crate rustc_hex;
+#[allow(unused_imports)]
 extern crate ethabi;
 #[macro_use]
 extern crate ethabi_derive;
 #[macro_use]
 extern crate ethabi_contract;
 
+extern crate futures;
+
+// include!("cc.rs");
+
 use_contract!(eip20, "Eip20", "../res/eip20.abi");
+use_contract_futures!(eip20_futures, "Eip20Futures", "../res/eip20.abi");
 use_contract!(constructor, "Constructor", "../res/con.abi");
 use_contract!(validators, "Validators", "../res/Validators.abi");
 
@@ -125,6 +131,27 @@ mod tests {
 			Ok("000000000000000000000000000000000000000000000000000000000036455b".from_hex().unwrap())
         });
 		assert_eq!(result.unwrap().to_hex(), "000000000000000000000000000000000000000000000000000000000036455b");
+	}
+
+	#[test]
+	fn test_calling_function_future() {
+		use eip20_futures::Eip20Futures;
+		use futures::{Future, future};
+
+		let contract = Eip20Futures::default();
+		let address_param = [0u8; 20];
+		let functions = contract.functions(); // .balance_of() is moved
+
+		let result = functions.balance_of().call_future(address_param, &|data| {
+			assert_eq!(data, "70a082310000000000000000000000000000000000000000000000000000000000000000".from_hex().unwrap());
+			Box::new(future::ok("000000000000000000000000000000000000000000000000000000000036455b".from_hex().unwrap()))
+        });
+		let result2 = functions.balance_of().call_future(address_param, &|data| {
+			assert_eq!(data, "70a082310000000000000000000000000000000000000000000000000000000000000000".from_hex().unwrap());
+			Box::new(future::ok("000000000000000000000000000000000000000000000000000000000036455b".from_hex().unwrap()))
+        });
+		assert_eq!(result.wait().unwrap().to_hex(), "000000000000000000000000000000000000000000000000000000000036455b");
+		assert_eq!(result2.wait().unwrap().to_hex(), "000000000000000000000000000000000000000000000000000000000036455b");
 	}
 
 }
