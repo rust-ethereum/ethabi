@@ -22,12 +22,11 @@ pub fn ethabi_derive(input: TokenStream) -> TokenStream {
 
 	let options = get_options(&ast.attrs, "ethabi_contract_options").expect(ERROR_MSG);
 	let futures = option_exists(&options, "futures");
-	let path = get_option_value(&options, "path").expect(ERROR_MSG);
-	let name = get_option_value(&options, "name").expect(ERROR_MSG);
+	let path = option_value(&options, "path").expect(ERROR_MSG);
+	let name = option_value(&options, "name").expect(ERROR_MSG);
 	let implementer = EthabiDeriveImplementer { futures, path, name };
 
 	let gen = implementer.implement().expect(ERROR_MSG);
-
 	gen.parse().expect(ERROR_MSG)
 }
 
@@ -49,7 +48,7 @@ fn option_exists<'a>(options: &'a [syn::MetaItem], name: &str) -> bool {
 	options.iter().find(|a| a.name() == name).is_some()
 }
 
-fn get_option_value<'a>(options: &'a [syn::MetaItem], name: &str) -> Result<&'a str> {
+fn option_value<'a>(options: &'a [syn::MetaItem], name: &str) -> Result<&'a str> {
 	let item = options.iter().find(|a| a.name() == name).chain_err(|| format!("Expected to find option {}", name))?;
 	value_of_meta_item(item, name)
 }
@@ -494,7 +493,7 @@ impl<'a> EthabiDeriveImplementer<'a> {
 
 			let call_future_quote = if self.futures {
 				quote! {
-					pub fn call_future</*'s,*/#(#template_params),*>(/*'s */self, #(#params ,)* do_call: &Fn(ethabi::Bytes) -> Box<Future<Item=ethabi::Bytes, Error=String>>) -> Box<Future<Item=#output_kinds, Error=ethabi::Error> /*+ 's*/>
+					pub fn call_future<#(#template_params),*>(self, #(#params ,)* do_call: &Fn(ethabi::Bytes) -> Box<Future<Item=ethabi::Bytes, Error=String>>) -> Box<Future<Item=#output_kinds, Error=ethabi::Error>>
 					{
 						let encoded_input = self.input(#(#names),*);
 
