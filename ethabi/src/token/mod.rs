@@ -43,6 +43,10 @@ pub trait Tokenizer {
 			return Err(ErrorKind::InvalidData.into());
 		}
 
+		if value.chars().count() == 2 {
+			return Ok(vec![]);
+		}
+
 		let mut result = vec![];
 		let mut nested = 0isize;
 		let mut ignore = false;
