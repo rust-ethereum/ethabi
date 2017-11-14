@@ -11,12 +11,12 @@ macro_rules! use_contract {
 }
 
 #[macro_export]
-macro_rules! use_contract_futures {
+macro_rules! use_contract_async {
 	($module: ident, $name: expr, $path: expr) => {
 		#[allow(dead_code)]
 		pub mod $module {
 			#[derive(EthabiContract)]
-			#[ethabi_contract_options(name = $name, path = $path, futures)]
+			#[ethabi_contract_options(name = $name, path = $path, async)]
 			struct _Dummy;
 		}
 	}

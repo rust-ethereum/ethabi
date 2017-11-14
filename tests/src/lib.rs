@@ -10,7 +10,7 @@ extern crate ethabi_derive;
 extern crate ethabi_contract;
 
 use_contract!(eip20, "Eip20", "../res/eip20.abi");
-use_contract_futures!(eip20_futures, "Eip20Futures", "../res/eip20.abi");
+use_contract_async!(eip20_async, "Eip20Async", "../res/eip20.abi");
 use_contract!(constructor, "Constructor", "../res/con.abi");
 use_contract!(validators, "Validators", "../res/Validators.abi");
 
@@ -126,27 +126,27 @@ mod tests {
 		let result = contract.functions().balance_of().call(address_param, &|data| {
 			assert_eq!(data, "70a082310000000000000000000000000000000000000000000000000000000000000000".from_hex().unwrap());
 			Ok("000000000000000000000000000000000000000000000000000000000036455b".from_hex().unwrap())
-        });
+		});
 		assert_eq!(result.unwrap().to_hex(), "000000000000000000000000000000000000000000000000000000000036455b");
 	}
 
 	#[test]
-	fn test_calling_function_future() {
-		use eip20_futures::Eip20Futures;
+	fn test_calling_function_async() {
+		use eip20_async::Eip20Async;
 		use futures::{Future, future};
 
-		let contract = Eip20Futures::default();
+		let contract = Eip20Async::default();
 		let address_param = [0u8; 20];
 		let functions = contract.functions(); // .balance_of() is moved
 
-		let result = functions.balance_of().call_future(address_param, &|data| {
+		let result = functions.balance_of().call_async(address_param, &|data| {
 			assert_eq!(data, "70a082310000000000000000000000000000000000000000000000000000000000000000".from_hex().unwrap());
 			Box::new(future::ok("000000000000000000000000000000000000000000000000000000000036455b".from_hex().unwrap()))
-        });
-		let result2 = functions.balance_of().call_future(address_param, &|data| {
+		});
+		let result2 = functions.balance_of().call_async(address_param, &|data| {
 			assert_eq!(data, "70a082310000000000000000000000000000000000000000000000000000000000000000".from_hex().unwrap());
 			Box::new(future::ok("000000000000000000000000000000000000000000000000000000000036455b".from_hex().unwrap()))
-        });
+		});
 		assert_eq!(result.wait().unwrap().to_hex(), "000000000000000000000000000000000000000000000000000000000036455b");
 		assert_eq!(result2.wait().unwrap().to_hex(), "000000000000000000000000000000000000000000000000000000000036455b");
 	}
