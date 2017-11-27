@@ -21,10 +21,9 @@ pub fn ethabi_derive(input: TokenStream) -> TokenStream {
 	let ast = syn::parse_derive_input(&s).expect(ERROR_MSG);
 
 	let options = get_options(&ast.attrs, "ethabi_contract_options").expect(ERROR_MSG);
-	let async = option_exists(&options, "async");
 	let path = option_value(&options, "path").expect(ERROR_MSG);
 	let name = option_value(&options, "name").expect(ERROR_MSG);
-	let implementer = EthabiDeriveImplementer { async, path, name };
+	let implementer = EthabiDeriveImplementer { path, name };
 
 	let gen = implementer.implement().expect(ERROR_MSG);
 	gen.parse().expect(ERROR_MSG)
@@ -44,10 +43,6 @@ fn get_options(attrs: &[syn::Attribute], name: &str) -> Result<Vec<syn::MetaItem
 	}
 }
 
-fn option_exists<'a>(options: &'a [syn::MetaItem], name: &str) -> bool {
-	options.iter().find(|a| a.name() == name).is_some()
-}
-
 fn option_value<'a>(options: &'a [syn::MetaItem], name: &str) -> Result<&'a str> {
 	let item = options.iter().find(|a| a.name() == name).chain_err(|| format!("Expected to find option {}", name))?;
 	value_of_meta_item(item, name)
@@ -61,7 +56,6 @@ fn value_of_meta_item<'a>(item: &'a syn::MetaItem, name: &str) -> Result<&'a str
 }
 
 struct EthabiDeriveImplementer<'a> {
-	async: bool,
 	path: &'a str,
 	name: &'a str,
 }
@@ -140,19 +134,9 @@ impl<'a> EthabiDeriveImplementer<'a> {
 			}
 		};
 
-		let futures_import_quote = if self.async {
-			quote! {
-				extern crate futures;
-				#[allow(unused_imports)]
-				use futures::{Future, IntoFuture};
-			}
-		} else {
-			quote! {}
-		};
-
 		let result = quote! {
-
-			#futures_import_quote
+			#[allow(unused_imports)]
+			use ::ethabi_contract::futures::{Future, IntoFuture};
 
 			#[allow(unused_imports)] // Not used if no constructor
 			use ethabi;
@@ -491,27 +475,6 @@ impl<'a> EthabiDeriveImplementer<'a> {
 				},
 			};
 
-			let call_async_quote = if self.async {
-				quote! {
-					pub fn call_async<__F, __T, __Fn, #(#template_params),*>(self, #(#params ,)* do_call: __Fn)
-						-> Box<Future<Item=#output_kinds, Error=ethabi::Error>>
-					where
-						__F: Future<Item=ethabi::Bytes, Error=String> + 'static,
-  						__T: IntoFuture<Future=__F, Item=ethabi::Bytes, Error=String>,
-						__Fn: FnOnce(ethabi::Bytes) -> __T
-					{
-						let encoded_input = self.input(#(#names),*);
-
-						Box::new(do_call(encoded_input)
-							.into_future()
-							.map_err(|x| ethabi::Error::with_chain(ethabi::Error::from(x), ethabi::ErrorKind::CallError))
-							.and_then(move |encoded_output| self.output(&encoded_output)))
-					}
-				}
-			} else {
-				quote! {}
-			};
-
 			quote! {
 				pub fn output(&self, output: &[u8]) -> ethabi::Result<#output_kinds> {
 					#o_impl
@@ -526,7 +489,20 @@ impl<'a> EthabiDeriveImplementer<'a> {
 						.and_then(|encoded_output| self.output(&encoded_output))
 				}
 
-				#call_async_quote
+				pub fn call_async<__F, __T, __Fn, #(#template_params),*>(self, #(#params ,)* do_call: __Fn)
+					-> Box<Future<Item=#output_kinds, Error=ethabi::Error>>
+				where
+					__F: Future<Item=ethabi::Bytes, Error=String> + 'static,
+					__T: IntoFuture<Future=__F, Item=ethabi::Bytes, Error=String>,
+					__Fn: FnOnce(ethabi::Bytes) -> __T
+				{
+					let encoded_input = self.input(#(#names),*);
+
+					Box::new(do_call(encoded_input)
+						.into_future()
+						.map_err(|x| ethabi::Error::with_chain(ethabi::Error::from(x), ethabi::ErrorKind::CallError))
+						.and_then(move |encoded_output| self.output(&encoded_output)))
+				}
 			}
 		};
 

@@ -6,3 +6,6 @@ homepage = "https://github.com/paritytech/ethabi"
 license = "MIT"
 keywords = ["ethereum", "eth", "abi", "solidity", "derive"]
 description = "Easy to use conversion of ethereum contract calls to bytecode."
+
+[dependencies]
+futures = "0.1"

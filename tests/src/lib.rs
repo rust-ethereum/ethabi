@@ -10,7 +10,7 @@ extern crate ethabi_derive;
 extern crate ethabi_contract;
 
 use_contract!(eip20, "Eip20", "../res/eip20.abi");
-use_contract_async!(eip20_async, "Eip20Async", "../res/eip20.abi");
+use_contract!(eip20_async, "Eip20Async", "../res/eip20.abi");
 use_contract!(constructor, "Constructor", "../res/con.abi");
 use_contract!(validators, "Validators", "../res/Validators.abi");
 
@@ -152,4 +152,3 @@ mod tests {
 	}
 
 }
-
