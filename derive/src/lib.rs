@@ -566,9 +566,7 @@ fn declare_functions(function: &Function) -> quote::Tokens {
 		.map(|(param_name, param)| to_token(&from_template_param(&param.kind, param_name), &param.kind))
 		.collect();
 
-	let output_call_impl = if !function.constant {
-		quote! {}
-	} else {
+	let output_call_impl = {
 		let output_kinds = match function.outputs.len() {
 			0 => quote! {()},
 			1 => {
@@ -608,18 +606,67 @@ fn declare_functions(function: &Function) -> quote::Tokens {
 			},
 		};
 
-		quote! {
-			pub fn output(&self, output: &[u8]) -> ethabi::Result<#output_kinds> {
-				#o_impl
+		if !function.constant {
+			quote! {
+				pub fn transact<CALLER: ethabi::Caller, #(#template_params),*>(self, #(#params ,)* do_call: CALLER)
+					-> ethabi::Result<()>
+				{
+					use self::ethabi::futures::{Future, IntoFuture};
+
+					let encoded_input = self.input(#(#names),*);
+
+					do_call.transact(encoded_input).into_future().wait()
+						.map_err(|x| ethabi::Error::with_chain(ethabi::Error::from(x), ethabi::ErrorKind::CallError))
+						.map(|_| ())
+				}
+
+				pub fn transact_async<CALLER: ethabi::Caller, #(#template_params),*>(self, #(#params ,)* do_call: CALLER)
+					-> Box<ethabi::futures::Future<Item=(), Error=ethabi::Error> + Send> where
+					<<CALLER as ethabi::Caller>::TransactOut as ethabi::futures::IntoFuture>::Future: Send + 'static,
+				{
+					use self::ethabi::futures::{Future, IntoFuture};
+
+					let encoded_input = self.input(#(#names),*);
+
+					Box::new(
+						do_call.transact(encoded_input).into_future()
+							.map_err(|x| ethabi::Error::with_chain(ethabi::Error::from(x), ethabi::ErrorKind::CallError))
+							.map(|_| ())
+					)
+				}
 			}
+		} else {
+			quote! {
+				pub fn output(&self, output: &[u8]) -> ethabi::Result<#output_kinds> {
+					#o_impl
+				}
 
-			pub fn call<#(#template_params),*>(&self, #(#params ,)* do_call: &Fn(ethabi::Bytes) -> Result<ethabi::Bytes, String>) -> ethabi::Result<#output_kinds>
-			{
-				let encoded_input = self.input(#(#names),*);
+				pub fn call<CALLER: ethabi::Caller, #(#template_params),*>(self, #(#params ,)* do_call: CALLER)
+					-> ethabi::Result<#output_kinds>
+				{
+					use self::ethabi::futures::{Future, IntoFuture};
 
-				do_call(encoded_input)
-					.map_err(|x| ethabi::Error::with_chain(ethabi::Error::from(x), ethabi::ErrorKind::CallError))
-					.and_then(|encoded_output| self.output(&encoded_output))
+					let encoded_input = self.input(#(#names),*);
+
+					do_call.call(encoded_input).into_future().wait()
+						.map_err(|x| ethabi::Error::with_chain(ethabi::Error::from(x), ethabi::ErrorKind::CallError))
+						.and_then(move |encoded_output| self.output(&encoded_output))
+				}
+
+				pub fn call_async<CALLER: ethabi::Caller, #(#template_params),*>(self, #(#params ,)* do_call: CALLER)
+					-> Box<ethabi::futures::Future<Item=#output_kinds, Error=ethabi::Error> + Send> where
+					<<CALLER as ethabi::Caller>::CallOut as ethabi::futures::IntoFuture>::Future: Send + 'static,
+				{
+					use self::ethabi::futures::{Future, IntoFuture};
+
+					let encoded_input = self.input(#(#names),*);
+
+					Box::new(
+						do_call.call(encoded_input).into_future()
+							.map_err(|x| ethabi::Error::with_chain(ethabi::Error::from(x), ethabi::ErrorKind::CallError))
+							.and_then(move |encoded_output| self.output(&encoded_output))
+					)
+				}
 			}
 		}
 	};
