@@ -1,3 +1,5 @@
+pub extern crate futures;
+
 #[macro_export]
 macro_rules! use_contract {
 	($module: ident, $name: expr, $path: expr) => {
