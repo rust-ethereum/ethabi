@@ -67,7 +67,7 @@ struct EthabiDeriveImplementer<'a> {
 }
 
 impl<'a> EthabiDeriveImplementer<'a> {
-	pub fn implement(self: &Self) -> Result<quote::Tokens> {
+	pub fn implement(&self) -> Result<quote::Tokens> {
 		let normalized_path = Self::normalize_path(self.path)?;
 		let source_file = fs::File::open(&normalized_path)
 			.chain_err(|| format!("Cannot load contract abi from `{}`", normalized_path.display()))?;
@@ -183,7 +183,7 @@ impl<'a> EthabiDeriveImplementer<'a> {
 		Ok(result)
 	}
 
-	fn impl_contract_function(self: &Self, function: &Function) -> quote::Tokens {
+	fn impl_contract_function(&self, function: &Function) -> quote::Tokens {
 		let name = syn::Ident::new(function.name.to_snake_case());
 		let function_name = syn::Ident::new(function.name.to_camel_case());
 
@@ -194,7 +194,7 @@ impl<'a> EthabiDeriveImplementer<'a> {
 		}
 	}
 
-	fn impl_contract_event(self: &Self, event: &Event) -> quote::Tokens {
+	fn impl_contract_event(&self, event: &Event) -> quote::Tokens {
 		let name = syn::Ident::new(event.name.to_snake_case());
 		let event_name = syn::Ident::new(event.name.to_camel_case());
 		quote! {
@@ -204,7 +204,7 @@ impl<'a> EthabiDeriveImplementer<'a> {
 		}
 	}
 
-	fn impl_contract_constructor(self: &Self, constructor: &Constructor) -> quote::Tokens {
+	fn impl_contract_constructor(&self, constructor: &Constructor) -> quote::Tokens {
 		// [param0, hello_world, param2]
 		let names: Vec<_> = constructor.inputs
 			.iter()
@@ -261,7 +261,7 @@ impl<'a> EthabiDeriveImplementer<'a> {
 		}
 	}
 
-	fn declare_logs(self: &Self, event: &Event) -> quote::Tokens {
+	fn declare_logs(&self, event: &Event) -> quote::Tokens {
 		let name = syn::Ident::new(event.name.to_camel_case());
 		let names: Vec<_> = event.inputs
 			.iter()
@@ -286,7 +286,7 @@ impl<'a> EthabiDeriveImplementer<'a> {
 		}
 	}
 
-	fn declare_events(self: &Self, event: &Event) -> quote::Tokens {
+	fn declare_events(&self, event: &Event) -> quote::Tokens {
 		let name = syn::Ident::new(event.name.to_camel_case());
 
 		// parse log
@@ -410,7 +410,7 @@ impl<'a> EthabiDeriveImplementer<'a> {
 		}
 	}
 
-	fn declare_functions(self: &Self, function: &Function) -> quote::Tokens {
+	fn declare_functions(&self, function: &Function) -> quote::Tokens {
 		let name = syn::Ident::new(function.name.to_camel_case());
 
 		// [param0, hello_world, param2]
