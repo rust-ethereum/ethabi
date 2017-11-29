@@ -21,9 +21,17 @@ pub fn ethabi_derive(input: TokenStream) -> TokenStream {
 	let ast = syn::parse_derive_input(&s).expect(ERROR_MSG);
 
 	let options = get_options(&ast.attrs, "ethabi_contract_options").expect(ERROR_MSG);
-	let path = option_value(&options, "path").expect(ERROR_MSG);
+	let abi_path = option_value(&options, "abi_path").ok();
+	let abi_inline = option_value(&options, "abi_inline").ok();
+	let abi = match (abi_path, abi_inline) {
+		(Some(_), Some(_)) => panic!(ERROR_MSG),
+		(Some(abi_path), None) => Abi::AbiPath(abi_path),
+		(None, Some(abi_inline)) => Abi::AbiInline(abi_inline),
+		(_, _) => panic!(ERROR_MSG),
+	};
+
 	let name = option_value(&options, "name").expect(ERROR_MSG);
-	let implementer = EthabiDeriveImplementer { path, name };
+	let implementer = EthabiDeriveImplementer { abi, name };
 
 	let gen = implementer.implement().expect(ERROR_MSG);
 	gen.parse().expect(ERROR_MSG)
@@ -55,17 +63,27 @@ fn value_of_meta_item<'a>(item: &'a syn::MetaItem, name: &str) -> Result<&'a str
 	}
 }
 
+enum Abi<'a> {
+	AbiPath(&'a str), AbiInline(&'a str)
+}
+
 struct EthabiDeriveImplementer<'a> {
-	path: &'a str,
+	abi: Abi<'a>,
 	name: &'a str,
 }
 
 impl<'a> EthabiDeriveImplementer<'a> {
 	pub fn implement(&self) -> Result<quote::Tokens> {
-		let normalized_path = Self::normalize_path(self.path)?;
-		let source_file = fs::File::open(&normalized_path)
-			.chain_err(|| format!("Cannot load contract abi from `{}`", normalized_path.display()))?;
-		let contract = Contract::load(source_file)?;
+		let contract = match self.abi {
+			Abi::AbiPath(abi_path) => {
+				let normalized_path = Self::normalize_path(abi_path)?;
+				let file = fs::File::open(&normalized_path).chain_err(|| format!("Cannot load contract abi from `{}`", normalized_path.display()))?;
+				Contract::load(file)?
+			}
+			Abi::AbiInline(abi_inline) => {
+				Contract::load(abi_inline.as_bytes())?
+			}
+		};
 
 		let functions: Vec<_> = contract.functions().map(|x| self.impl_contract_function(x)).collect();
 		let events_impl: Vec<_> = contract.events().map(|x| self.impl_contract_event(x)).collect();

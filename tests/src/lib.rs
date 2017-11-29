@@ -9,10 +9,10 @@ extern crate ethabi_derive;
 #[macro_use]
 extern crate ethabi_contract;
 
-use_contract!(eip20, "Eip20", "../res/eip20.abi");
-use_contract!(eip20_async, "Eip20Async", "../res/eip20.abi");
-use_contract!(constructor, "Constructor", "../res/con.abi");
-use_contract!(validators, "Validators", "../res/Validators.abi");
+use_contract!(eip20, "Eip20", include_str!("../res/eip20.abi"));
+use_contract!(eip20_async, "Eip20Async", "[{\"constant\": false,\"inputs\": [{\"name\": \"_spender\",\"type\": \"address\"},{\"name\": \"_value\",\"type\": \"uint256\"}],\"name\": \"approve\",\"outputs\": [{\"name\": \"success\",\"type\": \"bool\"}],\"type\": \"function\"},{\"constant\": true,\"inputs\": [],\"name\": \"totalSupply\",\"outputs\": [{\"name\": \"total\",\"type\": \"uint256\"}],\"type\": \"function\"},{\"constant\": false,\"inputs\": [{\"name\": \"_from\",\"type\": \"address\"},{\"name\": \"_to\",\"type\": \"address\"},{\"name\": \"_value\",\"type\": \"uint256\"}],\"name\": \"transferFrom\",\"outputs\": [{\"name\": \"success\",\"type\": \"bool\"}],\"type\": \"function\"},{\"constant\": true,\"inputs\": [{\"name\": \"_owner\",\"type\": \"address\"}],\"name\": \"balanceOf\",\"outputs\": [{\"name\": \"balance\",\"type\": \"uint256\"}],\"type\": \"function\"},{\"constant\": false,\"inputs\": [{\"name\": \"_to\",\"type\": \"address\"},{\"name\": \"_value\",\"type\": \"uint256\"}],\"name\": \"transfer\",\"outputs\": [{\"name\": \"success\",\"type\": \"bool\"}],\"type\": \"function\"},{\"constant\": true,\"inputs\": [{\"name\": \"_owner\",\"type\": \"address\"},{\"name\": \"_spender\",\"type\": \"address\"}],\"name\": \"allowance\",\"outputs\": [{\"name\": \"remaining\",\"type\": \"uint256\"}],\"type\": \"function\"},{\"anonymous\": false,\"inputs\": [{\"indexed\": true,\"name\": \"from\",\"type\": \"address\"},{\"indexed\": true,\"name\": \"to\",\"type\": \"address\"},{\"indexed\": false,\"name\": \"value\",\"type\": \"uint256\"}],\"name\": \"Transfer\",\"type\": \"event\"},{\"anonymous\": false,\"inputs\": [{\"indexed\": true,\"name\": \"owner\",\"type\": \"address\"},{\"indexed\": true,\"name\": \"spender\",\"type\": \"address\"},{\"indexed\": false,\"name\": \"value\",\"type\": \"uint256\"}],\"name\": \"Approval\",\"type\": \"event\"}]");
+use_contract!(constructor, "Constructor", include_str!("../res/con.abi"));
+use_contract!(validators, "Validators", include_str!("../res/Validators.abi"));
 
 #[cfg(test)]
 mod tests {
