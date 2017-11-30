@@ -577,6 +577,7 @@ impl<'a> EthabiDeriveImplementer<'a> {
 		// workaround for https://github.com/rust-lang/rust/issues/43860
 		let cargo_toml_directory = env::var("CARGO_MANIFEST_DIR").chain_err(|| "Cannot find manifest file")?;
 		let mut path: PathBuf = cargo_toml_directory.into();
+		path.push("src");
 		path.push(relative_path);
 		Ok(path)
 	}
