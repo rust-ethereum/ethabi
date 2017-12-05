@@ -178,7 +178,7 @@ fn impl_contract_function(function: &Function) -> quote::Tokens {
 fn to_syntax_string(param_type : &ethabi::ParamType) -> quote::Tokens {
 	match *param_type {
 		ParamType::Address => quote! { ethabi::ParamType::Address },
-		ParamType::Bytes => quote! { ethabi::ParamType::Address },
+		ParamType::Bytes => quote! { ethabi::ParamType::Bytes },
 		ParamType::Int(x) => quote! { ethabi::ParamType::Int(#x) },
 		ParamType::Uint(x) => quote! { ethabi::ParamType::Uint(#x) },
 		ParamType::Bool => quote! { ethabi::ParamType::Bool },
