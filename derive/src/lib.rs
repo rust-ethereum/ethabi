@@ -397,6 +397,7 @@ fn declare_logs(event: &Event) -> quote::Tokens {
 		.collect();
 
 	quote! {
+		#[derive(Debug)]
 		pub struct #name {
 			#(#params)*
 		}
