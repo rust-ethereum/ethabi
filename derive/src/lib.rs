@@ -49,6 +49,7 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 		quote! {
 			pub mod events {
 				use ethabi;
+				use ethabi::ParseLog;
 
 				#(#events_structs)*
 			}
@@ -504,15 +505,20 @@ fn declare_events(event: &Event) -> quote::Tokens {
 			}
 		}
 
-		impl #name {
+		impl ParseLog for #name {
+			type Log = super::logs::#name;
+
 			/// Parses log.
-			pub fn parse_log(&self, log: ethabi::RawLog) -> ethabi::Result<super::logs::#name> {
+			fn parse_log(&self, log: ethabi::RawLog) -> ethabi::Result<Self::Log> {
 				let mut log = self.event.parse_log(log)?.params.into_iter();
 				let result = super::logs::#name {
 					#(#log_params),*
 				};
 				Ok(result)
 			}
+		}
+
+		impl #name {
 
 			/// Creates topic filter.
 			pub fn create_filter<#(#template_params),*>(&self, #(#params),*) -> ethabi::TopicFilter {
