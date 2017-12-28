@@ -151,10 +151,10 @@ fn get_option<'a>(options: &'a [syn::MetaItem], name: &str) -> Result<&'a str> {
 }
 
 fn str_value_of_meta_item<'a>(item: &'a syn::MetaItem, name: &str) -> Result<&'a str> {
-    match *item {
-        syn::MetaItem::NameValue(_, syn::Lit::Str(ref value, _)) => Ok(&*value),
-        _ => Err(format!(r#"`{}` must be in the form `#[{}="something"]`"#, name, name).into()),
-    }
+	match *item {
+		syn::MetaItem::NameValue(_, syn::Lit::Str(ref value, _)) => Ok(&*value),
+		_ => Err(format!(r#"`{}` must be in the form `#[{}="something"]`"#, name, name).into()),
+	}
 }
 
 fn normalize_path(relative_path: &str) -> Result<PathBuf> {
