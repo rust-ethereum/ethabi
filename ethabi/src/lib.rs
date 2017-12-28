@@ -43,7 +43,7 @@ pub use decoder::decode;
 pub use filter::{Topic, TopicFilter, RawTopicFilter};
 pub use function::Function;
 pub use param::Param;
-pub use log::{Log, RawLog, LogParam};
+pub use log::{Log, RawLog, LogParam, ParseLog};
 pub use event::Event;
 pub use event_param::EventParam;
 
