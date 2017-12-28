@@ -1,4 +1,15 @@
-use {Hash, Token, Bytes};
+use {Hash, Token, Bytes, Result};
+
+/// trait common to things (events) that have an associated `Log` type
+/// that can be parsed from a `RawLog`
+pub trait ParseLog {
+	/// the associated `Log` type that can be parsed from a `RawLog`
+	/// by calling `parse_log`
+	type Log;
+
+	/// parse the associated `Log` type from a `RawLog`
+	fn parse_log(&self, log: RawLog) -> Result<Self::Log>;
+}
 
 /// Ethereum log.
 #[derive(Debug, PartialEq)]
