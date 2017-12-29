@@ -520,7 +520,6 @@ fn declare_events(event: &Event) -> quote::Tokens {
 		}
 
 		impl #name {
-
 			/// Creates topic filter.
 			pub fn create_filter<#(#template_params),*>(&self, #(#params),*) -> ethabi::TopicFilter {
 				let raw = ethabi::RawTopicFilter {
