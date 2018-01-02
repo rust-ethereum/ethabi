@@ -132,6 +132,14 @@ mod tests {
 	}
 
 	#[test]
+	fn tokenize_empty_array() {
+		assert_eq!(
+			StrictTokenizer::tokenize(&ParamType::Array(Box::new(ParamType::Bool)), "[]").unwrap(),
+			Token::Array(vec![])
+		);
+	}
+
+	#[test]
 	fn tokenize_bool_array() {
 		assert_eq!(
 			StrictTokenizer::tokenize(&ParamType::Array(Box::new(ParamType::Bool)), "[true,1,0,false]").unwrap(),
