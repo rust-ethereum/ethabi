@@ -49,6 +49,7 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 		quote! {
 			pub mod events {
 				use ethabi;
+				use ethabi::ParseLog;
 
 				#(#events_structs)*
 			}
@@ -150,10 +151,10 @@ fn get_option<'a>(options: &'a [syn::MetaItem], name: &str) -> Result<&'a str> {
 }
 
 fn str_value_of_meta_item<'a>(item: &'a syn::MetaItem, name: &str) -> Result<&'a str> {
-    match *item {
-        syn::MetaItem::NameValue(_, syn::Lit::Str(ref value, _)) => Ok(&*value),
-        _ => Err(format!(r#"`{}` must be in the form `#[{}="something"]`"#, name, name).into()),
-    }
+	match *item {
+		syn::MetaItem::NameValue(_, syn::Lit::Str(ref value, _)) => Ok(&*value),
+		_ => Err(format!(r#"`{}` must be in the form `#[{}="something"]`"#, name, name).into()),
+	}
 }
 
 fn normalize_path(relative_path: &str) -> Result<PathBuf> {
@@ -396,6 +397,7 @@ fn declare_logs(event: &Event) -> quote::Tokens {
 		.collect();
 
 	quote! {
+		#[derive(Debug)]
 		pub struct #name {
 			#(#params)*
 		}
@@ -504,16 +506,20 @@ fn declare_events(event: &Event) -> quote::Tokens {
 			}
 		}
 
-		impl #name {
+		impl ParseLog for #name {
+			type Log = super::logs::#name;
+
 			/// Parses log.
-			pub fn parse_log(&self, log: ethabi::RawLog) -> ethabi::Result<super::logs::#name> {
+			fn parse_log(&self, log: ethabi::RawLog) -> ethabi::Result<Self::Log> {
 				let mut log = self.event.parse_log(log)?.params.into_iter();
 				let result = super::logs::#name {
 					#(#log_params),*
 				};
 				Ok(result)
 			}
+		}
 
+		impl #name {
 			/// Creates topic filter.
 			pub fn create_filter<#(#template_params),*>(&self, #(#params),*) -> ethabi::TopicFilter {
 				let raw = ethabi::RawTopicFilter {
