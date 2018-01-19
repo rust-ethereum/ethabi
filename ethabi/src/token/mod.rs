@@ -16,13 +16,13 @@ pub trait Tokenizer {
 	/// Tries to parse a string as a token of given type.
 	fn tokenize(param: &ParamType, value: &str) -> Result<Token, Error> {
 		match *param {
-			ParamType::Address => Self::tokenize_address(value).map(Token::Address),
+			ParamType::Address => Self::tokenize_address(value).map(|a| Token::Address(a.into())),
 			ParamType::String => Self::tokenize_string(value).map(Token::String),
 			ParamType::Bool => Self::tokenize_bool(value).map(Token::Bool),
 			ParamType::Bytes => Self::tokenize_bytes(value).map(Token::Bytes),
 			ParamType::FixedBytes(len) => Self::tokenize_fixed_bytes(value, len).map(Token::FixedBytes),
-			ParamType::Uint(_) => Self::tokenize_uint(value).map(Token::Uint),
-			ParamType::Int(_) => Self::tokenize_int(value).map(Token::Int),
+			ParamType::Uint(_) => Self::tokenize_uint(value).map(Into::into).map(Token::Uint),
+			ParamType::Int(_) => Self::tokenize_int(value).map(Into::into).map(Token::Int),
 			ParamType::Array(ref p) => Self::tokenize_array(value, p).map(Token::Array),
 			ParamType::FixedArray(ref p, len) => Self::tokenize_fixed_array(value, p, len).map(Token::FixedArray),
 		}.chain_err(|| format!("Cannot parse {}", param))
