@@ -14,12 +14,13 @@ use_contract!(validators, "Validators", "../res/Validators.abi");
 #[cfg(test)]
 mod tests {
 	use rustc_hex::{ToHex, FromHex};
+	use ethabi::{Address, Uint};
 
 	struct Wrapper([u8; 20]);
 
-	impl Into<[u8; 20]> for Wrapper {
-		fn into(self) -> [u8; 20] {
-			self.0
+	impl Into<Address> for Wrapper {
+		fn into(self) -> Address {
+			self.0.into()
 		}
 	}
 
@@ -53,7 +54,7 @@ mod tests {
 		let contract = Eip20::default();
 		let output = "000000000000000000000000000000000000000000000000000000000036455B".from_hex().unwrap();
 		let decoded_output = contract.functions().total_supply().output(&output).unwrap();
-		let expected_output = output.clone();
+		let expected_output: Uint = 0x36455b.into();
 		assert_eq!(expected_output, decoded_output);
 	}
 
@@ -107,9 +108,9 @@ mod tests {
 		// 4 bytes signature + 2 * 32 bytes for params
 		assert_eq!(encoded.to_hex(), expected);
 
-		let from = [2u8; 20];
-		let to = [3u8; 20];
-		let to2 = [4u8; 20];
+		let from: Address = [2u8; 20].into();
+		let to: Address = [3u8; 20].into();
+		let to2: Address = [4u8; 20].into();
 		let _filter = contract.events().transfer().create_filter(from, vec![to, to2]);
 		let _filter = contract.events().transfer().create_filter(None, None);
 	}
@@ -124,7 +125,7 @@ mod tests {
 			assert_eq!(data, "70a082310000000000000000000000000000000000000000000000000000000000000000".from_hex().unwrap());
 			Ok("000000000000000000000000000000000000000000000000000000000036455b".from_hex().unwrap())
         });
-		assert_eq!(result.unwrap().to_hex(), "000000000000000000000000000000000000000000000000000000000036455b");
+		assert_eq!(result.unwrap(), "000000000000000000000000000000000000000000000000000000000036455b".into());
 	}
 
 }

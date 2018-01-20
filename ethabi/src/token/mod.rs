@@ -3,13 +3,11 @@
 mod lenient;
 mod strict;
 mod token;
-mod from_hex;
 
 use {ParamType, Error, ErrorKind, ResultExt};
 pub use self::lenient::LenientTokenizer;
 pub use self::strict::StrictTokenizer;
 pub use self::token::Token;
-pub use self::from_hex::TokenFromHex;
 
 /// This trait should be used to parse string values as tokens.
 pub trait Tokenizer {
