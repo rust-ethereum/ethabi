@@ -47,7 +47,6 @@ pub use event::Event;
 pub use event_param::EventParam;
 
 /// ABI address.
-//pub type Address = [u8; 20];
 pub type Address = ethereum_types::Address;
 
 /// ABI fixed bytes.
@@ -63,5 +62,4 @@ pub type Int = ethereum_types::U256;
 pub type Uint = ethereum_types::U256;
 
 /// Commonly used FixedBytes of size 32
-//pub type Hash = [u8; 32];
 pub type Hash = ethereum_types::H256;
