@@ -1,7 +1,7 @@
 //! ABI decoder.
 
 use util::slice_data;
-use {Token, ErrorKind, Error, ResultExt, ParamType, Hash};
+use {Token, ErrorKind, Error, ResultExt, ParamType};
 
 struct DecodeResult {
 	token: Token,
@@ -13,7 +13,7 @@ struct BytesTaken {
 	new_offset: usize,
 }
 
-fn as_u32(slice: &Hash) -> Result<u32, Error> {
+fn as_u32(slice: &[u8; 32]) -> Result<u32, Error> {
 	if !slice[..28].iter().all(|x| *x == 0) {
 		return Err(ErrorKind::InvalidData.into());
 	}
@@ -26,7 +26,7 @@ fn as_u32(slice: &Hash) -> Result<u32, Error> {
 	Ok(result)
 }
 
-fn as_bool(slice: &Hash) -> Result<bool, Error> {
+fn as_bool(slice: &[u8; 32]) -> Result<bool, Error> {
 	if !slice[..31].iter().all(|x| *x == 0) {
 		return Err(ErrorKind::InvalidData.into());
 	}
@@ -47,11 +47,11 @@ pub fn decode(types: &[ParamType], data: &[u8]) -> Result<Vec<Token>, Error> {
 	Ok(tokens)
 }
 
-fn peek(slices: &[Hash], position: usize) -> Result<&Hash, Error> {
+fn peek(slices: &[[u8; 32]], position: usize) -> Result<&[u8; 32], Error> {
 	slices.get(position).ok_or_else(|| ErrorKind::InvalidData.into())
 }
 
-fn take_bytes(slices: &[Hash], position: usize, len: usize) -> Result<BytesTaken, Error> {
+fn take_bytes(slices: &[[u8; 32]], position: usize, len: usize) -> Result<BytesTaken, Error> {
 	let slices_len = (len + 31) / 32;
 
 	let mut bytes_slices = vec![];
@@ -73,7 +73,7 @@ fn take_bytes(slices: &[Hash], position: usize, len: usize) -> Result<BytesTaken
 	Ok(taken)
 }
 
-fn decode_param(param: &ParamType, slices: &[Hash], offset: usize) -> Result<DecodeResult, Error> {
+fn decode_param(param: &ParamType, slices: &[[u8; 32]], offset: usize) -> Result<DecodeResult, Error> {
 	match *param {
 		ParamType::Address => {
 			let slice = try!(peek(slices, offset));
@@ -81,7 +81,7 @@ fn decode_param(param: &ParamType, slices: &[Hash], offset: usize) -> Result<Dec
 			address.copy_from_slice(&slice[12..]);
 
 			let result = DecodeResult {
-				token: Token::Address(address),
+				token: Token::Address(address.into()),
 				new_offset: offset + 1,
 			};
 
@@ -91,7 +91,7 @@ fn decode_param(param: &ParamType, slices: &[Hash], offset: usize) -> Result<Dec
 			let slice = try!(peek(slices, offset));
 
 			let result = DecodeResult {
-				token: Token::Int(slice.clone()),
+				token: Token::Int(slice.clone().into()),
 				new_offset: offset + 1,
 			};
 
@@ -101,7 +101,7 @@ fn decode_param(param: &ParamType, slices: &[Hash], offset: usize) -> Result<Dec
 			let slice = try!(peek(slices, offset));
 
 			let result = DecodeResult {
-				token: Token::Uint(slice.clone()),
+				token: Token::Uint(slice.clone().into()),
 				new_offset: offset + 1,
 			};
 
@@ -211,7 +211,7 @@ mod tests {
 	#[test]
 	fn decode_address() {
 		let encoded = "0000000000000000000000001111111111111111111111111111111111111111".from_hex().unwrap();
-		let address = Token::Address([0x11u8; 20]);
+		let address = Token::Address([0x11u8; 20].into());
 		let expected = vec![address];
 		let decoded = decode(&[ParamType::Address], &encoded).unwrap();
 		assert_eq!(decoded, expected);
@@ -222,8 +222,8 @@ mod tests {
 		let encoded = ("".to_owned() +
 					   "0000000000000000000000001111111111111111111111111111111111111111" +
 					   "0000000000000000000000002222222222222222222222222222222222222222").from_hex().unwrap();
-		let address1 = Token::Address([0x11u8; 20]);
-		let address2 = Token::Address([0x22u8; 20]);
+		let address1 = Token::Address([0x11u8; 20].into());
+		let address2 = Token::Address([0x22u8; 20].into());
 		let expected = vec![address1, address2];
 		let decoded = decode(&[ParamType::Address, ParamType::Address], &encoded).unwrap();
 		assert_eq!(decoded, expected);
@@ -234,8 +234,8 @@ mod tests {
 		let encoded = ("".to_owned() +
 					   "0000000000000000000000001111111111111111111111111111111111111111" +
 					   "0000000000000000000000002222222222222222222222222222222222222222").from_hex().unwrap();
-		let address1 = Token::Address([0x11u8; 20]);
-		let address2 = Token::Address([0x22u8; 20]);
+		let address1 = Token::Address([0x11u8; 20].into());
+		let address2 = Token::Address([0x22u8; 20].into());
 		let expected = vec![Token::FixedArray(vec![address1, address2])];
 		let decoded = decode(&[ParamType::FixedArray(Box::new(ParamType::Address), 2)], &encoded).unwrap();
 		assert_eq!(decoded, expected);
@@ -244,7 +244,7 @@ mod tests {
 	#[test]
 	fn decode_uint() {
 		let encoded = "1111111111111111111111111111111111111111111111111111111111111111".from_hex().unwrap();
-		let uint = Token::Uint([0x11u8; 32]);
+		let uint = Token::Uint([0x11u8; 32].into());
 		let expected = vec![uint];
 		let decoded = decode(&[ParamType::Uint(32)], &encoded).unwrap();
 		assert_eq!(decoded, expected);
@@ -253,7 +253,7 @@ mod tests {
 	#[test]
 	fn decode_int() {
 		let encoded = "1111111111111111111111111111111111111111111111111111111111111111".from_hex().unwrap();
-		let int = Token::Int([0x11u8; 32]);
+		let int = Token::Int([0x11u8; 32].into());
 		let expected = vec![int];
 		let decoded = decode(&[ParamType::Int(32)], &encoded).unwrap();
 		assert_eq!(decoded, expected);
@@ -266,8 +266,8 @@ mod tests {
 			"0000000000000000000000000000000000000000000000000000000000000002" +
 			"0000000000000000000000001111111111111111111111111111111111111111" +
 			"0000000000000000000000002222222222222222222222222222222222222222").from_hex().unwrap();
-		let address1 = Token::Address([0x11u8; 20]);
-		let address2 = Token::Address([0x22u8; 20]);
+		let address1 = Token::Address([0x11u8; 20].into());
+		let address2 = Token::Address([0x22u8; 20].into());
 		let addresses = Token::Array(vec![address1, address2]);
 		let expected = vec![addresses];
 		let decoded = decode(&[ParamType::Array(Box::new(ParamType::Address))], &encoded).unwrap();
@@ -283,10 +283,10 @@ mod tests {
 			"0000000000000000000000002222222222222222222222222222222222222222" +
 			"0000000000000000000000003333333333333333333333333333333333333333" +
 			"0000000000000000000000004444444444444444444444444444444444444444").from_hex().unwrap();
-		let address1 = Token::Address([0x11u8; 20]);
-		let address2 = Token::Address([0x22u8; 20]);
-		let address3 = Token::Address([0x33u8; 20]);
-		let address4 = Token::Address([0x44u8; 20]);
+		let address1 = Token::Address([0x11u8; 20].into());
+		let address2 = Token::Address([0x22u8; 20].into());
+		let address3 = Token::Address([0x33u8; 20].into());
+		let address4 = Token::Address([0x44u8; 20].into());
 		let array0 = Token::FixedArray(vec![address1, address2]);
 		let array1 = Token::FixedArray(vec![address3, address4]);
 		let dynamic = Token::Array(vec![array0, array1]);
@@ -311,8 +311,8 @@ mod tests {
 			"0000000000000000000000000000000000000000000000000000000000000001" +
 			"0000000000000000000000002222222222222222222222222222222222222222").from_hex().unwrap();
 
-		let address1 = Token::Address([0x11u8; 20]);
-		let address2 = Token::Address([0x22u8; 20]);
+		let address1 = Token::Address([0x11u8; 20].into());
+		let address2 = Token::Address([0x22u8; 20].into());
 		let array0 = Token::Array(vec![address1]);
 		let array1 = Token::Array(vec![address2]);
 		let dynamic = Token::Array(vec![array0, array1]);
@@ -339,10 +339,10 @@ mod tests {
 			"0000000000000000000000003333333333333333333333333333333333333333" +
 			"0000000000000000000000004444444444444444444444444444444444444444").from_hex().unwrap();
 
-		let address1 = Token::Address([0x11u8; 20]);
-		let address2 = Token::Address([0x22u8; 20]);
-		let address3 = Token::Address([0x33u8; 20]);
-		let address4 = Token::Address([0x44u8; 20]);
+		let address1 = Token::Address([0x11u8; 20].into());
+		let address2 = Token::Address([0x22u8; 20].into());
+		let address3 = Token::Address([0x33u8; 20].into());
+		let address4 = Token::Address([0x44u8; 20].into());
 		let array0 = Token::Array(vec![address1, address2]);
 		let array1 = Token::Array(vec![address3, address4]);
 		let dynamic = Token::Array(vec![array0, array1]);
@@ -362,10 +362,10 @@ mod tests {
 			"0000000000000000000000002222222222222222222222222222222222222222" +
 			"0000000000000000000000003333333333333333333333333333333333333333" +
 			"0000000000000000000000004444444444444444444444444444444444444444").from_hex().unwrap();
-		let address1 = Token::Address([0x11u8; 20]);
-		let address2 = Token::Address([0x22u8; 20]);
-		let address3 = Token::Address([0x33u8; 20]);
-		let address4 = Token::Address([0x44u8; 20]);
+		let address1 = Token::Address([0x11u8; 20].into());
+		let address2 = Token::Address([0x22u8; 20].into());
+		let address3 = Token::Address([0x33u8; 20].into());
+		let address4 = Token::Address([0x44u8; 20].into());
 		let array0 = Token::FixedArray(vec![address1, address2]);
 		let array1 = Token::FixedArray(vec![address3, address4]);
 		let fixed = Token::FixedArray(vec![array0, array1]);
@@ -392,10 +392,10 @@ mod tests {
 			"0000000000000000000000000000000000000000000000000000000000000002" +
 			"0000000000000000000000003333333333333333333333333333333333333333" +
 			"0000000000000000000000004444444444444444444444444444444444444444").from_hex().unwrap();
-		let address1 = Token::Address([0x11u8; 20]);
-		let address2 = Token::Address([0x22u8; 20]);
-		let address3 = Token::Address([0x33u8; 20]);
-		let address4 = Token::Address([0x44u8; 20]);
+		let address1 = Token::Address([0x11u8; 20].into());
+		let address2 = Token::Address([0x22u8; 20].into());
+		let address3 = Token::Address([0x33u8; 20].into());
+		let address4 = Token::Address([0x44u8; 20].into());
 		let array0 = Token::Array(vec![address1, address2]);
 		let array1 = Token::Array(vec![address3, address4]);
 		let fixed = Token::FixedArray(vec![array0, array1]);

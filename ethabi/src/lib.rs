@@ -13,6 +13,8 @@ extern crate serde_derive;
 #[macro_use]
 extern crate error_chain;
 
+extern crate ethereum_types;
+
 pub mod param_type;
 pub mod token;
 mod constructor;
@@ -28,7 +30,7 @@ mod log;
 mod operation;
 mod param;
 mod signature;
-pub mod util;
+mod util;
 
 pub use param_type::ParamType;
 pub use constructor::Constructor;
@@ -45,7 +47,7 @@ pub use event::Event;
 pub use event_param::EventParam;
 
 /// ABI address.
-pub type Address = [u8; 20];
+pub type Address = ethereum_types::Address;
 
 /// ABI fixed bytes.
 pub type FixedBytes = Vec<u8>;
@@ -54,10 +56,10 @@ pub type FixedBytes = Vec<u8>;
 pub type Bytes = Vec<u8>;
 
 /// ABI signed integer.
-pub type Int = [u8; 32];
+pub type Int = ethereum_types::U256;
 
 /// ABI unsigned integer.
-pub type Uint = [u8; 32];
+pub type Uint = ethereum_types::U256;
 
 /// Commonly used FixedBytes of size 32
-pub type Hash = [u8; 32];
+pub type Hash = ethereum_types::H256;

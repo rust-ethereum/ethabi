@@ -75,8 +75,8 @@ mod tests {
 
 	#[test]
 	fn tokenize_address() {
-		assert_eq!(StrictTokenizer::tokenize(&ParamType::Address, "1111111111111111111111111111111111111111").unwrap(), Token::Address([0x11u8; 20]));
-		assert_eq!(StrictTokenizer::tokenize(&ParamType::Address, "2222222222222222222222222222222222222222").unwrap(), Token::Address([0x22u8; 20]));
+		assert_eq!(StrictTokenizer::tokenize(&ParamType::Address, "1111111111111111111111111111111111111111").unwrap(), Token::Address([0x11u8; 20].into()));
+		assert_eq!(StrictTokenizer::tokenize(&ParamType::Address, "2222222222222222222222222222222222222222").unwrap(), Token::Address([0x22u8; 20].into()));
 	}
 
 	#[test]
@@ -109,12 +109,12 @@ mod tests {
 	fn tokenize_uint() {
 		assert_eq!(
 			StrictTokenizer::tokenize(&ParamType::Uint(256), "1111111111111111111111111111111111111111111111111111111111111111").unwrap(),
-			Token::Uint([0x11u8; 32])
+			Token::Uint([0x11u8; 32].into())
 		);
 
 		assert_eq!(
 			StrictTokenizer::tokenize(&ParamType::Uint(256), "2222222222222222222222222222222222222222222222222222222222222222").unwrap(),
-			Token::Uint([0x22u8; 32])
+			Token::Uint([0x22u8; 32].into())
 		);
 	}
 
@@ -122,12 +122,12 @@ mod tests {
 	fn tokenize_int() {
 		assert_eq!(
 			StrictTokenizer::tokenize(&ParamType::Int(256), "1111111111111111111111111111111111111111111111111111111111111111").unwrap(),
-			Token::Int([0x11u8; 32])
+			Token::Int([0x11u8; 32].into())
 		);
 
 		assert_eq!(
 			StrictTokenizer::tokenize(&ParamType::Int(256), "2222222222222222222222222222222222222222222222222222222222222222").unwrap(),
-			Token::Int([0x22u8; 32])
+			Token::Int([0x22u8; 32].into())
 		);
 	}
 
@@ -158,3 +158,4 @@ mod tests {
 		);
 	}
 }
+
