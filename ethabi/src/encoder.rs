@@ -3,13 +3,13 @@
 use util::pad_u32;
 use {Token, Hash, Bytes};
 
-fn pad_bytes(bytes: &[u8]) -> Vec<Hash> {
+fn pad_bytes(bytes: &[u8]) -> Vec<[u8; 32]> {
 	let mut result = vec![pad_u32(bytes.len() as u32)];
 	result.extend(pad_fixed_bytes(bytes));
 	result
 }
 
-fn pad_fixed_bytes(bytes: &[u8]) -> Vec<Hash> {
+fn pad_fixed_bytes(bytes: &[u8]) -> Vec<[u8; 32]> {
 	let mut result = vec![];
 	let len = (bytes.len() + 31) / 32;
 	for i in 0..len {
@@ -33,8 +33,8 @@ fn pad_fixed_bytes(bytes: &[u8]) -> Vec<Hash> {
 
 #[derive(Debug)]
 enum Mediate {
-	Raw(Vec<Hash>),
-	Prefixed(Vec<Hash>),
+	Raw(Vec<[u8; 32]>),
+	Prefixed(Vec<[u8; 32]>),
 	FixedArray(Vec<Mediate>),
 	Array(Vec<Mediate>),
 }
@@ -65,7 +65,7 @@ impl Mediate {
 		mediates[0..position].iter().fold(init_len, |acc, m| acc + m.closing_len())
 	}
 
-	fn init(&self, suffix_offset: u32) -> Vec<Hash> {
+	fn init(&self, suffix_offset: u32) -> Vec<[u8; 32]> {
 		match *self {
 			Mediate::Raw(ref raw) => raw.clone(),
 			Mediate::FixedArray(ref nes) => {
@@ -80,7 +80,7 @@ impl Mediate {
 		}
 	}
 
-	fn closing(&self, offset: u32) -> Vec<Hash> {
+	fn closing(&self, offset: u32) -> Vec<[u8; 32]> {
 		match *self {
 			Mediate::Raw(_) => vec![],
 			Mediate::Prefixed(ref pre) => pre.clone(),
@@ -139,11 +139,14 @@ fn encode_token(token: &Token) -> Mediate {
 		Token::Bytes(ref bytes) => Mediate::Prefixed(pad_bytes(bytes)),
 		Token::String(ref s) => Mediate::Prefixed(pad_bytes(s.as_bytes())),
 		Token::FixedBytes(ref bytes) => Mediate::Raw(pad_fixed_bytes(bytes)),
-		Token::Int(ref int) => Mediate::Raw(vec![int.clone()]),
-		Token::Uint(ref uint) => Mediate::Raw(vec![uint.clone()]),
+		Token::Int(ref int) => Mediate::Raw(vec![Hash::from(int).0]),
+		Token::Uint(ref uint) => Mediate::Raw(vec![Hash::from(uint).0]),
 		Token::Bool(b) => {
-			let value = if b { 1 } else { 0 };
-			Mediate::Raw(vec![pad_u32(value)])
+			let mut value = [0u8; 32];
+			if b {
+				value[31] = 1;
+			}
+			Mediate::Raw(vec![value])
 		},
 		Token::Array(ref tokens) => {
 			let mediates = tokens.iter()
@@ -170,7 +173,7 @@ mod tests {
 
 	#[test]
 	fn encode_address() {
-		let address = Token::Address([0x11u8; 20]);
+		let address = Token::Address([0x11u8; 20].into());
 		let encoded = encode(&vec![address]);
 		let expected = "0000000000000000000000001111111111111111111111111111111111111111".from_hex().unwrap();
 		assert_eq!(encoded, expected);
@@ -178,8 +181,8 @@ mod tests {
 
 	#[test]
 	fn encode_dynamic_array_of_addresses() {
-		let address1 = Token::Address([0x11u8; 20]);
-		let address2 = Token::Address([0x22u8; 20]);
+		let address1 = Token::Address([0x11u8; 20].into());
+		let address2 = Token::Address([0x22u8; 20].into());
 		let addresses = Token::Array(vec![address1, address2]);
 		let encoded = encode(&vec![addresses]);
 		let expected = ("".to_owned() +
@@ -192,8 +195,8 @@ mod tests {
 
 	#[test]
 	fn encode_fixed_array_of_addresses() {
-		let address1 = Token::Address([0x11u8; 20]);
-		let address2 = Token::Address([0x22u8; 20]);
+		let address1 = Token::Address([0x11u8; 20].into());
+		let address2 = Token::Address([0x22u8; 20].into());
 		let addresses = Token::FixedArray(vec![address1, address2]);
 		let encoded = encode(&vec![addresses]);
 		let expected = ("".to_owned() +
@@ -204,8 +207,8 @@ mod tests {
 
 	#[test]
 	fn encode_two_addresses() {
-		let address1 = Token::Address([0x11u8; 20]);
-		let address2 = Token::Address([0x22u8; 20]);
+		let address1 = Token::Address([0x11u8; 20].into());
+		let address2 = Token::Address([0x22u8; 20].into());
 		let encoded = encode(&vec![address1, address2]);
 		let expected = ("".to_owned() +
 			"0000000000000000000000001111111111111111111111111111111111111111" +
@@ -215,10 +218,10 @@ mod tests {
 
 	#[test]
 	fn encode_fixed_array_of_dynamic_array_of_addresses() {
-		let address1 = Token::Address([0x11u8; 20]);
-		let address2 = Token::Address([0x22u8; 20]);
-		let address3 = Token::Address([0x33u8; 20]);
-		let address4 = Token::Address([0x44u8; 20]);
+		let address1 = Token::Address([0x11u8; 20].into());
+		let address2 = Token::Address([0x22u8; 20].into());
+		let address3 = Token::Address([0x33u8; 20].into());
+		let address4 = Token::Address([0x44u8; 20].into());
 		let array0 = Token::Array(vec![address1, address2]);
 		let array1 = Token::Array(vec![address3, address4]);
 		let fixed = Token::FixedArray(vec![array0, array1]);
@@ -237,10 +240,10 @@ mod tests {
 
 	#[test]
 	fn encode_dynamic_array_of_fixed_array_of_addresses() {
-		let address1 = Token::Address([0x11u8; 20]);
-		let address2 = Token::Address([0x22u8; 20]);
-		let address3 = Token::Address([0x33u8; 20]);
-		let address4 = Token::Address([0x44u8; 20]);
+		let address1 = Token::Address([0x11u8; 20].into());
+		let address2 = Token::Address([0x22u8; 20].into());
+		let address3 = Token::Address([0x33u8; 20].into());
+		let address4 = Token::Address([0x44u8; 20].into());
 		let array0 = Token::FixedArray(vec![address1, address2]);
 		let array1 = Token::FixedArray(vec![address3, address4]);
 		let dynamic = Token::Array(vec![array0, array1]);
@@ -257,8 +260,8 @@ mod tests {
 
 	#[test]
 	fn encode_dynamic_array_of_dynamic_arrays() {
-		let address1 = Token::Address([0x11u8; 20]);
-		let address2 = Token::Address([0x22u8; 20]);
+		let address1 = Token::Address([0x11u8; 20].into());
+		let address2 = Token::Address([0x22u8; 20].into());
 		let array0 = Token::Array(vec![address1]);
 		let array1 = Token::Array(vec![address2]);
 		let dynamic = Token::Array(vec![array0, array1]);
@@ -277,10 +280,10 @@ mod tests {
 
 	#[test]
 	fn encode_dynamic_array_of_dynamic_arrays2() {
-		let address1 = Token::Address([0x11u8; 20]);
-		let address2 = Token::Address([0x22u8; 20]);
-		let address3 = Token::Address([0x33u8; 20]);
-		let address4 = Token::Address([0x44u8; 20]);
+		let address1 = Token::Address([0x11u8; 20].into());
+		let address2 = Token::Address([0x22u8; 20].into());
+		let address3 = Token::Address([0x33u8; 20].into());
+		let address4 = Token::Address([0x44u8; 20].into());
 		let array0 = Token::Array(vec![address1, address2]);
 		let array1 = Token::Array(vec![address3, address4]);
 		let dynamic = Token::Array(vec![array0, array1]);
@@ -301,10 +304,10 @@ mod tests {
 
 	#[test]
 	fn encode_fixed_array_of_fixed_arrays() {
-		let address1 = Token::Address([0x11u8; 20]);
-		let address2 = Token::Address([0x22u8; 20]);
-		let address3 = Token::Address([0x33u8; 20]);
-		let address4 = Token::Address([0x44u8; 20]);
+		let address1 = Token::Address([0x11u8; 20].into());
+		let address2 = Token::Address([0x22u8; 20].into());
+		let address3 = Token::Address([0x33u8; 20].into());
+		let address4 = Token::Address([0x44u8; 20].into());
 		let array0 = Token::FixedArray(vec![address1, address2]);
 		let array1 = Token::FixedArray(vec![address3, address4]);
 		let fixed = Token::FixedArray(vec![array0, array1]);
@@ -423,7 +426,7 @@ mod tests {
 	fn encode_uint() {
 		let mut uint = [0u8; 32];
 		uint[31] = 4;
-		let encoded = encode(&vec![Token::Uint(uint)]);
+		let encoded = encode(&vec![Token::Uint(uint.into())]);
 		let expected = ("".to_owned() +
 			"0000000000000000000000000000000000000000000000000000000000000004").from_hex().unwrap();
 		assert_eq!(encoded, expected);
@@ -433,7 +436,7 @@ mod tests {
 	fn encode_int() {
 		let mut int = [0u8; 32];
 		int[31] = 4;
-		let encoded = encode(&vec![Token::Int(int)]);
+		let encoded = encode(&vec![Token::Int(int.into())]);
 		let expected = ("".to_owned() +
 			"0000000000000000000000000000000000000000000000000000000000000004").from_hex().unwrap();
 		assert_eq!(encoded, expected);
@@ -461,9 +464,9 @@ mod tests {
 			"131a3afc00d1b1e3461b955e53fc866dcf303b3eb9f4c16f89e388930f48134b" +
 			"131a3afc00d1b1e3461b955e53fc866dcf303b3eb9f4c16f89e388930f48134b").from_hex().unwrap();
 		let encoded = encode(&vec![
-			Token::Int(pad_u32(5)),
+			Token::Int(5.into()),
 			Token::Bytes(bytes.clone()),
-			Token::Int(pad_u32(3)),
+			Token::Int(3.into()),
 			Token::Bytes(bytes)
 		]);
 
@@ -491,15 +494,15 @@ mod tests {
 	#[test]
 	fn comprehensive_test2() {
 		let encoded = encode(&vec![
-			Token::Int(pad_u32(1)),
+			Token::Int(1.into()),
 			Token::String("gavofyork".to_owned()),
-			Token::Int(pad_u32(2)),
-			Token::Int(pad_u32(3)),
-			Token::Int(pad_u32(4)),
+			Token::Int(2.into()),
+			Token::Int(3.into()),
+			Token::Int(4.into()),
 			Token::Array(vec![
-				Token::Int(pad_u32(5)),
-				Token::Int(pad_u32(6)),
-				Token::Int(pad_u32(7))
+				Token::Int(5.into()),
+				Token::Int(6.into()),
+				Token::Int(7.into()),
 			])
 		]);
 

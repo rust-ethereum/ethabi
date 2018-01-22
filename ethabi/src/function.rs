@@ -74,7 +74,7 @@ mod tests {
 		let func = Function::from(interface);
 		let mut uint = [0u8; 32];
 		uint[31] = 69;
-		let encoded = func.encode_input(&[Token::Uint(uint), Token::Bool(true)]).unwrap();
+		let encoded = func.encode_input(&[Token::Uint(uint.into()), Token::Bool(true)]).unwrap();
 		let expected = "cdcd77c000000000000000000000000000000000000000000000000000000000000000450000000000000000000000000000000000000000000000000000000000000001".from_hex().unwrap();
 		assert_eq!(encoded, expected);
 	}

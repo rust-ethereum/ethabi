@@ -14,8 +14,8 @@ use std::env;
 use docopt::Docopt;
 use hex::{ToHex, FromHex};
 use ethabi::param_type::{ParamType, Reader};
-use ethabi::token::{Token, Tokenizer, StrictTokenizer, LenientTokenizer, TokenFromHex};
-use ethabi::{encode, decode, Contract, Function, Event};
+use ethabi::token::{Token, Tokenizer, StrictTokenizer, LenientTokenizer};
+use ethabi::{encode, decode, Contract, Function, Event, Hash};
 use error::{Error, ResultExt};
 
 pub const ETHABI: &'static str = r#"
@@ -189,9 +189,9 @@ fn decode_params(types: &[String], data: &str) -> Result<String, Error> {
 
 fn decode_log(path: &str, event: &str, topics: &[String], data: &str) -> Result<String, Error> {
 	let event = load_event(path, event)?;
-	let topics: Vec<[u8; 32]> = topics.into_iter()
-		.map(|t| t.token_from_hex().map_err(From::from))
-		.collect::<Result<_, Error>>()?;
+	let topics: Vec<Hash> = topics.into_iter()
+		.map(|t| t.parse())
+		.collect::<Result<_, _>>()?;
 	let data = data.from_hex().chain_err(|| "Expected <data> to be hex")?;
 	let decoded = event.parse_log((topics, data).into())?;
 
