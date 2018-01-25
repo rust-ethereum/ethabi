@@ -271,6 +271,14 @@ fn from_token(kind: &ParamType, token: &syn::Ident) -> quote::Tokens {
 	match *kind {
 		ParamType::Address => quote! { #token.to_address().expect(super::INTERNAL_ERR) },
 		ParamType::Bytes => quote! { #token.to_bytes().expect(super::INTERNAL_ERR) },
+		ParamType::FixedBytes(32) => quote! {
+			{
+				let mut result = [0u8; 32];
+				let v = #token.to_fixed_bytes().expect(super::INTERNAL_ERR);
+				result.copy_from_slice(&v);
+				ethabi::Hash::from(result)
+			}
+		},
 		ParamType::FixedBytes(size) => {
 			let size: syn::Ident = format!("{}", size).into();
 			quote! {
