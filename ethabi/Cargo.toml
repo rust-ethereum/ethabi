@@ -1,6 +1,6 @@
 [package]
 name = "ethabi"
-version = "4.1.0"
+version = "5.0.1"
 authors = ["Parity Technologies <admin@parity.io>"]
 homepage = "https://github.com/paritytech/ethabi"
 license = "MIT"
@@ -15,6 +15,7 @@ serde_json = "1.0"
 serde_derive = "1.0"
 tiny-keccak = "1.3"
 error-chain = { version = "0.11", default-features = false }
+ethereum-types = "0.1.4"
 
 [features]
 backtrace = ["error-chain/backtrace"]
@@ -22,3 +23,4 @@ backtrace = ["error-chain/backtrace"]
 [badges]
 travis-ci = { repository = "paritytech/ethabi", branch = "master" }
 coveralls = { repository = "paritytech/ethabi", branch = "master" }
+

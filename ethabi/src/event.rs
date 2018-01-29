@@ -58,9 +58,9 @@ impl Event {
 			if encoded.len() == 32 {
 				let mut data = [0u8; 32];
 				data.copy_from_slice(&encoded);
-				Ok(data)
+				Ok(data.into())
 			} else {
-				Ok(keccak256(&encoded))
+				Ok(keccak256(&encoded).into())
 			}
 		}
 
@@ -176,7 +176,7 @@ impl Event {
 #[cfg(test)]
 mod tests {
 	use hex::FromHex;
-	use token::{Token, TokenFromHex};
+	use token::Token;
 	use signature::long_signature;
 	use log::{RawLog, Log};
 	use {EventParam, ParamType, Event, LogParam};
@@ -208,8 +208,8 @@ mod tests {
 		let log = RawLog {
 			topics: vec![
 				long_signature("foo", &[ParamType::Int(256), ParamType::Int(256), ParamType::Address, ParamType::Address]),
-				"0000000000000000000000000000000000000000000000000000000000000002".token_from_hex().unwrap(),
-				"0000000000000000000000001111111111111111111111111111111111111111".token_from_hex().unwrap(),
+				"0000000000000000000000000000000000000000000000000000000000000002".into(),
+				"0000000000000000000000001111111111111111111111111111111111111111".into(),
 			],
 			data:
 			("".to_owned() +
@@ -219,10 +219,10 @@ mod tests {
 		let result = event.parse_log(log).unwrap();
 
 		assert_eq!(result, Log { params: vec![
-			("a".to_owned(), Token::Int("0000000000000000000000000000000000000000000000000000000000000003".token_from_hex().unwrap())),
-			("b".to_owned(), Token::Int("0000000000000000000000000000000000000000000000000000000000000002".token_from_hex().unwrap())),
-			("c".to_owned(), Token::Address("2222222222222222222222222222222222222222".token_from_hex().unwrap())),
-			("d".to_owned(), Token::Address("1111111111111111111111111111111111111111".token_from_hex().unwrap())),
+			("a".to_owned(), Token::Int("0000000000000000000000000000000000000000000000000000000000000003".into())),
+			("b".to_owned(), Token::Int("0000000000000000000000000000000000000000000000000000000000000002".into())),
+			("c".to_owned(), Token::Address("2222222222222222222222222222222222222222".into())),
+			("d".to_owned(), Token::Address("1111111111111111111111111111111111111111".into())),
 		].into_iter().map(|(name, value)| LogParam { name, value }).collect::<Vec<_>>()});
 	}
 }

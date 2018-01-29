@@ -114,15 +114,11 @@ impl Serialize for Topic<Hash> {
 #[cfg(test)]
 mod tests {
 	use serde_json;
-	use hex::FromHex;
 	use super::{Topic, TopicFilter};
 	use Hash;
 
-	fn hash(s: &str) -> Hash {
-		let v = s.from_hex().unwrap();
-		let mut result = [0u8; 32];
-		result.copy_from_slice(&v);
-		result
+	fn hash(s: &'static str) -> Hash {
+		s.into()
 	}
 
 	#[test]
