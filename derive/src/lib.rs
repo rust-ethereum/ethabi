@@ -169,9 +169,46 @@ fn impl_contract_function(function: &Function) -> quote::Tokens {
 	let name = syn::Ident::new(function.name.to_snake_case());
 	let function_name = syn::Ident::new(function.name.to_camel_case());
 
+	// [param0, hello_world, param2]
+	let ref names: Vec<_> = function.inputs
+		.iter()
+		.enumerate()
+		.map(|(index, param)| if param.name.is_empty() {
+			syn::Ident::new(format!("param{}", index))
+		} else {
+			param.name.to_snake_case().into()
+		}).collect();
+
+	// [T0: Into<Uint>, T1: Into<Bytes>, T2: IntoIterator<Item = U2>, U2 = Into<Uint>]
+	let ref template_params: Vec<_> = function.inputs.iter().enumerate()
+		.map(|(index, param)| template_param_type(&param.kind, index))
+		.collect();
+
+	// [Uint, Bytes, Vec<Uint>]
+	let kinds: Vec<_> = function.inputs
+		.iter()
+		.map(|param| rust_type(&param.kind))
+		.collect();
+
+	// [T0, T1, T2]
+	let template_names: Vec<_> = kinds.iter().enumerate()
+		.map(|(index, _)| syn::Ident::new(format!("T{}", index)))
+		.collect();
+
+	// [param0: T0, hello_world: T1, param2: T2]
+	let ref params: Vec<_> = names.iter().zip(template_names.iter())
+		.map(|(param_name, template_name)| quote! { #param_name: #template_name })
+		.collect();
+
+	// [Token::Uint(param0.into()), Token::Bytes(hello_world.into()), Token::Array(param2.into_iter().map(Into::into).collect())]
+	let usage: Vec<_> = names.iter().zip(function.inputs.iter())
+		.map(|(param_name, param)| to_token(&from_template_param(&param.kind, param_name), &param.kind))
+		.collect();
+
 	quote! {
-		pub fn #name(&self) -> functions::#function_name {
-			functions::#function_name::default()
+		pub fn #name<#(#template_params),*>(&self, #(#params),*) -> functions::#function_name {
+			let v: Vec<ethabi::Token> = vec![#(#usage),*];
+			functions::#function_name::with_input_tokens(v)
 		}
 	}
 }
@@ -536,42 +573,6 @@ fn declare_events(event: &Event) -> quote::Tokens {
 fn declare_functions(function: &Function) -> quote::Tokens {
 	let name = syn::Ident::new(function.name.to_camel_case());
 
-	// [param0, hello_world, param2]
-	let ref names: Vec<_> = function.inputs
-		.iter()
-		.enumerate()
-		.map(|(index, param)| if param.name.is_empty() {
-			syn::Ident::new(format!("param{}", index))
-		} else {
-			param.name.to_snake_case().into()
-		}).collect();
-
-	// [Uint, Bytes, Vec<Uint>]
-	let kinds: Vec<_> = function.inputs
-		.iter()
-		.map(|param| rust_type(&param.kind))
-		.collect();
-
-	// [T0, T1, T2]
-	let template_names: Vec<_> = kinds.iter().enumerate()
-		.map(|(index, _)| syn::Ident::new(format!("T{}", index)))
-		.collect();
-
-	// [T0: Into<Uint>, T1: Into<Bytes>, T2: IntoIterator<Item = U2>, U2 = Into<Uint>]
-	let ref template_params: Vec<_> = function.inputs.iter().enumerate()
-		.map(|(index, param)| template_param_type(&param.kind, index))
-		.collect();
-
-	// [param0: T0, hello_world: T1, param2: T2]
-	let ref params: Vec<_> = names.iter().zip(template_names.iter())
-		.map(|(param_name, template_name)| quote! { #param_name: #template_name })
-		.collect();
-
-	// [Token::Uint(param0.into()), Token::Bytes(hello_world.into()), Token::Array(param2.into_iter().map(Into::into).collect())]
-	let usage: Vec<_> = names.iter().zip(function.inputs.iter())
-		.map(|(param_name, param)| to_token(&from_template_param(&param.kind, param_name), &param.kind))
-		.collect();
-
 	let output_call_impl = {
 		let output_kinds = match function.outputs.len() {
 			0 => quote! {()},
@@ -614,25 +615,25 @@ fn declare_functions(function: &Function) -> quote::Tokens {
 
 		if !function.constant {
 			quote! {
-				pub fn transact<CALLER: ethabi::Caller, #(#template_params),*>(self, #(#params ,)* do_call: CALLER)
+				pub fn transact<CALLER: ethabi::Caller>(self, do_call: CALLER)
 					-> ethabi::Result<()>
 				{
 					use self::ethabi::futures::{Future, IntoFuture};
 
-					let encoded_input = self.input(#(#names),*);
+					let encoded_input = self.encoded();
 
 					do_call.transact(encoded_input).into_future().wait()
 						.map_err(|x| ethabi::Error::with_chain(ethabi::Error::from(x), ethabi::ErrorKind::CallError))
 						.map(|_| ())
 				}
 
-				pub fn transact_async<CALLER: ethabi::Caller, #(#template_params),*>(self, #(#params ,)* do_call: CALLER)
+				pub fn transact_async<CALLER: ethabi::Caller>(self, do_call: CALLER)
 					-> Box<ethabi::futures::Future<Item=(), Error=ethabi::Error> + Send> where
 					<<CALLER as ethabi::Caller>::TransactOut as ethabi::futures::IntoFuture>::Future: Send + 'static,
 				{
 					use self::ethabi::futures::{Future, IntoFuture};
 
-					let encoded_input = self.input(#(#names),*);
+					let encoded_input = self.encoded();
 
 					Box::new(
 						do_call.transact(encoded_input).into_future()
@@ -647,25 +648,25 @@ fn declare_functions(function: &Function) -> quote::Tokens {
 					#o_impl
 				}
 
-				pub fn call<CALLER: ethabi::Caller, #(#template_params),*>(self, #(#params ,)* do_call: CALLER)
+				pub fn call<CALLER: ethabi::Caller>(self, do_call: CALLER)
 					-> ethabi::Result<#output_kinds>
 				{
 					use self::ethabi::futures::{Future, IntoFuture};
 
-					let encoded_input = self.input(#(#names),*);
+					let encoded_input = self.encoded();
 
 					do_call.call(encoded_input).into_future().wait()
 						.map_err(|x| ethabi::Error::with_chain(ethabi::Error::from(x), ethabi::ErrorKind::CallError))
 						.and_then(move |encoded_output| self.output(&encoded_output))
 				}
 
-				pub fn call_async<CALLER: ethabi::Caller, #(#template_params),*>(self, #(#params ,)* do_call: CALLER)
+				pub fn call_async<CALLER: ethabi::Caller>(self, do_call: CALLER)
 					-> Box<ethabi::futures::Future<Item=#output_kinds, Error=ethabi::Error> + Send> where
 					<<CALLER as ethabi::Caller>::CallOut as ethabi::futures::IntoFuture>::Future: Send + 'static,
 				{
 					use self::ethabi::futures::{Future, IntoFuture};
 
-					let encoded_input = self.input(#(#names),*);
+					let encoded_input = self.encoded();
 
 					Box::new(
 						do_call.call(encoded_input).into_future()
@@ -698,27 +699,30 @@ fn declare_functions(function: &Function) -> quote::Tokens {
 	quote! {
 		pub struct #name {
 			function: ethabi::Function,
+			encoded_input: ethabi::Bytes
 		}
 
-		impl Default for #name {
-			fn default() -> Self {
-				#name {
+		impl #name {
+
+			pub fn with_input_tokens(v: Vec<ethabi::Token>) -> Self {
+				let mut instance = #name {
 					function: ethabi::Function {
 						name: #function_name.to_owned(),
 						inputs: #function_inputs,
 						outputs: #function_outputs,
 						constant: #function_constant
-					}
-				}
-			}
-		}
+					},
+					encoded_input: vec![]
+				};
 
-		impl #name {
+				instance.encoded_input = instance.function.encode_input(&v).expect(super::INTERNAL_ERR);
 
-			pub fn input<#(#template_params),*>(&self, #(#params),*) -> ethabi::Bytes {
-				let v: Vec<ethabi::Token> = vec![#(#usage),*];
-				self.function.encode_input(&v).expect(super::INTERNAL_ERR)
+				instance
 			}
+
+			pub fn encoded(&self) -> ethabi::Bytes {
+	            self.encoded_input.clone()
+         	}
 
 			#output_call_impl
 		}

@@ -33,11 +33,10 @@ mod tests {
 		let second = [0x22u8; 20];
 
 		let functions = contract.functions();
-		let set_validators = functions.set_validators();
 
-		let encoded_from_vec = set_validators.input(vec![first.clone(), second.clone()]);
-		let encoded_from_vec_iter = set_validators.input(vec![first.clone(), second.clone()].into_iter());
-		let encoded_from_vec_wrapped = set_validators.input(vec![Wrapper(first), Wrapper(second)]);
+		let encoded_from_vec = functions.set_validators(vec![first.clone(), second.clone()]).encoded();
+		let encoded_from_vec_iter = functions.set_validators(vec![first.clone(), second.clone()].into_iter()).encoded();
+		let encoded_from_vec_wrapped = functions.set_validators(vec![Wrapper(first), Wrapper(second)]).encoded();
 
 		let expected = "9300c9260000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000200000000000000000000000011111111111111111111111111111111111111110000000000000000000000002222222222222222222222222222222222222222".to_owned();
 		assert_eq!(expected, encoded_from_vec.to_hex());
@@ -86,10 +85,9 @@ mod tests {
 		let second = [0x22u8; 20];
 
 		let functions = contract.functions();
-		let add_validators = functions.add_two_validators();
 
-		let encoded_from_array = add_validators.input([first.clone(), second.clone()]);
-		let encoded_from_array_wrapped = add_validators.input([Wrapper(first), Wrapper(second)]);
+		let encoded_from_array = functions.add_two_validators([first.clone(), second.clone()]).encoded();
+		let encoded_from_array_wrapped = functions.add_two_validators([Wrapper(first), Wrapper(second)]).encoded();
 
 		let expected = "7de33d2000000000000000000000000011111111111111111111111111111111111111110000000000000000000000002222222222222222222222222222222222222222".to_owned();
 		assert_eq!(expected, encoded_from_array.to_hex());
@@ -104,7 +102,7 @@ mod tests {
 		let contract = Eip20::default();
 		let owner = [0u8; 20];
 		let spender = [1u8; 20];
-		let encoded = contract.functions().allowance().input(owner, spender);
+		let encoded = contract.functions().allowance(owner, spender).encoded();
 		// 4 bytes signature + 2 * 32 bytes for params
 		assert_eq!(encoded.to_hex(), expected);
 
@@ -121,7 +119,7 @@ mod tests {
 
 		let contract = Eip20::default();
 		let address_param = [0u8; 20];
-		let result = contract.functions().balance_of().call(address_param, &|data| {
+		let result = contract.functions().balance_of(address_param).call(&|data| {
 			assert_eq!(data, "70a082310000000000000000000000000000000000000000000000000000000000000000".from_hex().unwrap());
 			Ok("000000000000000000000000000000000000000000000000000000000036455b".from_hex().unwrap())
         });
