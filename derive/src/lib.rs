@@ -37,6 +37,8 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 	let logs_structs: Vec<_> = contract.events().map(declare_logs).collect();
 	let events_structs: Vec<_> = contract.events().map(declare_events).collect();
 	let func_structs: Vec<_> = contract.functions().map(declare_functions).collect();
+	let output_functions: Vec<_> = contract.functions().map(declare_output_functions).collect();
+	let func_input_wrappers_structs: Vec<_> = contract.functions().map(declare_functions_input_wrappers).collect();
 
 	let name = get_option(&options, "name")?;
 	let name = syn::Ident::new(name);
@@ -86,6 +88,8 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 				#(#func_structs)*
 			}
 
+			#(#func_input_wrappers_structs)*
+
 			pub struct #functions_name {
 			}
 			impl #functions_name {
@@ -97,6 +101,22 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 				}
 			}
 
+		}
+	};
+
+	let outputs_quote = if output_functions.is_empty() {
+		quote! {}
+	} else {
+		quote! {
+			pub struct Outputs {}
+			impl Outputs {
+				#(#output_functions)*
+			}
+			impl #name {
+				pub fn outputs(&self) -> Outputs {
+					Outputs {}
+				}
+			}
 		}
 	};
 
@@ -125,8 +145,14 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 
 		#events_and_logs_quote
 
+		#outputs_quote
+
 		#functions_quote
 	};
+
+	if name == "Validators" {
+		println!("{}",result);
+	}
 
 	Ok(result)
 }
@@ -167,7 +193,7 @@ fn normalize_path(relative_path: &str) -> Result<PathBuf> {
 
 fn impl_contract_function(function: &Function) -> quote::Tokens {
 	let name = syn::Ident::new(function.name.to_snake_case());
-	let function_name = syn::Ident::new(function.name.to_camel_case());
+	let function_input_wrapper_name = syn::Ident::new(format!("{}WithInput",function.name.to_camel_case()));
 
 	// [param0, hello_world, param2]
 	let ref names: Vec<_> = function.inputs
@@ -206,9 +232,9 @@ fn impl_contract_function(function: &Function) -> quote::Tokens {
 		.collect();
 
 	quote! {
-		pub fn #name<#(#template_params),*>(&self, #(#params),*) -> functions::#function_name {
+		pub fn #name<#(#template_params),*>(&self, #(#params),*) -> #function_input_wrapper_name {
 			let v: Vec<ethabi::Token> = vec![#(#usage),*];
-			functions::#function_name::with_input_tokens(v)
+			#function_input_wrapper_name::from_tokens(v)
 		}
 	}
 }
@@ -573,7 +599,7 @@ fn declare_events(event: &Event) -> quote::Tokens {
 fn declare_functions(function: &Function) -> quote::Tokens {
 	let name = syn::Ident::new(function.name.to_camel_case());
 
-	let output_call_impl = {
+	let decode_output = {
 		let output_kinds = match function.outputs.len() {
 			0 => quote! {()},
 			1 => {
@@ -613,67 +639,12 @@ fn declare_functions(function: &Function) -> quote::Tokens {
 			},
 		};
 
-		if !function.constant {
-			quote! {
-				pub fn transact<CALLER: ethabi::Caller>(self, do_call: CALLER)
-					-> ethabi::Result<()>
-				{
-					use self::ethabi::futures::{Future, IntoFuture};
-
-					let encoded_input = self.encoded();
-
-					do_call.transact(encoded_input).into_future().wait()
-						.map_err(|x| ethabi::Error::with_chain(ethabi::Error::from(x), ethabi::ErrorKind::CallError))
-						.map(|_| ())
-				}
-
-				pub fn transact_async<CALLER: ethabi::Caller>(self, do_call: CALLER)
-					-> Box<ethabi::futures::Future<Item=(), Error=ethabi::Error> + Send> where
-					<<CALLER as ethabi::Caller>::TransactOut as ethabi::futures::IntoFuture>::Future: Send + 'static,
-				{
-					use self::ethabi::futures::{Future, IntoFuture};
-
-					let encoded_input = self.encoded();
-
-					Box::new(
-						do_call.transact(encoded_input).into_future()
-							.map_err(|x| ethabi::Error::with_chain(ethabi::Error::from(x), ethabi::ErrorKind::CallError))
-							.map(|_| ())
-					)
-				}
-			}
-		} else {
-			quote! {
-				pub fn output(&self, output: &[u8]) -> ethabi::Result<#output_kinds> {
-					#o_impl
-				}
-
-				pub fn call<CALLER: ethabi::Caller>(self, do_call: CALLER)
-					-> ethabi::Result<#output_kinds>
-				{
-					use self::ethabi::futures::{Future, IntoFuture};
-
-					let encoded_input = self.encoded();
-
-					do_call.call(encoded_input).into_future().wait()
-						.map_err(|x| ethabi::Error::with_chain(ethabi::Error::from(x), ethabi::ErrorKind::CallError))
-						.and_then(move |encoded_output| self.output(&encoded_output))
-				}
-
-				pub fn call_async<CALLER: ethabi::Caller>(self, do_call: CALLER)
-					-> Box<ethabi::futures::Future<Item=#output_kinds, Error=ethabi::Error> + Send> where
-					<<CALLER as ethabi::Caller>::CallOut as ethabi::futures::IntoFuture>::Future: Send + 'static,
-				{
-					use self::ethabi::futures::{Future, IntoFuture};
-
-					let encoded_input = self.encoded();
-
-					Box::new(
-						do_call.call(encoded_input).into_future()
-							.map_err(|x| ethabi::Error::with_chain(ethabi::Error::from(x), ethabi::ErrorKind::CallError))
-							.and_then(move |encoded_output| self.output(&encoded_output))
-					)
-				}
+		// TODO remove decode_output function for functions without output?
+		// Otherwise the output argument is unused
+		quote! {
+			#[allow(unused_variables)]
+			pub fn decode_output(&self, output: &[u8]) -> ethabi::Result<#output_kinds> {
+				#o_impl
 			}
 		}
 	};
@@ -698,33 +669,155 @@ fn declare_functions(function: &Function) -> quote::Tokens {
 
 	quote! {
 		pub struct #name {
-			function: ethabi::Function,
-			encoded_input: ethabi::Bytes
+			function: ethabi::Function
 		}
 
-		impl #name {
-
-			pub fn with_input_tokens(v: Vec<ethabi::Token>) -> Self {
-				let mut instance = #name {
+		impl Default for #name {
+			fn default() -> Self {
+				#name {
 					function: ethabi::Function {
 						name: #function_name.to_owned(),
 						inputs: #function_inputs,
 						outputs: #function_outputs,
 						constant: #function_constant
-					},
-					encoded_input: vec![]
-				};
+					}
+				}
+			}
+		}
 
-				instance.encoded_input = instance.function.encode_input(&v).expect(super::INTERNAL_ERR);
+		impl #name {
+			#decode_output
 
-				instance
+			pub fn encode_input(&self, tokens: &[ethabi::Token]) -> ethabi::Result<ethabi::Bytes> {
+				self.function.encode_input(tokens)
+			}
+		}
+	}
+}
+
+fn declare_output_functions(function: &Function) -> quote::Tokens {
+	let name_camel = syn::Ident::new(function.name.to_camel_case());
+	let name_snake = syn::Ident::new(function.name.to_snake_case());
+
+	let output_kinds = match function.outputs.len() {
+		0 => quote! {()},
+		1 => {
+			let t = rust_type(&function.outputs[0].kind);
+			quote! { #t }
+		},
+		_ => {
+			let outs: Vec<_> = function.outputs
+				.iter()
+				.map(|param| rust_type(&param.kind))
+				.collect();
+			quote! { (#(#outs),*) }
+		}
+	};
+
+	quote! {
+		pub fn #name_snake(&self, bytes : &[u8]) -> ethabi::Result<#output_kinds> {
+			functions::#name_camel::default().decode_output(&bytes)
+		}
+	}
+}
+
+fn declare_functions_input_wrappers(function: &Function) -> quote::Tokens {
+	let name = syn::Ident::new(function.name.to_camel_case());
+	let name_with_input = syn::Ident::new(format!("{}WithInput",function.name.to_camel_case()));
+
+	let output_kinds = match function.outputs.len() {
+		0 => quote! {()},
+		1 => {
+			let t = rust_type(&function.outputs[0].kind);
+			quote! { #t }
+		},
+		_ => {
+			let outs: Vec<_> = function.outputs
+				.iter()
+				.map(|param| rust_type(&param.kind))
+				.collect();
+			quote! { (#(#outs),*) }
+		}
+	};
+
+	let call_or_transact = if function.constant {
+		quote! {
+			pub fn call<CALLER: ethabi::Caller>(self, do_call: CALLER)
+				-> ethabi::Result<#output_kinds>
+			{
+				use self::ethabi::futures::{Future, IntoFuture};
+
+				let encoded_input = self.encoded();
+
+				do_call.call(encoded_input).into_future().wait()
+					.map_err(|x| ethabi::Error::with_chain(ethabi::Error::from(x), ethabi::ErrorKind::CallError))
+					.and_then(move |encoded_output| functions::#name::default().decode_output(&encoded_output))
+			}
+
+			pub fn call_async<CALLER: ethabi::Caller>(self, do_call: CALLER)
+				-> Box<ethabi::futures::Future<Item=#output_kinds, Error=ethabi::Error> + Send> where
+				<<CALLER as ethabi::Caller>::CallOut as ethabi::futures::IntoFuture>::Future: Send + 'static,
+			{
+				use self::ethabi::futures::{Future, IntoFuture};
+
+				let encoded_input = self.encoded();
+
+				Box::new(
+					do_call.call(encoded_input).into_future()
+						.map_err(|x| ethabi::Error::with_chain(ethabi::Error::from(x), ethabi::ErrorKind::CallError))
+						.and_then(move |encoded_output| functions::#name::default().decode_output(&encoded_output))
+				)
+			}
+		}
+	} else {
+		quote! {
+			pub fn transact<CALLER: ethabi::Caller>(self, do_call: CALLER)
+				-> ethabi::Result<()>
+			{
+				use self::ethabi::futures::{Future, IntoFuture};
+
+				let encoded_input = self.encoded();
+
+				do_call.transact(encoded_input).into_future().wait()
+					.map_err(|x| ethabi::Error::with_chain(ethabi::Error::from(x), ethabi::ErrorKind::CallError))
+					.map(|_| ())
+			}
+
+			pub fn transact_async<CALLER: ethabi::Caller>(self, do_call: CALLER)
+				-> Box<ethabi::futures::Future<Item=(), Error=ethabi::Error> + Send> where
+				<<CALLER as ethabi::Caller>::TransactOut as ethabi::futures::IntoFuture>::Future: Send + 'static,
+			{
+				use self::ethabi::futures::{Future, IntoFuture};
+
+				let encoded_input = self.encoded();
+
+				Box::new(
+					do_call.transact(encoded_input).into_future()
+						.map_err(|x| ethabi::Error::with_chain(ethabi::Error::from(x), ethabi::ErrorKind::CallError))
+						.map(|_| ())
+				)
+			}
+		}
+	};
+
+	quote! {
+		pub struct #name_with_input {
+			encoded_input: ethabi::Bytes
+		}
+
+		impl #name_with_input {
+			pub fn from_tokens(v: Vec<ethabi::Token>) -> Self {
+				let encoded_input : ethabi::Bytes = functions::#name::default().encode_input(&v).expect(INTERNAL_ERR);
+				#name_with_input {
+					encoded_input: encoded_input
+				}
 			}
 
 			pub fn encoded(&self) -> ethabi::Bytes {
-	            self.encoded_input.clone()
-         	}
+				self.encoded_input.clone()
+			}
 
-			#output_call_impl
+			#call_or_transact
 		}
 	}
 }

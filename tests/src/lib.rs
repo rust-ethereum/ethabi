@@ -52,7 +52,7 @@ mod tests {
 
 		let contract = Eip20::default();
 		let output = "000000000000000000000000000000000000000000000000000000000036455B".from_hex().unwrap();
-		let decoded_output = contract.functions().total_supply().output(&output).unwrap();
+		let decoded_output = contract.outputs().total_supply(&output).unwrap();
 		let expected_output: Uint = 0x36455b.into();
 		assert_eq!(expected_output, decoded_output);
 	}
