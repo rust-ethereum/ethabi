@@ -1,6 +1,7 @@
 use token::{Tokenizer, StrictTokenizer};
-use util::{pad_u32, pad_i32};
-use errors::Error;
+use util::pad_i32;
+use errors::{Error, ErrorKind};
+use Uint;
 
 /// Tries to parse string as a token. Does not require string to clearly represent the value.
 pub struct LenientTokenizer;
@@ -32,8 +33,8 @@ impl Tokenizer for LenientTokenizer {
 			return result;
 		}
 
-		let uint = try!(u32::from_str_radix(value, 10));
-		Ok(pad_u32(uint))
+		let uint: Uint = Uint::from_dec_str(value).map_err(|_| ErrorKind::InvalidData)?;
+		Ok(uint.into())
 	}
 
 	fn tokenize_int(value: &str) -> Result<[u8; 32], Error> {

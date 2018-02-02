@@ -214,12 +214,28 @@ mod tests {
 		assert_eq!(execute(command).unwrap(), expected);
 	}
 
-	// TODO: parsing negative values is not working
 	#[test]
-	#[ignore]
 	fn int_encode() {
-		let command = "ethabi encode paramas -v int256 -2 --lenient".split(" ");
+		let command = "ethabi encode params -v int256 100000000000 --lenient".split(" ");
+		let expected = "000000000000000000000000000000000000000000000000000000174876e800";
+		assert_eq!(execute(command).unwrap(), expected);
+	}
+
+	#[test]
+	fn int_encode_negative() {
+		let command = "ethabi encode params --lenient -v -- int256 -2".split(" ");
 		let expected = "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe";
+		assert_eq!(execute(command).unwrap(), expected);
+
+		let command = "ethabi encode params --lenient -v -v -- int256 -2 int256 -3".split(" ");
+		let expected = "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffd";
+		assert_eq!(execute(command).unwrap(), expected);
+	}
+
+	#[test]
+	fn uint_encode() {
+		let command = "ethabi encode params -v uint256 100000000000 --lenient".split(" ");
+		let expected = "000000000000000000000000000000000000000000000000000000174876e800";
 		assert_eq!(execute(command).unwrap(), expected);
 	}
 
