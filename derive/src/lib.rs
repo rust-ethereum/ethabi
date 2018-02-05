@@ -100,11 +100,14 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 	};
 
 	let result = quote! {
+		#[allow(missing_docs)]
 		#[allow(unused_imports)]
-		use ethabi; // Not used if no constructor
-
 		#[allow(dead_code)]
-		// Not used in Constructor contract for example
+
+		// may not be used
+		use ethabi;
+
+		// may not be used
 		const INTERNAL_ERR: &'static str = "`ethabi_derive` internal error";
 
 		/// Contract
