@@ -10,6 +10,7 @@ extern crate ethabi_contract;
 use_contract!(eip20, "Eip20", "../res/eip20.abi");
 use_contract!(constructor, "Constructor", "../res/con.abi");
 use_contract!(validators, "Validators", "../res/Validators.abi");
+use_contract!(operations, "Operations", "../res/Operations.abi");
 
 #[cfg(test)]
 mod tests {
