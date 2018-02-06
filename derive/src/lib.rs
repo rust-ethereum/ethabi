@@ -62,6 +62,7 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 				#(#logs_structs)*
 			}
 
+			/// Contract events
 			pub struct #events_name {
 			}
 
@@ -70,6 +71,7 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 			}
 
 			impl #name {
+				/// Get contract events
 				pub fn events(&self) -> #events_name {
 					#events_name {
 					}
@@ -90,12 +92,15 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 
 			#(#func_input_wrappers_structs)*
 
+			/// Contract functions (for encoding input, making calls, transactions)
 			pub struct #functions_name {
 			}
+
 			impl #functions_name {
 				#(#functions)*
 			}
 			impl #name {
+				/// Gets contract functions (for encoding input, making calls, transactions)
 				pub fn functions(&self) -> #functions_name {
 					#functions_name {}
 				}
@@ -108,11 +113,13 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 		quote! {}
 	} else {
 		quote! {
+			/// Contract functions (for decoding output)
 			pub struct Outputs {}
 			impl Outputs {
 				#(#output_functions)*
 			}
 			impl #name {
+				/// Gets contract functions (for decoding output)
 				pub fn outputs(&self) -> Outputs {
 					Outputs {}
 				}
@@ -149,10 +156,6 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 
 		#functions_quote
 	};
-
-	if name == "Validators" {
-		println!("{}",result);
-	}
 
 	Ok(result)
 }
@@ -232,6 +235,7 @@ fn impl_contract_function(function: &Function) -> quote::Tokens {
 		.collect();
 
 	quote! {
+		/// Sets the input (arguments) for this contract function
 		pub fn #name<#(#template_params),*>(&self, #(#params),*) -> #function_input_wrapper_name {
 			let v: Vec<ethabi::Token> = vec![#(#usage),*];
 			#function_input_wrapper_name::from_tokens(v)
@@ -715,8 +719,9 @@ fn declare_output_functions(function: &Function) -> quote::Tokens {
 	};
 
 	quote! {
-		pub fn #name_snake(&self, bytes : &[u8]) -> ethabi::Result<#output_kinds> {
-			functions::#name_camel::default().decode_output(&bytes)
+		/// Returns the output for this contract function converted to native types
+		pub fn #name_snake(&self, output_bytes : &[u8]) -> ethabi::Result<#output_kinds> {
+			functions::#name_camel::default().decode_output(&output_bytes)
 		}
 	}
 }
@@ -742,6 +747,7 @@ fn declare_functions_input_wrappers(function: &Function) -> quote::Tokens {
 
 	let call_or_transact = if function.constant {
 		quote! {
+			/// Makes a blocking call to the constant function with the arguments previously set
 			pub fn call<CALLER: ethabi::Caller>(self, do_call: CALLER)
 				-> ethabi::Result<#output_kinds>
 			{
@@ -754,6 +760,7 @@ fn declare_functions_input_wrappers(function: &Function) -> quote::Tokens {
 					.and_then(move |encoded_output| functions::#name::default().decode_output(&encoded_output))
 			}
 
+			/// Makes an asynchronous call to the constant function with the arguments previously set
 			pub fn call_async<CALLER: ethabi::Caller>(self, do_call: CALLER)
 				-> Box<ethabi::futures::Future<Item=#output_kinds, Error=ethabi::Error> + Send> where
 				<<CALLER as ethabi::Caller>::CallOut as ethabi::futures::IntoFuture>::Future: Send + 'static,
@@ -771,6 +778,7 @@ fn declare_functions_input_wrappers(function: &Function) -> quote::Tokens {
 		}
 	} else {
 		quote! {
+			/// Makes a transaction to the function with the arguments previously set
 			pub fn transact<CALLER: ethabi::Caller>(self, do_call: CALLER)
 				-> ethabi::Result<()>
 			{
@@ -783,6 +791,7 @@ fn declare_functions_input_wrappers(function: &Function) -> quote::Tokens {
 					.map(|_| ())
 			}
 
+			/// Makes an asynchronous transaction to the function with the arguments previously set
 			pub fn transact_async<CALLER: ethabi::Caller>(self, do_call: CALLER)
 				-> Box<ethabi::futures::Future<Item=(), Error=ethabi::Error> + Send> where
 				<<CALLER as ethabi::Caller>::TransactOut as ethabi::futures::IntoFuture>::Future: Send + 'static,
@@ -801,11 +810,13 @@ fn declare_functions_input_wrappers(function: &Function) -> quote::Tokens {
 	};
 
 	quote! {
+		/// Contract function with already defined input values
 		pub struct #name_with_input {
 			encoded_input: ethabi::Bytes
 		}
 
 		impl #name_with_input {
+			#[doc(hidden)]
 			pub fn from_tokens(v: Vec<ethabi::Token>) -> Self {
 				let encoded_input : ethabi::Bytes = functions::#name::default().encode_input(&v).expect(INTERNAL_ERR);
 				#name_with_input {
@@ -813,6 +824,7 @@ fn declare_functions_input_wrappers(function: &Function) -> quote::Tokens {
 				}
 			}
 
+			/// Returns the previously set function arguments encoded as bytes
 			pub fn encoded(&self) -> ethabi::Bytes {
 				self.encoded_input.clone()
 			}
