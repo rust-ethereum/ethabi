@@ -100,10 +100,6 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 	};
 
 	let result = quote! {
-		#[allow(missing_docs)]
-		#[allow(unused_imports)]
-		#[allow(dead_code)]
-
 		// may not be used
 		use ethabi;
 
