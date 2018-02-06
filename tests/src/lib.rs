@@ -1,4 +1,8 @@
-#![deny(warnings)]
+//! Test crate
+
+#![deny(missing_docs)]
+#![deny(dead_code)]
+#![deny(unused_imports)]
 
 extern crate rustc_hex;
 extern crate ethabi;
