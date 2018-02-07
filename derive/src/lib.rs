@@ -34,6 +34,7 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 	let functions: Vec<_> = contract.functions().map(impl_contract_function).collect();
 	let events_impl: Vec<_> = contract.events().map(impl_contract_event).collect();
 	let constructor_impl = contract.constructor.as_ref().map(impl_contract_constructor);
+	let constructor_input_wrapper_struct = contract.constructor.as_ref().map(declare_contract_constructor_input_wrapper);
 	let logs_structs: Vec<_> = contract.events().map(declare_logs).collect();
 	let events_structs: Vec<_> = contract.events().map(declare_events).collect();
 	let func_structs: Vec<_> = contract.functions().map(declare_functions).collect();
@@ -148,6 +149,7 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 		impl #name {
 			#constructor_impl
 		}
+		#constructor_input_wrapper_struct
 
 		#events_and_logs_quote
 
@@ -432,6 +434,16 @@ fn impl_contract_constructor(constructor: &Constructor) -> quote::Tokens {
 		.map(|(param_name, param)| to_token(&from_template_param(&param.kind, param_name), &param.kind))
 		.collect();
 
+	quote! {
+		pub fn constructor<#(#template_params),*>(&self, code: ethabi::Bytes, #(#params),* ) -> ConstructorWithInput {
+			let v: Vec<ethabi::Token> = vec![#(#usage),*];
+			ConstructorWithInput::new(code, v)
+		}
+
+	}
+}
+
+fn declare_contract_constructor_input_wrapper(constructor: &Constructor) -> quote::Tokens {
 	let constructor_inputs = &constructor.inputs.iter().map(|x| {
 		let name = &x.name;
 		let kind = to_syntax_string(&x.kind);
@@ -440,15 +452,51 @@ fn impl_contract_constructor(constructor: &Constructor) -> quote::Tokens {
 	let constructor_inputs = quote! { vec![ #(#constructor_inputs),* ] };
 
 	quote! {
-		pub fn constructor<#(#template_params),*>(&self, code: ethabi::Bytes, #(#params),* ) -> ethabi::Bytes {
-			let v: Vec<ethabi::Token> = vec![#(#usage),*];
-
-			ethabi::Constructor {
-				inputs: #constructor_inputs
-			}
-			.encode_input(code, &v)
-			.expect(INTERNAL_ERR)
+		pub struct ConstructorWithInput {
+			encoded_input: ethabi::Bytes,
 		}
+		impl ConstructorWithInput {
+			pub fn new(code: ethabi::Bytes, tokens: Vec<ethabi::Token>) -> Self {
+				let constructor = ethabi::Constructor {
+					inputs: #constructor_inputs
+				};
+
+				let encoded_input: ethabi::Bytes = constructor
+					.encode_input(code, &tokens)
+					.expect(INTERNAL_ERR);
+
+				ConstructorWithInput { encoded_input: encoded_input }
+			}
+			pub fn encoded(&self) -> ethabi::Bytes {
+				self.encoded_input.clone()
+			}
+			pub fn transact<CALLER: ethabi::Caller>(self, do_call: CALLER) -> ethabi::Result<ethabi::Address> {
+				use self::ethabi::futures::{Future, IntoFuture};
+				let encoded_input = self.encoded();
+				do_call
+					.transact(encoded_input)
+					.into_future()
+					.wait()
+					.map_err(|x| {
+						ethabi::Error::with_chain(ethabi::Error::from(x), ethabi::ErrorKind::CallError)
+					})
+					.map(|x| ethabi::decode(&[ethabi::ParamType::Address], &x).unwrap().into_iter().next().and_then(|y| y.to_address()).expect(INTERNAL_ERR))
+			}
+			pub fn transact_async < CALLER : ethabi :: Caller > ( self , do_call : CALLER ) -> Box < ethabi :: futures :: Future < Item = ethabi::Address , Error = ethabi :: Error > + Send > where << CALLER as ethabi :: Caller > :: TransactOut as ethabi :: futures :: IntoFuture > :: Future : Send + 'static ,{
+				use self::ethabi::futures::{Future, IntoFuture};
+				let encoded_input = self.encoded();
+				Box::new(
+					do_call
+						.transact(encoded_input)
+						.into_future()
+						.map_err(|x| {
+							ethabi::Error::with_chain(ethabi::Error::from(x), ethabi::ErrorKind::CallError)
+						})
+						.map(|x| ethabi::decode(&[ethabi::ParamType::Address], &x).unwrap().into_iter().next().and_then(|y| y.to_address()).expect(INTERNAL_ERR))
+				)
+			}
+		}
+
 	}
 }
 
