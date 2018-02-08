@@ -158,7 +158,7 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 		#functions_quote
 	};
 
-	// if name == "Eip20" {
+	// if name == "Validators" {
 	// 	println!("{}", result);
 	// }
 
@@ -243,7 +243,7 @@ fn impl_contract_function(function: &Function) -> quote::Tokens {
 		/// Sets the input (arguments) for this contract function
 		pub fn #name<#(#template_params),*>(&self, #(#params),*) -> #function_input_wrapper_name {
 			let v: Vec<ethabi::Token> = vec![#(#usage),*];
-			#function_input_wrapper_name::from_tokens(v)
+			#function_input_wrapper_name::new(v)
 		}
 	}
 }
@@ -459,6 +459,17 @@ fn declare_contract_constructor_input_wrapper(constructor: &Constructor) -> quot
 		pub struct ConstructorWithInput {
 			encoded_input: ethabi::Bytes,
 		}
+		impl ethabi::EthabiFunction for ConstructorWithInput {
+			type Output = ();
+
+			fn encoded(&self) -> ethabi::Bytes {
+				self.encoded_input.clone()
+			}
+
+			fn output(&self, _output_bytes: ethabi::Bytes) -> ethabi::Result<Self::Output> {
+				Ok(())
+			}
+		}
 		impl ConstructorWithInput {
 			pub fn new(code: ethabi::Bytes, tokens: Vec<ethabi::Token>) -> Self {
 				let constructor = ethabi::Constructor {
@@ -470,34 +481,6 @@ fn declare_contract_constructor_input_wrapper(constructor: &Constructor) -> quot
 					.expect(INTERNAL_ERR);
 
 				ConstructorWithInput { encoded_input: encoded_input }
-			}
-			pub fn encoded(&self) -> ethabi::Bytes {
-				self.encoded_input.clone()
-			}
-			pub fn transact<CALLER: ethabi::Caller>(self, do_call: CALLER) -> ethabi::Result<ethabi::Address> {
-				use self::ethabi::futures::{Future, IntoFuture};
-				let encoded_input = self.encoded();
-				do_call
-					.transact(encoded_input)
-					.into_future()
-					.wait()
-					.map_err(|x| {
-						ethabi::Error::with_chain(ethabi::Error::from(x), ethabi::ErrorKind::CallError)
-					})
-					.map(|x| ethabi::decode(&[ethabi::ParamType::Address], &x).unwrap().into_iter().next().and_then(|y| y.to_address()).expect(INTERNAL_ERR))
-			}
-			pub fn transact_async < CALLER : ethabi :: Caller > ( self , do_call : CALLER ) -> Box < ethabi :: futures :: Future < Item = ethabi::Address , Error = ethabi :: Error > + Send > where << CALLER as ethabi :: Caller > :: TransactOut as ethabi :: futures :: IntoFuture > :: Future : Send + 'static ,{
-				use self::ethabi::futures::{Future, IntoFuture};
-				let encoded_input = self.encoded();
-				Box::new(
-					do_call
-						.transact(encoded_input)
-						.into_future()
-						.map_err(|x| {
-							ethabi::Error::with_chain(ethabi::Error::from(x), ethabi::ErrorKind::CallError)
-						})
-						.map(|x| ethabi::decode(&[ethabi::ParamType::Address], &x).unwrap().into_iter().next().and_then(|y| y.to_address()).expect(INTERNAL_ERR))
-				)
 			}
 		}
 
@@ -825,7 +808,7 @@ fn declare_functions_input_wrappers(function: &Function) -> quote::Tokens {
 
 		impl #name_with_input {
 			#[doc(hidden)]
-			pub fn from_tokens(v: Vec<ethabi::Token>) -> Self {
+			pub fn new(v: Vec<ethabi::Token>) -> Self {
 				let encoded_input : ethabi::Bytes = functions::#name::default().encode_input(&v).expect(INTERNAL_ERR);
 				#name_with_input {
 					encoded_input: encoded_input

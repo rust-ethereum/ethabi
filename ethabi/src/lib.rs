@@ -158,30 +158,3 @@ impl<F> Transact for F where
 
 
 
-
-pub trait Caller: Sized {
-	type CallOut: futures::IntoFuture<Item=Bytes, Error=String> + Send;
-	type TransactOut: futures::IntoFuture<Item=Bytes, Error=String> + Send;
-
-	fn call(self, Bytes) -> Self::CallOut;
-
-	fn transact(self, Bytes) -> Self::TransactOut;
-}
-
-
-// TODO [ToDr] Consider implementation for FnOnce, and later Caller for &sth
-impl<F, R> Caller for F where
-	R: futures::IntoFuture<Item=Bytes, Error=String> + Send,
-	F: FnOnce(Bytes) -> R,
-{
-	type CallOut = R;
-	type TransactOut = R;
-
-	fn call(self, b: Bytes) -> R {
-		(self)(b)
-	}
-
-	fn transact(self, b: Bytes) -> R {
-		(self)(b)
-	}
-}
