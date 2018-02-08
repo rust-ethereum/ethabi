@@ -66,28 +66,28 @@ pub type Uint = ethereum_types::U256;
 /// Commonly used FixedBytes of size 32
 pub type Hash = ethereum_types::H256;
 
-
-// Trait for functions will allow some nice meta programming.
-// Trait implemented by the struct returned by .balance_of(123)
+/// Contract functions from ethabi-derive
 pub trait EthabiFunction {
+	/// Output types of the contract function
     type Output;
 
+	/// Encodes the input for the contract function
     fn encoded(&self) -> Bytes;
+
+	/// Decodes the given bytes output
     fn output(&self, Bytes) -> Result<Self::Output>;
 }
 
-// A caller extension trait can be implemented for EthabiFunction in a separate crate.
-// Lets us use .call() and .transact() on .balance_of(123)
-// .balance_of(123).call(|encoded_input| send_to_solaris_and_return_output_bytes())
-// aka EthabiFunction.call(closure_get_output_from_bytes)
-// aka (rewritten par ce trait): closure_get_output.call(encoded_bytes, output_bytes_to_result)
-// [donc closure_get_output [Fn] doit implémenter .call, aka Call<Out> voir plus bas]
-// -> C::Result
+/// Trait that adds `.call(caller)` and `.transact(caller)` to contract functions.
+/// The functions get delegated to the caller.
 pub trait DelegateCall<O> {
+	/// Delegate call to caller
 	fn call<C: Call<O>>(self, caller: C) -> C::Result;
+
+	/// Delegate transaction to caller
 	fn transact<T: Transact>(self, caller: T) -> T::Result;
 }
-impl<O, EF: EthabiFunction<Output=O>> DelegateCall<O> for EF {
+impl<O, E: EthabiFunction<Output=O>> DelegateCall<O> for E {
     fn call<C: Call<O>>(self, caller: C) -> C::Result {
         caller.call(self.encoded(), move |bytes| self.output(bytes))
     }
@@ -97,49 +97,49 @@ impl<O, EF: EthabiFunction<Output=O>> DelegateCall<O> for EF {
     }
 }
 
-// Trait for anything that implements .call(bytes, output_decoder)
-// aka trait for any closure_get_output_from_bytes
+/// A caller (for example a closure) that takes input bytes and an output decoder,
+/// processes internally an output and returns the decoded output.
 pub trait Call<Out> {
     // TODO do we actually need any bounds here?
+	/// Return type of the call
     type Result;
 
+	/// Processes the call given input bytes
     fn call<F>(self, input: Bytes, output_decoder: F) -> Self::Result
-        where F: FnOnce(Bytes) -> Result<Out/*, Error*/>;
+        where F: FnOnce(Bytes) -> Result<Out>;
 }
-
-// A blanket implementations would be nice (that's the current call signature).
+// Blanket implementation for closures
 impl<Out, F> Call<Out> for F where
-    F: FnOnce(Bytes) -> Result<Bytes/*, String*/>
+    F: FnOnce(Bytes) -> Result<Bytes>
 {
-    type Result = Result<Out/*, Error*/>;
+    type Result = Result<Out>;
 
-    fn call<FX>(self, input: Bytes, output_decoder: FX) -> Self::Result
-		where FX: FnOnce(Bytes) -> Result<Out/*, String*/>
+    fn call<D>(self, input: Bytes, output_decoder: D) -> Self::Result
+		where D: FnOnce(Bytes) -> Result<Out>
 	{
         (self)(input)
-            // .map_err(Error::Message)
             .and_then(output_decoder)
     }
 }
 
-// Trait for anything that implements .transact(bytes, output_decoder)
-// aka trait for any closure_get_output_from_bytes
+/// A caller (for example a closure) that takes input bytes and processes them.
 pub trait Transact {
+	/// Return type of the transaction
     type Result;
 
+	/// Processes the transaction given input bytes
     fn transact(self, Bytes) -> Self::Result;
 }
-
-// Similar blanket impl for transact (although we don't really have bytes as result, just ())
+// Blanket implementation for closures.
+// Transactions always return () for now.
 impl<F> Transact for F where
-    F: FnOnce(Bytes) -> Result<()/*, String*/>
+    F: FnOnce(Bytes) -> Result<()>
 {
-    type Result = Result<()/*, Error*/>;
+    type Result = Result<()>;
 
     fn transact(self, input: Bytes) -> Self::Result
 	{
         (self)(input)
-            // .map_err(Error::Message)
     }
 }
 
