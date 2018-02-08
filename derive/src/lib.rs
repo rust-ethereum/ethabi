@@ -11,7 +11,7 @@ use std::{env, fs};
 use std::path::PathBuf;
 use proc_macro::TokenStream;
 use heck::{SnakeCase, CamelCase};
-use ethabi::{Result, ResultExt, Contract, Event, Function, ParamType, Constructor};
+use ethabi::{Result, ResultExt, Contract, Event, Function, Param, ParamType, Constructor};
 
 const ERROR_MSG: &'static str = "`derive(EthabiContract)` failed";
 
@@ -199,56 +199,7 @@ fn normalize_path(relative_path: &str) -> Result<PathBuf> {
 	Ok(path)
 }
 
-fn impl_contract_function(function: &Function) -> quote::Tokens {
-	let name = syn::Ident::new(function.name.to_snake_case());
-	let function_input_wrapper_name = syn::Ident::new(format!("{}WithInput",function.name.to_camel_case()));
-
-	// [param0, hello_world, param2]
-	let ref names: Vec<_> = function.inputs
-		.iter()
-		.enumerate()
-		.map(|(index, param)| if param.name.is_empty() {
-			syn::Ident::new(format!("param{}", index))
-		} else {
-			param.name.to_snake_case().into()
-		}).collect();
-
-	// [T0: Into<Uint>, T1: Into<Bytes>, T2: IntoIterator<Item = U2>, U2 = Into<Uint>]
-	let ref template_params: Vec<_> = function.inputs.iter().enumerate()
-		.map(|(index, param)| template_param_type(&param.kind, index))
-		.collect();
-
-	// [Uint, Bytes, Vec<Uint>]
-	let kinds: Vec<_> = function.inputs
-		.iter()
-		.map(|param| rust_type(&param.kind))
-		.collect();
-
-	// [T0, T1, T2]
-	let template_names: Vec<_> = kinds.iter().enumerate()
-		.map(|(index, _)| syn::Ident::new(format!("T{}", index)))
-		.collect();
-
-	// [param0: T0, hello_world: T1, param2: T2]
-	let ref params: Vec<_> = names.iter().zip(template_names.iter())
-		.map(|(param_name, template_name)| quote! { #param_name: #template_name })
-		.collect();
-
-	// [Token::Uint(param0.into()), Token::Bytes(hello_world.into()), Token::Array(param2.into_iter().map(Into::into).collect())]
-	let usage: Vec<_> = names.iter().zip(function.inputs.iter())
-		.map(|(param_name, param)| to_token(&from_template_param(&param.kind, param_name), &param.kind))
-		.collect();
-
-	quote! {
-		/// Sets the input (arguments) for this contract function
-		pub fn #name<#(#template_params),*>(&self, #(#params),*) -> #function_input_wrapper_name {
-			let v: Vec<ethabi::Token> = vec![#(#usage),*];
-			#function_input_wrapper_name::new(v)
-		}
-	}
-}
-
-fn to_syntax_string(param_type : &ethabi::ParamType) -> quote::Tokens {
+fn to_syntax_string(param_type: &ethabi::ParamType) -> quote::Tokens {
 	match *param_type {
 		ParamType::Address => quote! { ethabi::ParamType::Address },
 		ParamType::Bytes => quote! { ethabi::ParamType::Bytes },
@@ -266,6 +217,15 @@ fn to_syntax_string(param_type : &ethabi::ParamType) -> quote::Tokens {
 			quote! { ethabi::ParamType::FixedArray(Box::new(#param_type_quote), #x) }
 		}
 	}
+}
+
+fn to_ethabi_param_vec(params: &Vec<Param>) -> quote::Tokens {
+	let p = params.iter().map(|x| {
+		let name = &x.name;
+		let kind = to_syntax_string(&x.kind);
+		format!(r##"ethabi::Param {{ name: "{}".to_owned(), kind: {} }}"##, name, kind).into()
+	}).collect::<Vec<syn::Ident>>();
+	quote! { vec![ #(#p),* ] }
 }
 
 fn rust_type(input: &ParamType) -> syn::Ident {
@@ -391,6 +351,80 @@ fn from_token(kind: &ParamType, token: &syn::Ident) -> quote::Tokens {
 	}
 }
 
+fn input_names(inputs: &Vec<Param>) -> Vec<syn::Ident> {
+	inputs
+		.iter()
+		.enumerate()
+		.map(|(index, param)| if param.name.is_empty() {
+			syn::Ident::new(format!("param{}", index))
+		} else {
+			param.name.to_snake_case().into()
+		}).collect()
+}
+
+fn get_template_names(kinds: &Vec<syn::Ident>) -> Vec<syn::Ident> {
+	kinds.iter().enumerate()
+		.map(|(index, _)| syn::Ident::new(format!("T{}", index)))
+		.collect()
+}
+
+fn get_output_kinds(outputs: &Vec<Param>) -> quote::Tokens {
+	match outputs.len() {
+		0 => quote! {()},
+		1 => {
+			let t = rust_type(&outputs[0].kind);
+			quote! { #t }
+		},
+		_ => {
+			let outs: Vec<_> = outputs
+				.iter()
+				.map(|param| rust_type(&param.kind))
+				.collect();
+			quote! { (#(#outs),*) }
+		}
+	}
+}
+
+fn impl_contract_function(function: &Function) -> quote::Tokens {
+	let name = syn::Ident::new(function.name.to_snake_case());
+	let function_input_wrapper_name = syn::Ident::new(format!("{}WithInput",function.name.to_camel_case()));
+
+	// [param0, hello_world, param2]
+	let ref input_names: Vec<syn::Ident> = input_names(&function.inputs);
+
+	// [T0: Into<Uint>, T1: Into<Bytes>, T2: IntoIterator<Item = U2>, U2 = Into<Uint>]
+	let ref template_params: Vec<_> = function.inputs.iter().enumerate()
+		.map(|(index, param)| template_param_type(&param.kind, index))
+		.collect();
+
+	// [Uint, Bytes, Vec<Uint>]
+	let kinds: Vec<_> = function.inputs
+		.iter()
+		.map(|param| rust_type(&param.kind))
+		.collect();
+
+	// [T0, T1, T2]
+	let template_names: Vec<_> = get_template_names(&kinds);
+
+	// [param0: T0, hello_world: T1, param2: T2]
+	let ref params: Vec<_> = input_names.iter().zip(template_names.iter())
+		.map(|(param_name, template_name)| quote! { #param_name: #template_name })
+		.collect();
+
+	// [Token::Uint(param0.into()), Token::Bytes(hello_world.into()), Token::Array(param2.into_iter().map(Into::into).collect())]
+	let usage: Vec<_> = input_names.iter().zip(function.inputs.iter())
+		.map(|(param_name, param)| to_token(&from_template_param(&param.kind, param_name), &param.kind))
+		.collect();
+
+	quote! {
+		/// Sets the input (arguments) for this contract function
+		pub fn #name<#(#template_params),*>(&self, #(#params),*) -> #function_input_wrapper_name {
+			let v: Vec<ethabi::Token> = vec![#(#usage),*];
+			#function_input_wrapper_name::new(v)
+		}
+	}
+}
+
 fn impl_contract_event(event: &Event) -> quote::Tokens {
 	let name = syn::Ident::new(event.name.to_snake_case());
 	let event_name = syn::Ident::new(event.name.to_camel_case());
@@ -403,14 +437,7 @@ fn impl_contract_event(event: &Event) -> quote::Tokens {
 
 fn impl_contract_constructor(constructor: &Constructor) -> quote::Tokens {
 	// [param0, hello_world, param2]
-	let names: Vec<_> = constructor.inputs
-		.iter()
-		.enumerate()
-		.map(|(index, param)| if param.name.is_empty() {
-			syn::Ident::new(format!("param{}", index))
-		} else {
-			param.name.to_snake_case().into()
-		}).collect();
+	let input_names: Vec<_> = input_names(&constructor.inputs);
 
 	// [Uint, Bytes, Vec<Uint>]
 	let kinds: Vec<_> = constructor.inputs
@@ -419,9 +446,7 @@ fn impl_contract_constructor(constructor: &Constructor) -> quote::Tokens {
 		.collect();
 
 	// [T0, T1, T2]
-	let template_names: Vec<_> = kinds.iter().enumerate()
-		.map(|(index, _)| syn::Ident::new(format!("T{}", index)))
-		.collect();
+	let template_names: Vec<_> = get_template_names(&kinds);
 
 	// [T0: Into<Uint>, T1: Into<Bytes>, T2: IntoIterator<Item = U2>, U2 = Into<Uint>]
 	let template_params: Vec<_> = constructor.inputs.iter().enumerate()
@@ -429,12 +454,12 @@ fn impl_contract_constructor(constructor: &Constructor) -> quote::Tokens {
 		.collect();
 
 	// [param0: T0, hello_world: T1, param2: T2]
-	let params: Vec<_> = names.iter().zip(template_names.iter())
+	let params: Vec<_> = input_names.iter().zip(template_names.iter())
 		.map(|(param_name, template_name)| quote! { #param_name: #template_name })
 		.collect();
 
 	// [Token::Uint(param0.into()), Token::Bytes(hello_world.into()), Token::Array(param2.into())]
-	let usage: Vec<_> = names.iter().zip(constructor.inputs.iter())
+	let usage: Vec<_> = input_names.iter().zip(constructor.inputs.iter())
 		.map(|(param_name, param)| to_token(&from_template_param(&param.kind, param_name), &param.kind))
 		.collect();
 
@@ -448,12 +473,7 @@ fn impl_contract_constructor(constructor: &Constructor) -> quote::Tokens {
 }
 
 fn declare_contract_constructor_input_wrapper(constructor: &Constructor) -> quote::Tokens {
-	let constructor_inputs = &constructor.inputs.iter().map(|x| {
-		let name = &x.name;
-		let kind = to_syntax_string(&x.kind);
-		format!(r##"ethabi::Param {{ name: "{}".to_owned(), kind: {} }}"##, name, kind).into()
-	}).collect::<Vec<syn::Ident>>();
-	let constructor_inputs = quote! { vec![ #(#constructor_inputs),* ] };
+	let constructor_inputs = to_ethabi_param_vec(&constructor.inputs);
 
 	quote! {
 		pub struct ConstructorWithInput {
@@ -562,9 +582,7 @@ fn declare_events(event: &Event) -> quote::Tokens {
 		.collect();
 
 	// [T0, T1, T2]
-	let template_names: Vec<_> = topic_kinds.iter().enumerate()
-		.map(|(index, _)| syn::Ident::new(format!("T{}", index)))
-		.collect();
+	let template_names: Vec<_> = get_template_names(&topic_kinds);
 
 	let params: Vec<_> = topic_names.iter().zip(template_names.iter())
 		.map(|(param_name, template_name)| quote! { #param_name: #template_name })
@@ -646,20 +664,7 @@ fn declare_functions(function: &Function) -> quote::Tokens {
 	let name = syn::Ident::new(function.name.to_camel_case());
 
 	let decode_output = {
-		let output_kinds = match function.outputs.len() {
-			0 => quote! {()},
-			1 => {
-				let t = rust_type(&function.outputs[0].kind);
-				quote! { #t }
-			},
-			_ => {
-				let outs: Vec<_> = function.outputs
-					.iter()
-					.map(|param| rust_type(&param.kind))
-					.collect();
-				quote! { (#(#outs),*) }
-			}
-		};
+		let output_kinds = get_output_kinds(&function.outputs);
 
 		let o_impl = match function.outputs.len() {
 			0 => quote! { Ok(()) },
@@ -696,21 +701,8 @@ fn declare_functions(function: &Function) -> quote::Tokens {
 	};
 
 	let function_name = &function.name;
-
-	let function_inputs = &function.inputs.iter().map(|x| {
-		let name = &x.name;
-		let kind = to_syntax_string(&x.kind);
-		format!(r##"ethabi::Param {{ name: "{}".to_owned(), kind: {} }}"##, name, kind).into()
-	}).collect::<Vec<syn::Ident>>();
-	let function_inputs = quote! { vec![ #(#function_inputs),* ] };
-
-	let function_outputs = &function.outputs.iter().map(|x| {
-		let name = &x.name;
-		let kind = to_syntax_string(&x.kind);
-		format!(r##"ethabi::Param {{ name: "{}".to_owned(), kind: {} }}"##, name, kind).into()
-	}).collect::<Vec<syn::Ident>>();
-	let function_outputs = quote! { vec![ #(#function_outputs),* ] };
-
+	let function_inputs = to_ethabi_param_vec(&function.inputs);
+	let function_outputs = to_ethabi_param_vec(&function.outputs);
 	let function_constant = &function.constant;
 
 	quote! {
@@ -744,24 +736,10 @@ fn declare_functions(function: &Function) -> quote::Tokens {
 fn declare_output_functions(function: &Function) -> quote::Tokens {
 	let name_camel = syn::Ident::new(function.name.to_camel_case());
 	let name_snake = syn::Ident::new(function.name.to_snake_case());
-
-	let output_kinds = match function.outputs.len() {
-		0 => quote! {()},
-		1 => {
-			let t = rust_type(&function.outputs[0].kind);
-			quote! { #t }
-		},
-		_ => {
-			let outs: Vec<_> = function.outputs
-				.iter()
-				.map(|param| rust_type(&param.kind))
-				.collect();
-			quote! { (#(#outs),*) }
-		}
-	};
+	let output_kinds = get_output_kinds(&function.outputs);
 
 	quote! {
-		/// Returns the output for this contract function converted to native types
+		/// Returns the decoded output for this contract function
 		pub fn #name_snake(&self, output_bytes : &[u8]) -> ethabi::Result<#output_kinds> {
 			functions::#name_camel::default().decode_output(&output_bytes)
 		}
@@ -771,21 +749,7 @@ fn declare_output_functions(function: &Function) -> quote::Tokens {
 fn declare_functions_input_wrappers(function: &Function) -> quote::Tokens {
 	let name = syn::Ident::new(function.name.to_camel_case());
 	let name_with_input = syn::Ident::new(format!("{}WithInput",function.name.to_camel_case()));
-
-	let output_kinds = match function.outputs.len() {
-		0 => quote! {()},
-		1 => {
-			let t = rust_type(&function.outputs[0].kind);
-			quote! { #t }
-		},
-		_ => {
-			let outs: Vec<_> = function.outputs
-				.iter()
-				.map(|param| rust_type(&param.kind))
-				.collect();
-			quote! { (#(#outs),*) }
-		}
-	};
+	let output_kinds = get_output_kinds(&function.outputs);
 
 	quote! {
 		/// Contract function with already defined input values
@@ -796,7 +760,6 @@ fn declare_functions_input_wrappers(function: &Function) -> quote::Tokens {
 		impl ethabi::EthabiFunction for #name_with_input {
 			type Output = #output_kinds;
 
-			/// Returns the previously set function arguments encoded as bytes
 			fn encoded(&self) -> ethabi::Bytes {
 				self.encoded_input.clone()
 			}
