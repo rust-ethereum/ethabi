@@ -158,6 +158,10 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 		#functions_quote
 	};
 
+	// if name == "Eip20" {
+	// 	println!("{}", result);
+	// }
+
 	Ok(result)
 }
 
@@ -800,74 +804,23 @@ fn declare_functions_input_wrappers(function: &Function) -> quote::Tokens {
 		}
 	};
 
-	let call_or_transact = if function.constant {
-		quote! {
-			/// Makes a blocking call to the constant function with the arguments previously set
-			pub fn call<CALLER: ethabi::Caller>(self, do_call: CALLER)
-				-> ethabi::Result<#output_kinds>
-			{
-				use self::ethabi::futures::{Future, IntoFuture};
-
-				let encoded_input = self.encoded();
-
-				do_call.call(encoded_input).into_future().wait()
-					.map_err(|x| ethabi::Error::with_chain(ethabi::Error::from(x), ethabi::ErrorKind::CallError))
-					.and_then(move |encoded_output| functions::#name::default().decode_output(&encoded_output))
-			}
-
-			/// Makes an asynchronous call to the constant function with the arguments previously set
-			pub fn call_async<CALLER: ethabi::Caller>(self, do_call: CALLER)
-				-> Box<ethabi::futures::Future<Item=#output_kinds, Error=ethabi::Error> + Send> where
-				<<CALLER as ethabi::Caller>::CallOut as ethabi::futures::IntoFuture>::Future: Send + 'static,
-			{
-				use self::ethabi::futures::{Future, IntoFuture};
-
-				let encoded_input = self.encoded();
-
-				Box::new(
-					do_call.call(encoded_input).into_future()
-						.map_err(|x| ethabi::Error::with_chain(ethabi::Error::from(x), ethabi::ErrorKind::CallError))
-						.and_then(move |encoded_output| functions::#name::default().decode_output(&encoded_output))
-				)
-			}
-		}
-	} else {
-		quote! {
-			/// Makes a transaction to the function with the arguments previously set
-			pub fn transact<CALLER: ethabi::Caller>(self, do_call: CALLER)
-				-> ethabi::Result<()>
-			{
-				use self::ethabi::futures::{Future, IntoFuture};
-
-				let encoded_input = self.encoded();
-
-				do_call.transact(encoded_input).into_future().wait()
-					.map_err(|x| ethabi::Error::with_chain(ethabi::Error::from(x), ethabi::ErrorKind::CallError))
-					.map(|_| ())
-			}
-
-			/// Makes an asynchronous transaction to the function with the arguments previously set
-			pub fn transact_async<CALLER: ethabi::Caller>(self, do_call: CALLER)
-				-> Box<ethabi::futures::Future<Item=(), Error=ethabi::Error> + Send> where
-				<<CALLER as ethabi::Caller>::TransactOut as ethabi::futures::IntoFuture>::Future: Send + 'static,
-			{
-				use self::ethabi::futures::{Future, IntoFuture};
-
-				let encoded_input = self.encoded();
-
-				Box::new(
-					do_call.transact(encoded_input).into_future()
-						.map_err(|x| ethabi::Error::with_chain(ethabi::Error::from(x), ethabi::ErrorKind::CallError))
-						.map(|_| ())
-				)
-			}
-		}
-	};
-
 	quote! {
 		/// Contract function with already defined input values
 		pub struct #name_with_input {
 			encoded_input: ethabi::Bytes
+		}
+
+		impl ethabi::EthabiFunction for #name_with_input {
+			type Output = #output_kinds;
+
+			/// Returns the previously set function arguments encoded as bytes
+			fn encoded(&self) -> ethabi::Bytes {
+				self.encoded_input.clone()
+			}
+
+			fn output(&self, output_bytes: ethabi::Bytes) -> ethabi::Result<Self::Output> {
+				functions::#name::default().decode_output(&output_bytes)
+			}
 		}
 
 		impl #name_with_input {
@@ -878,13 +831,6 @@ fn declare_functions_input_wrappers(function: &Function) -> quote::Tokens {
 					encoded_input: encoded_input
 				}
 			}
-
-			/// Returns the previously set function arguments encoded as bytes
-			pub fn encoded(&self) -> ethabi::Bytes {
-				self.encoded_input.clone()
-			}
-
-			#call_or_transact
 		}
 	}
 }

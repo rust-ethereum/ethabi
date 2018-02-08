@@ -66,6 +66,99 @@ pub type Uint = ethereum_types::U256;
 /// Commonly used FixedBytes of size 32
 pub type Hash = ethereum_types::H256;
 
+
+// Trait for functions will allow some nice meta programming.
+// Trait implemented by the struct returned by .balance_of(123)
+pub trait EthabiFunction {
+    type Output;
+
+    fn encoded(&self) -> Bytes;
+    fn output(&self, Bytes) -> Result<Self::Output>;
+}
+
+// A caller extension trait can be implemented for EthabiFunction in a separate crate.
+// Lets us use .call() and .transact() on .balance_of(123)
+// .balance_of(123).call(|encoded_input| send_to_solaris_and_return_output_bytes())
+// aka EthabiFunction.call(closure_get_output_from_bytes)
+// aka (rewritten par ce trait): closure_get_output.call(encoded_bytes, output_bytes_to_result)
+// [donc closure_get_output [Fn] doit implémenter .call, aka Call<Out> voir plus bas]
+// -> C::Result
+pub trait DelegateCall<O> {
+	fn call<C: Call<O>>(self, caller: C) -> C::Result;
+	fn transact<T: Transact>(self, caller: T) -> T::Result;
+}
+impl<O, EF: EthabiFunction<Output=O>> DelegateCall<O> for EF {
+    fn call<C: Call<O>>(self, caller: C) -> C::Result {
+        caller.call(self.encoded(), move |bytes| self.output(bytes))
+    }
+
+    fn transact<T: Transact>(self, caller: T) -> T::Result {
+        caller.transact(self.encoded())
+    }
+}
+
+// Trait for anything that implements .call(bytes, output_decoder)
+// aka trait for any closure_get_output_from_bytes
+pub trait Call<Out> {
+    // TODO do we actually need any bounds here?
+    type Result;
+
+    fn call<F>(self, input: Bytes, output_decoder: F) -> Self::Result
+        where F: FnOnce(Bytes) -> Result<Out/*, Error*/>;
+}
+
+// A blanket implementations would be nice (that's the current call signature).
+impl<Out, F> Call<Out> for F where
+    F: FnOnce(Bytes) -> Result<Bytes/*, String*/>
+{
+    type Result = Result<Out/*, Error*/>;
+
+    fn call<FX>(self, input: Bytes, output_decoder: FX) -> Self::Result
+		where FX: FnOnce(Bytes) -> Result<Out/*, String*/>
+	{
+        (self)(input)
+            // .map_err(Error::Message)
+            .and_then(output_decoder)
+    }
+}
+
+// Trait for anything that implements .transact(bytes, output_decoder)
+// aka trait for any closure_get_output_from_bytes
+pub trait Transact {
+    type Result;
+
+    fn transact(self, Bytes) -> Self::Result;
+}
+
+// Similar blanket impl for transact (although we don't really have bytes as result, just ())
+impl<F> Transact for F where
+    F: FnOnce(Bytes) -> Result<()/*, String*/>
+{
+    type Result = Result<()/*, Error*/>;
+
+    fn transact(self, input: Bytes) -> Self::Result
+	{
+        (self)(input)
+            // .map_err(Error::Message)
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub trait Caller: Sized {
 	type CallOut: futures::IntoFuture<Item=Bytes, Error=String> + Send;
 	type TransactOut: futures::IntoFuture<Item=Bytes, Error=String> + Send;
