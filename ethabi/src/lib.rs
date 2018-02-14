@@ -1,6 +1,7 @@
 //! Ethereum ABI encoding decoding library.
 
 #![warn(missing_docs)]
+#![feature(conservative_impl_trait)]
 
 extern crate rustc_hex as hex;
 extern crate serde;
@@ -87,7 +88,7 @@ pub trait DelegateCall<O> {
 	/// Delegate transaction to caller
 	fn transact<T: Transact>(self, caller: T) -> T::Result;
 }
-impl<O, E: EthabiFunction<Output=O>> DelegateCall<O> for E {
+impl<O, E: EthabiFunction<Output=O> + 'static> DelegateCall<O> for E {
     fn call<C: Call<O>>(self, caller: C) -> C::Result {
         caller.call(self.encoded(), move |bytes| self.output(bytes))
     }
@@ -99,27 +100,32 @@ impl<O, E: EthabiFunction<Output=O>> DelegateCall<O> for E {
 
 /// A caller (for example a closure) that takes input bytes and an output decoder,
 /// processes internally an output and returns the decoded output.
-pub trait Call<Out> {
+pub trait Call<Out>: Sized {
     // TODO do we actually need any bounds here?
 	/// Return type of the call
     type Result;
 
 	/// Processes the call given input bytes
-    fn call<F>(self, input: Bytes, output_decoder: F) -> Self::Result
-        where F: FnOnce(Bytes) -> Result<Out>;
+    fn call<D: 'static>(self, input: Bytes, output_decoder: D) -> Self::Result
+        where D: FnOnce(Bytes) -> Result<Out>;
 }
-// Blanket implementation for closures
-impl<Out, F> Call<Out> for F where
-    F: FnOnce(Bytes) -> Result<Bytes>
-{
-    type Result = Result<Out>;
 
-    fn call<D>(self, input: Bytes, output_decoder: D) -> Self::Result
+// Blanket implementation for closures
+use futures::{Future, IntoFuture};
+impl<Out: 'static, F, R: 'static> Call<Out> for F where
+	R: IntoFuture<Item=Bytes, Error=Error>,
+    F: FnOnce(Bytes) -> R,
+{
+    type Result = Box<Future<Item=Out, Error=Error>>;
+
+    fn call<D: 'static>(self, input: Bytes, output_decoder: D) -> Self::Result
 		where D: FnOnce(Bytes) -> Result<Out>
 	{
-        (self)(input)
-            .and_then(output_decoder)
-    }
+		Box::new(
+			(self)(input).into_future().and_then(output_decoder)
+		)
+	}
+
 }
 
 /// A caller (for example a closure) that takes input bytes and processes them.
