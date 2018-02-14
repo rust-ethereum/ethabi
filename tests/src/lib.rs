@@ -19,7 +19,7 @@ use_contract!(operations, "Operations", "../res/Operations.abi");
 #[cfg(test)]
 mod tests {
 	use rustc_hex::{ToHex, FromHex};
-	use ethabi::{Address, Uint, Bytes, EthabiFunction, DelegateCall};
+	use ethabi::{Address, Uint, Bytes, EthabiFunction, DelegateCall, Future};
 
 	struct Wrapper([u8; 20]);
 
@@ -75,7 +75,7 @@ mod tests {
 		let first = [0x11u8; 20];
 		let second = [0x22u8; 20];
 
-		let address = contract.constructor(code.clone(), vec![first.clone(), second.clone()]).transact(&|_: Bytes| Ok(())).unwrap();
+		let address = contract.constructor(code.clone(), vec![first.clone(), second.clone()]).transact(&|_: Bytes| Ok(())).wait().unwrap();
 		assert_eq!(address, ());
 
 		// Todo make transact async work
@@ -150,7 +150,7 @@ mod tests {
 			assert_eq!(data, "70a082310000000000000000000000000000000000000000000000000000000000000000".from_hex().unwrap());
 			Ok("000000000000000000000000000000000000000000000000000000000036455b".from_hex().unwrap())
         });
-		assert_eq!(result.unwrap(), "000000000000000000000000000000000000000000000000000000000036455b".into());
+		assert_eq!(result.wait().unwrap(), "000000000000000000000000000000000000000000000000000000000036455b".into());
 	}
 
 	#[allow(dead_code)]
@@ -176,9 +176,7 @@ mod tests {
 		let input_bytes = contract.functions().balance_of(addr).encoded();
 		println!("input_bytes: {:?}", input_bytes);
 
-// R: futures::IntoFuture<Item=Bytes, Error=String> + Send,
-	//F: FnOnce(Bytes) -> R,
-		let balance = contract.functions().balance_of(addr).call(&|_: Bytes| /*send bytes, return intofuture<bytes>*/ Ok("000000000000000000000000000000000000000000000000000000000000000B".from_hex().unwrap()) ).unwrap();
+		let balance = contract.functions().balance_of(addr).call(&|_: Bytes| /*send bytes, return intofuture<bytes>*/ Ok("000000000000000000000000000000000000000000000000000000000000000B".from_hex().unwrap()) ).wait().unwrap();
 		println!("balance: {:?}", balance);
 		assert_eq!(balance,11.into());
 
@@ -189,10 +187,10 @@ mod tests {
 
 		// Transact (result dependent on the caller)
 		let to: Address = [3u8; 20].into();
-		use ethabi::futures::Future; // why is this needed ?
-		let receipt = contract.functions().transfer(to, 5).transact(&|_: Bytes| /*ou wait future ok*/ Ok("0000000000000000000000000000000000000000000000000000000000000001".from_hex().unwrap())/* as future::IntoFuture*/).wait().unwrap();
+		let receipt = contract.functions().transfer(to, 5).transact(&|_: Bytes| Ok(())).wait().unwrap();
 		assert_eq!(receipt,());
-		let receipt = contract.functions().transfer(to, 5).transact(&|_: Bytes| Ok(/*"0000000000000000000000000000000000000000000000000000000000000001".from_hex().unwrap()*/())).unwrap();
+		// TODO test with returning futures
+		let receipt = contract.functions().transfer(to, 5).transact(&|_: Bytes| Ok(())).wait().unwrap();
 		assert_eq!(receipt,());
 
 		// Read events (same patter, just passing `parse_log` as decoder)

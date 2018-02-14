@@ -1,7 +1,6 @@
 //! Ethereum ABI encoding decoding library.
 
 #![warn(missing_docs)]
-#![feature(conservative_impl_trait)]
 
 extern crate rustc_hex as hex;
 extern crate serde;
@@ -48,6 +47,7 @@ pub use param::Param;
 pub use log::{Log, RawLog, LogParam, ParseLog};
 pub use event::Event;
 pub use event_param::EventParam;
+pub use futures::{Future, IntoFuture};
 
 /// ABI address.
 pub type Address = ethereum_types::Address;
@@ -111,10 +111,9 @@ pub trait Call<Out>: Sized {
 }
 
 // Blanket implementation for closures
-use futures::{Future, IntoFuture};
 impl<Out: 'static, F, R: 'static> Call<Out> for F where
 	R: IntoFuture<Item=Bytes, Error=Error>,
-    F: FnOnce(Bytes) -> R,
+    F: FnOnce(Bytes) -> R
 {
     type Result = Box<Future<Item=Out, Error=Error>>;
 
@@ -138,14 +137,17 @@ pub trait Transact {
 }
 // Blanket implementation for closures.
 // Transactions always return () for now.
-impl<F> Transact for F where
-    F: FnOnce(Bytes) -> Result<()>
+impl<F, R: 'static> Transact for F where
+    R: IntoFuture<Item=(), Error=Error>,
+    F: FnOnce(Bytes) -> R
 {
-    type Result = Result<()>;
+    type Result = Box<Future<Item=(), Error=Error>>;
 
     fn transact(self, input: Bytes) -> Self::Result
 	{
-        (self)(input)
+		Box::new(
+			(self)(input).into_future()
+		)
     }
 }
 
