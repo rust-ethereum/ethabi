@@ -19,7 +19,9 @@ use_contract!(operations, "Operations", "../res/Operations.abi");
 #[cfg(test)]
 mod tests {
 	use rustc_hex::{ToHex, FromHex};
-	use ethabi::{Address, Uint, Bytes, EthabiFunction, DelegateCall, Future};
+	use ethabi::{Address, Uint, Bytes, EthabiFunction, DelegateCall, Error};
+	use ethabi::futures;
+	use ethabi::futures::Future;
 
 	struct Wrapper([u8; 20]);
 
@@ -78,10 +80,8 @@ mod tests {
 		let address = contract.constructor(code.clone(), vec![first.clone(), second.clone()]).transact(&|_: Bytes| Ok(())).wait().unwrap();
 		assert_eq!(address, ());
 
-		// Todo make transact async work
-		// use ethabi::futures::Future;
-		// let address = contract.constructor(code.clone(), vec![first.clone(), second.clone()]).transact(&|_: Bytes| Future::ok::<u32, u32>(1)).wait().unwrap();
-		// assert_eq!(address, ());
+		let address = contract.constructor(code.clone(), vec![first.clone(), second.clone()]).transact(&|_: Bytes| futures::future::ok::<(), Error>(())).wait().unwrap();
+		assert_eq!(address, ());
 	}
 
 	#[test]

@@ -47,7 +47,7 @@ pub use param::Param;
 pub use log::{Log, RawLog, LogParam, ParseLog};
 pub use event::Event;
 pub use event_param::EventParam;
-pub use futures::{Future, IntoFuture};
+use futures::Future;
 
 /// ABI address.
 pub type Address = ethereum_types::Address;
@@ -112,10 +112,10 @@ pub trait Call<Out>: Sized {
 
 // Blanket implementation for closures
 impl<Out: 'static, F, R: 'static> Call<Out> for F where
-	R: IntoFuture<Item=Bytes, Error=Error>,
+	R: futures::IntoFuture<Item=Bytes, Error=Error>,
     F: FnOnce(Bytes) -> R
 {
-    type Result = Box<Future<Item=Out, Error=Error>>;
+    type Result = Box<futures::Future<Item=Out, Error=Error>>;
 
     fn call<D: 'static>(self, input: Bytes, output_decoder: D) -> Self::Result
 		where D: FnOnce(Bytes) -> Result<Out>
@@ -138,10 +138,10 @@ pub trait Transact {
 // Blanket implementation for closures.
 // Transactions always return () for now.
 impl<F, R: 'static> Transact for F where
-    R: IntoFuture<Item=(), Error=Error>,
+    R: futures::IntoFuture<Item=(), Error=Error>,
     F: FnOnce(Bytes) -> R
 {
-    type Result = Box<Future<Item=(), Error=Error>>;
+    type Result = Box<futures::Future<Item=(), Error=Error>>;
 
     fn transact(self, input: Bytes) -> Self::Result
 	{
