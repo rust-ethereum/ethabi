@@ -399,7 +399,7 @@ fn declare_logs(event: &Event) -> quote::Tokens {
 		.collect();
 
 	quote! {
-		#[derive(Debug, Default, Clone, PartialEq)]
+		#[derive(Debug, Clone, PartialEq)]
 		pub struct #name {
 			#(#params)*
 		}
