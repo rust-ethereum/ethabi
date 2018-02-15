@@ -70,18 +70,15 @@ mod tests {
 
 		let contract = Validators::default();
 
-		// deploy contract (that additional function would be nice)
-		// (a special caller that returns address as result)
-
 		let code = Vec::new();
 		let first = [0x11u8; 20];
 		let second = [0x22u8; 20];
 
-		let address = contract.constructor(code.clone(), vec![first.clone(), second.clone()]).transact(&|_: Bytes| Ok(())).wait().unwrap();
-		assert_eq!(address, ());
+		let address = contract.constructor(code.clone(), vec![first.clone(), second.clone()]).transact(&|_: Bytes| Ok("0000000000000000000000002222222222222222222222222222222222222222".from_hex().unwrap())).wait().unwrap();
+		assert_eq!(address, [0x22u8; 20].into());
 
-		let address = contract.constructor(code.clone(), vec![first.clone(), second.clone()]).transact(&|_: Bytes| futures::future::ok::<(), Error>(())).wait().unwrap();
-		assert_eq!(address, ());
+		let address = contract.constructor(code.clone(), vec![first.clone(), second.clone()]).transact(&|_: Bytes| futures::future::ok::<(Bytes), Error>("0000000000000000000000002222222222222222222222222222222222222222".from_hex().unwrap())).wait().unwrap();
+		assert_eq!(address, [0x22u8; 20].into());
 	}
 
 	#[test]
@@ -153,10 +150,10 @@ mod tests {
 		assert_eq!(result.wait().unwrap(), "000000000000000000000000000000000000000000000000000000000036455b".into());
 	}
 
-	#[allow(dead_code)]
-	pub mod eip20_file {
-		include!("eip20_file.rs");
-	}
+	// #[allow(dead_code)]
+	// pub mod eip20_file {
+	// 	include!("eip20_file.rs");
+	// }
 
 	#[test]
 	fn test_new_syntax() {
@@ -165,7 +162,8 @@ mod tests {
 
 		// Initialize contract
 
-		let contract = eip20_file::Eip20::default(); // utiliser contrat généré rs
+		use eip20::Eip20;
+		let contract = Eip20::default(); // utiliser contrat généré rs
 
 		// deploy contract (that additional function would be nice)
 		// (a special caller that returns address as result)
@@ -176,7 +174,7 @@ mod tests {
 		let input_bytes = contract.functions().balance_of(addr).encoded();
 		println!("input_bytes: {:?}", input_bytes);
 
-		let balance = contract.functions().balance_of(addr).call(&|_: Bytes| /*send bytes, return intofuture<bytes>*/ Ok("000000000000000000000000000000000000000000000000000000000000000B".from_hex().unwrap()) ).wait().unwrap();
+		let balance = contract.functions().balance_of(addr).call(&|_: Bytes| Ok("000000000000000000000000000000000000000000000000000000000000000B".from_hex().unwrap()) ).wait().unwrap();
 		println!("balance: {:?}", balance);
 		assert_eq!(balance,11.into());
 
@@ -187,10 +185,9 @@ mod tests {
 
 		// Transact (result dependent on the caller)
 		let to: Address = [3u8; 20].into();
-		let receipt = contract.functions().transfer(to, 5).transact(&|_: Bytes| Ok(())).wait().unwrap();
+		let receipt = contract.functions().transfer(to, 5).transact(&|_: Bytes| Ok(vec![])).wait().unwrap();
 		assert_eq!(receipt,());
-		// TODO test with returning futures
-		let receipt = contract.functions().transfer(to, 5).transact(&|_: Bytes| Ok(())).wait().unwrap();
+		let receipt = contract.functions().transfer(to, 5).transact(&|_: Bytes| futures::future::ok::<(Bytes), Error>(vec![])).wait().unwrap();
 		assert_eq!(receipt,());
 
 		// Read events (same patter, just passing `parse_log` as decoder)

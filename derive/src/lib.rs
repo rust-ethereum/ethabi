@@ -158,7 +158,7 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 		#functions_quote
 	};
 
-	// if name == "Validators" {
+	// if name == "Eip20" {
 	// 	println!("{}", result);
 	// }
 
@@ -480,14 +480,18 @@ fn declare_contract_constructor_input_wrapper(constructor: &Constructor) -> quot
 			encoded_input: ethabi::Bytes,
 		}
 		impl ethabi::EthabiFunction for ConstructorWithInput {
-			type Output = ();
+			type Output = ethabi::Address;
 
 			fn encoded(&self) -> ethabi::Bytes {
 				self.encoded_input.clone()
 			}
 
-			fn output(&self, _output_bytes: ethabi::Bytes) -> ethabi::Result<Self::Output> {
-				Ok(())
+			fn output(&self, output_bytes: ethabi::Bytes) -> ethabi::Result<Self::Output> {
+				let out = ethabi::decode(&vec![ethabi::ParamType::Address], &output_bytes)?
+					.into_iter()
+					.next()
+					.expect(INTERNAL_ERR);
+				Ok(out.to_address().expect(INTERNAL_ERR))
 			}
 		}
 		impl ConstructorWithInput {
@@ -749,7 +753,18 @@ fn declare_output_functions(function: &Function) -> quote::Tokens {
 fn declare_functions_input_wrappers(function: &Function) -> quote::Tokens {
 	let name = syn::Ident::new(function.name.to_camel_case());
 	let name_with_input = syn::Ident::new(format!("{}WithInput",function.name.to_camel_case()));
-	let output_kinds = get_output_kinds(&function.outputs);
+	let output_kinds = if function.constant {
+		get_output_kinds(&function.outputs)
+	}
+	else {
+		quote!{()}
+	};
+	let output_fn_body =  if function.constant {
+		quote!{functions::#name::default().decode_output(&_output_bytes)}
+	}
+	else {
+		quote!{Ok(())}
+	};
 
 	quote! {
 		/// Contract function with already defined input values
@@ -764,8 +779,8 @@ fn declare_functions_input_wrappers(function: &Function) -> quote::Tokens {
 				self.encoded_input.clone()
 			}
 
-			fn output(&self, output_bytes: ethabi::Bytes) -> ethabi::Result<Self::Output> {
-				functions::#name::default().decode_output(&output_bytes)
+			fn output(&self, _output_bytes: ethabi::Bytes) -> ethabi::Result<Self::Output> {
+				#output_fn_body
 			}
 		}
 

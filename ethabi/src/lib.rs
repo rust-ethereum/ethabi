@@ -80,28 +80,27 @@ pub trait EthabiFunction {
 }
 
 /// Trait that adds `.call(caller)` and `.transact(caller)` to contract functions.
-/// The functions get delegated to the caller.
+/// These functions get delegated to the caller.
 pub trait DelegateCall<O> {
 	/// Delegate call to caller
 	fn call<C: Call<O>>(self, caller: C) -> C::Result;
 
 	/// Delegate transaction to caller
-	fn transact<T: Transact>(self, caller: T) -> T::Result;
+	fn transact<T: Transact<O>>(self, caller: T) -> T::Result;
 }
 impl<O, E: EthabiFunction<Output=O> + 'static> DelegateCall<O> for E {
     fn call<C: Call<O>>(self, caller: C) -> C::Result {
         caller.call(self.encoded(), move |bytes| self.output(bytes))
     }
 
-    fn transact<T: Transact>(self, caller: T) -> T::Result {
-        caller.transact(self.encoded())
+    fn transact<T: Transact<O>>(self, caller: T) -> T::Result {
+        caller.transact(self.encoded(), move |bytes| self.output(bytes))
     }
 }
 
 /// A caller (for example a closure) that takes input bytes and an output decoder,
 /// processes internally an output and returns the decoded output.
 pub trait Call<Out>: Sized {
-    // TODO do we actually need any bounds here?
 	/// Return type of the call
     type Result;
 
@@ -109,7 +108,6 @@ pub trait Call<Out>: Sized {
     fn call<D: 'static>(self, input: Bytes, output_decoder: D) -> Self::Result
         where D: FnOnce(Bytes) -> Result<Out>;
 }
-
 // Blanket implementation for closures
 impl<Out: 'static, F, R: 'static> Call<Out> for F where
 	R: futures::IntoFuture<Item=Bytes, Error=Error>,
@@ -128,41 +126,26 @@ impl<Out: 'static, F, R: 'static> Call<Out> for F where
 }
 
 /// A caller (for example a closure) that takes input bytes and processes them.
-pub trait Transact {
+pub trait Transact<Out>: Sized {
 	/// Return type of the transaction
     type Result;
 
 	/// Processes the transaction given input bytes
-    fn transact(self, Bytes) -> Self::Result;
+    fn transact<D: 'static>(self, input: Bytes, output_decoder: D) -> Self::Result
+        where D: FnOnce(Bytes) -> Result<Out>;
 }
 // Blanket implementation for closures.
-// Transactions always return () for now.
-impl<F, R: 'static> Transact for F where
-    R: futures::IntoFuture<Item=(), Error=Error>,
+impl<Out: 'static, F, R: 'static> Transact<Out> for F where
+	R: futures::IntoFuture<Item=Bytes, Error=Error>,
     F: FnOnce(Bytes) -> R
 {
-    type Result = Box<futures::Future<Item=(), Error=Error>>;
+    type Result = Box<futures::Future<Item=Out, Error=Error>>;
 
-    fn transact(self, input: Bytes) -> Self::Result
+    fn transact<D: 'static>(self, input: Bytes, output_decoder: D) -> Self::Result
+		where D: FnOnce(Bytes) -> Result<Out>
 	{
 		Box::new(
-			(self)(input).into_future()
+			(self)(input).into_future().and_then(output_decoder)
 		)
-    }
+	}
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
