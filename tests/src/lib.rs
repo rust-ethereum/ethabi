@@ -30,6 +30,14 @@ mod tests {
 	}
 
 	#[test]
+	fn should_be_cloneable() {
+		use validators::Validators;
+
+		let contract = Validators::default();
+		contract.clone();
+	}
+
+	#[test]
 	fn test_encoding_function_input_as_array() {
 		use validators::Validators;
 

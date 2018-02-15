@@ -59,6 +59,7 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 				#(#logs_structs)*
 			}
 
+			#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 			pub struct #events_name {
 			}
 
@@ -85,6 +86,7 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 				#(#func_structs)*
 			}
 
+			#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 			pub struct #functions_name {
 			}
 			impl #functions_name {
@@ -107,14 +109,8 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 		const INTERNAL_ERR: &'static str = "`ethabi_derive` internal error";
 
 		/// Contract
+		#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 		pub struct #name {
-		}
-
-		impl Default for #name {
-			fn default() -> Self {
-				#name {
-				}
-			}
 		}
 
 		impl #name {
@@ -403,6 +399,7 @@ fn declare_logs(event: &Event) -> quote::Tokens {
 		.collect();
 
 	quote! {
+		#[derive(Debug, Default, Clone, PartialEq)]
 		pub struct #name {
 			#(#params)*
 		}
@@ -495,6 +492,7 @@ fn declare_events(event: &Event) -> quote::Tokens {
 
 
 	quote! {
+		#[derive(Debug, Clone, PartialEq)]
 		pub struct #name {
 			event: ethabi::Event,
 		}
@@ -650,6 +648,7 @@ fn declare_functions(function: &Function) -> quote::Tokens {
 	let function_constant = &function.constant;
 
 	quote! {
+		#[derive(Debug, Clone, PartialEq)]
 		pub struct #name {
 			function: ethabi::Function,
 		}
