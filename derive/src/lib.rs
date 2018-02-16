@@ -158,10 +158,6 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 		#functions_quote
 	};
 
-	// if name == "Eip20" {
-	// 	println!("{}", result);
-	// }
-
 	Ok(result)
 }
 
@@ -479,7 +475,7 @@ fn declare_contract_constructor_input_wrapper(constructor: &Constructor) -> quot
 		pub struct ConstructorWithInput {
 			encoded_input: ethabi::Bytes,
 		}
-		impl ethabi::EthabiFunction for ConstructorWithInput {
+		impl ethabi::ContractFunction for ConstructorWithInput {
 			type Output = ethabi::Address;
 
 			fn encoded(&self) -> ethabi::Bytes {
@@ -772,7 +768,7 @@ fn declare_functions_input_wrappers(function: &Function) -> quote::Tokens {
 			encoded_input: ethabi::Bytes
 		}
 
-		impl ethabi::EthabiFunction for #name_with_input {
+		impl ethabi::ContractFunction for #name_with_input {
 			type Output = #output_kinds;
 
 			fn encoded(&self) -> ethabi::Bytes {

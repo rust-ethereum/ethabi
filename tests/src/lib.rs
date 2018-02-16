@@ -19,7 +19,7 @@ use_contract!(operations, "Operations", "../res/Operations.abi");
 #[cfg(test)]
 mod tests {
 	use rustc_hex::{ToHex, FromHex};
-	use ethabi::{Address, Uint, Bytes, EthabiFunction, DelegateCall, Error};
+	use ethabi::{Address, Uint, Bytes, ContractFunction, DelegateCall, Error};
 	use ethabi::futures;
 	use ethabi::futures::Future;
 
@@ -148,63 +148,6 @@ mod tests {
 			Ok("000000000000000000000000000000000000000000000000000000000036455b".from_hex().unwrap())
         });
 		assert_eq!(result.wait().unwrap(), "000000000000000000000000000000000000000000000000000000000036455b".into());
-	}
-
-	// #[allow(dead_code)]
-	// pub mod eip20_file {
-	// 	include!("eip20_file.rs");
-	// }
-
-	#[test]
-	fn test_new_syntax() {
-		// Caller decides on return types.
-		// let caller = Caller::default();
-
-		// Initialize contract
-
-		use eip20::Eip20;
-		let contract = Eip20::default(); // utiliser contrat généré rs
-
-		// deploy contract (that additional function would be nice)
-		// (a special caller that returns address as result)
-		// TODO : let address = contract.constructor(a, b, c).transact(caller.deploy()).wait()?;
-
-		// Call constant function
-		let addr: Address = [2u8; 20].into();
-		let input_bytes = contract.functions().balance_of(addr).encoded();
-		println!("input_bytes: {:?}", input_bytes);
-
-		let balance = contract.functions().balance_of(addr).call(&|_: Bytes| Ok("000000000000000000000000000000000000000000000000000000000000000B".from_hex().unwrap()) ).wait().unwrap();
-		println!("balance: {:?}", balance);
-		assert_eq!(balance,11.into());
-
-		// In case you only need to decode output use this:
-		let output_bytes = "000000000000000000000000000000000000000000000000000000000036455B".from_hex().unwrap();
-		let balance = contract.outputs().balance_of(&output_bytes).unwrap();
-		println!("balance: {:?}", balance);
-
-		// Transact (result dependent on the caller)
-		let to: Address = [3u8; 20].into();
-		let receipt = contract.functions().transfer(to, 5).transact(&|_: Bytes| Ok(vec![])).wait().unwrap();
-		assert_eq!(receipt,());
-		let receipt = contract.functions().transfer(to, 5).transact(&|_: Bytes| futures::future::ok::<(Bytes), Error>(vec![])).wait().unwrap();
-		assert_eq!(receipt,());
-
-		// Read events (same patter, just passing `parse_log` as decoder)
-		// TODO does not work
-		// let _transfer_logs = contract.events().transfer().create_filter(c).call(&|_: Bytes| Ok("000000000000000000000000000000000000000000000000000000000000000B".from_hex().unwrap())).unwrap()
-		// 	.collect::<Vec<eip20_file::Eip20::logs::Transfer>>();
-
-		/*
-		// Alternatively since functions are traits, we can do this:
-		let evm = Evm::new(contract);
-		// Deploying a contract
-		evm.deploy(|contract| contract.constructor(a, b, c)).wait()?;
-		// Calling a function
-		assert_eq!(evm.call(|contract| contract.functions().balance_of(a))?, 5);
-		// Sending a transaction
-		evm.transact(|contract| contract.functions().transfer(b, 5)).wait()?;
-		*/
 	}
 
 }
