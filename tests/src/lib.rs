@@ -19,7 +19,7 @@ use_contract!(operations, "Operations", "../res/Operations.abi");
 #[cfg(test)]
 mod tests {
 	use rustc_hex::{ToHex, FromHex};
-	use ethabi::{Address, Uint, Bytes, ContractFunction, DelegateCall, Error};
+	use ethabi::{Address, Uint, Bytes, ContractFunction, DelegateCall};
 	use ethabi::futures;
 	use ethabi::futures::Future;
 
@@ -85,7 +85,7 @@ mod tests {
 		let address = contract.constructor(code.clone(), vec![first.clone(), second.clone()]).transact(&|_: Bytes| Ok("0000000000000000000000002222222222222222222222222222222222222222".from_hex().unwrap())).wait().unwrap();
 		assert_eq!(address, [0x22u8; 20].into());
 
-		let address = contract.constructor(code.clone(), vec![first.clone(), second.clone()]).transact(&|_: Bytes| futures::future::ok::<(Bytes), Error>("0000000000000000000000002222222222222222222222222222222222222222".from_hex().unwrap())).wait().unwrap();
+		let address = contract.constructor(code.clone(), vec![first.clone(), second.clone()]).transact(&|_: Bytes| futures::future::ok::<(Bytes), String>("0000000000000000000000002222222222222222222222222222222222222222".from_hex().unwrap())).wait().unwrap();
 		assert_eq!(address, [0x22u8; 20].into());
 	}
 

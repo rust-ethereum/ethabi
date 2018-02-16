@@ -27,5 +27,10 @@ error_chain! {
 			description("Call error"),
 			display("Call error"),
 		}
+
+		TransactError {
+			description("Transaction error"),
+			display("Transaction error"),
+		}
 	}
 }
