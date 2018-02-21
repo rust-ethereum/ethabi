@@ -154,7 +154,7 @@ mod tests {
 		let result = contract.functions().balance_of(address_param).call(&|data| {
 			assert_eq!(data, "70a082310000000000000000000000000000000000000000000000000000000000000000".from_hex().unwrap());
 			Ok("000000000000000000000000000000000000000000000000000000000036455b".from_hex().unwrap())
-        });
+		});
 		assert_eq!(result.wait().unwrap(), "000000000000000000000000000000000000000000000000000000000036455b".into());
 	}
 
