@@ -109,9 +109,10 @@ pub trait Call<Out>: Sized {
 		where D: FnOnce(Bytes) -> Result<Out>;
 }
 // Blanket implementation for closures
-impl<Out: 'static, F, R: 'static> Call<Out> for F where
-	R: futures::IntoFuture<Item=Bytes, Error=String>,
-	F: FnOnce(Bytes) -> R
+impl<Out: 'static, F, R: 'static, E> Call<Out> for F where
+	F: FnOnce(Bytes) -> R,
+	R: futures::IntoFuture<Item=Bytes, Error=E>,
+	E: Into<Error>
 {
 	type Result = Box<futures::Future<Item=Out, Error=Error>>;
 
@@ -119,7 +120,7 @@ impl<Out: 'static, F, R: 'static> Call<Out> for F where
 		where D: FnOnce(Bytes) -> Result<Out>
 	{
 		Box::new(
-			(self)(input).into_future().map_err(|e: String| Error::with_chain(Error::from(e), ErrorKind::CallError)).and_then(output_decoder)
+			(self)(input).into_future().map_err(|e: E| Error::with_chain(e.into(), ErrorKind::CallError)).and_then(output_decoder)
 		)
 	}
 
@@ -136,9 +137,10 @@ pub trait Transact<Out>: Sized {
 		where D: FnOnce(Bytes) -> Result<Out>;
 }
 // Blanket implementation for closures.
-impl<Out: 'static, F, R: 'static> Transact<Out> for F where
-	R: futures::IntoFuture<Item=Bytes, Error=String>,
-	F: FnOnce(Bytes) -> R
+impl<Out: 'static, F, R: 'static, E> Transact<Out> for F where
+	F: FnOnce(Bytes) -> R,
+	R: futures::IntoFuture<Item=Bytes, Error=E>,
+	E: Into<Error>
 {
 	type Result = Box<futures::Future<Item=Out, Error=Error>>;
 
@@ -146,7 +148,7 @@ impl<Out: 'static, F, R: 'static> Transact<Out> for F where
 		where D: FnOnce(Bytes) -> Result<Out>
 	{
 		Box::new(
-			(self)(input).into_future().map_err(|e: String| Error::with_chain(Error::from(e), ErrorKind::TransactError)).and_then(output_decoder)
+			(self)(input).into_future().map_err(|e: E| Error::with_chain(e.into(), ErrorKind::TransactError)).and_then(output_decoder)
 		)
 	}
 }
