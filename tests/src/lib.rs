@@ -31,6 +31,17 @@ mod tests {
 		}
 	}
 
+	#[derive(Debug)]
+	enum CallError {
+		EthabiError(::ethabi::Error)
+	}
+
+	impl From<::ethabi::Error> for CallError {
+		fn from(err: ::ethabi::Error) -> Self {
+			CallError::EthabiError(err)
+		}
+	}
+
 	#[test]
 	fn should_be_cloneable() {
 		use validators::Validators;
@@ -82,10 +93,10 @@ mod tests {
 		let first = [0x11u8; 20];
 		let second = [0x22u8; 20];
 
-		let address = contract.constructor(code.clone(), vec![first.clone(), second.clone()]).transact(&|_: Bytes| Ok::<Bytes,String>("0000000000000000000000002222222222222222222222222222222222222222".from_hex().unwrap())).wait().unwrap();
+		let address = contract.constructor(code.clone(), vec![first.clone(), second.clone()]).transact(&|_: Bytes| Ok::<Bytes, CallError>("0000000000000000000000002222222222222222222222222222222222222222".from_hex().unwrap())).wait().unwrap();
 		assert_eq!(address, [0x22u8; 20].into());
 
-		let address = contract.constructor(code.clone(), vec![first.clone(), second.clone()]).transact(&|_: Bytes| futures::future::ok::<(Bytes), String>("0000000000000000000000002222222222222222222222222222222222222222".from_hex().unwrap())).wait().unwrap();
+		let address = contract.constructor(code.clone(), vec![first.clone(), second.clone()]).transact(&|_: Bytes| futures::future::ok::<(Bytes), CallError>("0000000000000000000000002222222222222222222222222222222222222222".from_hex().unwrap())).wait().unwrap();
 		assert_eq!(address, [0x22u8; 20].into());
 	}
 
@@ -153,7 +164,7 @@ mod tests {
 		let address_param = [0u8; 20];
 		let result = contract.functions().balance_of(address_param).call(&|data| {
 			assert_eq!(data, "70a082310000000000000000000000000000000000000000000000000000000000000000".from_hex().unwrap());
-			Ok::<Bytes,String>("000000000000000000000000000000000000000000000000000000000036455b".from_hex().unwrap())
+			Ok::<Bytes, CallError>("000000000000000000000000000000000000000000000000000000000036455b".from_hex().unwrap())
 		});
 		assert_eq!(result.wait().unwrap(), "000000000000000000000000000000000000000000000000000000000036455b".into());
 	}
