@@ -22,15 +22,5 @@ error_chain! {
 			description("Invalid data"),
 			display("Invalid data"),
 		}
-
-		CallError {
-			description("Call error"),
-			display("Call error"),
-		}
-
-		TransactError {
-			description("Transaction error"),
-			display("Transaction error"),
-		}
 	}
 }
