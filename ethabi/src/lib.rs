@@ -120,7 +120,7 @@ impl<Out: 'static, F, R: 'static, E: 'static> Call<Out> for F where
 		where D: FnOnce(Bytes) -> Result<Out>
 	{
 		Box::new(
-			(self)(input).into_future().and_then(|output: Bytes| output_decoder(output).map_err(|e: Error| e.into()))
+			(self)(input).into_future().and_then(|output: Bytes| output_decoder(output).map_err(Into::into))
 		)
 	}
 }
@@ -147,7 +147,7 @@ impl<Out: 'static, F, R: 'static, E: 'static> Transact<Out> for F where
 		where D: FnOnce(Bytes) -> Result<Out>
 	{
 		Box::new(
-			(self)(input).into_future().and_then(|output: Bytes| output_decoder(output).map_err(|e: Error| e.into()))
+			(self)(input).into_future().and_then(|output: Bytes| output_decoder(output).map_err(Into::into))
 		)
 	}
 }
