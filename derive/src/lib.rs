@@ -17,16 +17,15 @@ const ERROR_MSG: &'static str = "`derive(EthabiContract)` failed";
 
 #[proc_macro_derive(EthabiContract, attributes(ethabi_contract_options))]
 pub fn ethabi_derive(input: TokenStream) -> TokenStream {
-	let s = input.to_string();
-	let ast = syn::parse_derive_input(&s).expect(ERROR_MSG);
+	let ast = syn::parse(input).expect(ERROR_MSG);
 	let gen = impl_ethabi_derive(&ast).expect(ERROR_MSG);
-	gen.parse().expect(ERROR_MSG)
+	gen.into()
 }
 
 fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 	let options = get_options(&ast.attrs, "ethabi_contract_options")?;
 	let path = get_option(&options, "path")?;
-	let normalized_path = normalize_path(path)?;
+	let normalized_path = normalize_path(&path)?;
 	let source_file = fs::File::open(&normalized_path)
 		.chain_err(|| format!("Cannot load contract abi from `{}`", normalized_path.display()))?;
 	let contract = Contract::load(source_file)?;
@@ -39,9 +38,9 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 	let func_structs: Vec<_> = contract.functions().map(declare_functions).collect();
 
 	let name = get_option(&options, "name")?;
-	let name = syn::Ident::new(name);
-	let functions_name = syn::Ident::new(format!("{}Functions", name));
-	let events_name = syn::Ident::new(format!("{}Events", name));
+	let name = syn::Ident::from(name);
+	let functions_name = syn::Ident::from(format!("{}Functions", name));
+	let events_name = syn::Ident::from(format!("{}Events", name));
 
 	let events_and_logs_quote = if events_structs.is_empty() {
 		quote! {}
@@ -125,30 +124,38 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 	Ok(result)
 }
 
-fn get_options(attrs: &[syn::Attribute], name: &str) -> Result<Vec<syn::MetaItem>> {
-	let options = attrs.iter().find(|a| a.name() == name).map(|a| &a.value);
+fn get_options(attrs: &[syn::Attribute], name: &str) -> Result<Vec<syn::NestedMeta>> {
+	let options = attrs.iter()
+		.flat_map(syn::Attribute::interpret_meta)
+		.find(|meta| meta.name() == name);
+
+
 	match options {
-		Some(&syn::MetaItem::List(_, ref options)) => {
-			options.iter().map(|o| match *o {
-				syn::NestedMetaItem::MetaItem(ref m) => Ok(m.clone()),
-				syn::NestedMetaItem::Literal(ref lit) => Err(format!("Unexpected meta item {:?}", lit).into())
-			}).collect::<Result<Vec<_>>>()
-		},
-		Some(e) => Err(format!("Unexpected meta item {:?}", e).into()),
-		None => Ok(vec![]),
+		Some(syn::Meta::List(list)) => Ok(list.nested.into_iter().collect()),
+		_ => Err("Unexpected meta item".into())
 	}
 }
 
-fn get_option<'a>(options: &'a [syn::MetaItem], name: &str) -> Result<&'a str> {
-	let item = options.iter().find(|a| a.name() == name).chain_err(|| format!("Expected to find option {}", name))?;
+
+fn get_option(options: &[syn::NestedMeta], name: &str) -> Result<String> {
+	let item = options.iter()
+		.flat_map(|nested| match *nested {
+			syn::NestedMeta::Meta(ref meta) => Some(meta),
+			_ => None,
+		})
+		.find(|meta| meta.name() == name)
+		.chain_err(|| format!("Expected to find option {}", name))?;
 	str_value_of_meta_item(item, name)
 }
 
-fn str_value_of_meta_item<'a>(item: &'a syn::MetaItem, name: &str) -> Result<&'a str> {
-    match *item {
-        syn::MetaItem::NameValue(_, syn::Lit::Str(ref value, _)) => Ok(&*value),
-        _ => Err(format!(r#"`{}` must be in the form `#[{}="something"]`"#, name, name).into()),
-    }
+fn str_value_of_meta_item(item: &syn::Meta, name: &str) -> Result<String> {
+	if let syn::Meta::NameValue(ref name_value) = *item {
+		if let syn::Lit::Str(ref value) = name_value.lit {
+			return Ok(value.value());
+		}
+	}
+
+	Err(format!(r#"`{}` must be in the form `#[{}="something"]`"#, name, name).into())
 }
 
 fn normalize_path(relative_path: &str) -> Result<PathBuf> {
@@ -160,8 +167,8 @@ fn normalize_path(relative_path: &str) -> Result<PathBuf> {
 }
 
 fn impl_contract_function(function: &Function) -> quote::Tokens {
-	let name = syn::Ident::new(function.name.to_snake_case());
-	let function_name = syn::Ident::new(function.name.to_camel_case());
+	let name = syn::Ident::from(function.name.to_snake_case());
+	let function_name = syn::Ident::from(function.name.to_camel_case());
 
 	quote! {
 		pub fn #name(&self) -> functions::#function_name {
@@ -190,45 +197,63 @@ fn to_syntax_string(param_type : &ethabi::ParamType) -> quote::Tokens {
 	}
 }
 
-fn rust_type(input: &ParamType) -> syn::Ident {
+fn rust_type(input: &ParamType) -> quote::Tokens {
 	match *input {
-		ParamType::Address => "ethabi::Address".into(),
-		ParamType::Bytes => "ethabi::Bytes".into(),
-		ParamType::FixedBytes(32) => "ethabi::Hash".into(),
-		ParamType::FixedBytes(size) => format!("[u8; {}]", size).into(),
-		ParamType::Int(_) => "ethabi::Int".into(),
-		ParamType::Uint(_) => "ethabi::Uint".into(),
-		ParamType::Bool => "bool".into(),
-		ParamType::String => "String".into(),
-		ParamType::Array(ref kind) => format!("Vec<{}>", rust_type(&*kind)).into(),
-		ParamType::FixedArray(ref kind, size) => format!("[{}; {}]", rust_type(&*kind), size).into(),
+		ParamType::Address => quote! { ethabi::Address },
+		ParamType::Bytes => quote! { ethabi::Bytes },
+		ParamType::FixedBytes(32) => quote! { ethabi::Hash },
+		ParamType::FixedBytes(size) => quote! { [u8; #size] },
+		ParamType::Int(_) => quote! { ethabi::Int },
+		ParamType::Uint(_) => quote! { ethabi::Uint },
+		ParamType::Bool => quote! { bool },
+		ParamType::String => quote! { String },
+		ParamType::Array(ref kind) => {
+			let t = rust_type(&*kind);
+			quote! { Vec<#t> }
+		},
+		ParamType::FixedArray(ref kind, size) => {
+			let t = rust_type(&*kind);
+			quote! { [#t, #size] }
+		}
 	}
 }
 
-fn template_param_type(input: &ParamType, index: usize) -> syn::Ident {
+fn template_param_type(input: &ParamType, index: usize) -> quote::Tokens {
+	let t_ident = syn::Ident::from(format!("T{}", index));
+	let u_ident = syn::Ident::from(format!("U{}", index));
 	match *input {
-		ParamType::Address => format!("T{}: Into<ethabi::Address>", index).into(),
-		ParamType::Bytes => format!("T{}: Into<ethabi::Bytes>", index).into(),
-		ParamType::FixedBytes(32) => format!("T{}: Into<ethabi::Hash>", index).into(),
-		ParamType::FixedBytes(size) => format!("T{}: Into<[u8; {}]>", index, size).into(),
-		ParamType::Int(_) => format!("T{}: Into<ethabi::Int>", index).into(),
-		ParamType::Uint(_) => format!("T{}: Into<ethabi::Uint>", index).into(),
-		ParamType::Bool => format!("T{}: Into<bool>", index).into(),
-		ParamType::String => format!("T{}: Into<String>", index).into(),
-		ParamType::Array(ref kind) => format!("T{}: IntoIterator<Item = U{}>, U{}: Into<{}>", index, index, index, rust_type(&*kind)).into(),
-		ParamType::FixedArray(ref kind, size) => format!("T{}: Into<[U{}; {}]>, U{}: Into<{}>", index, index, size, index, rust_type(&*kind)).into(),
+		ParamType::Address => quote! { #t_ident: Into<ethabi::Address> },
+		ParamType::Bytes => quote! { #t_ident: Into<ethabi::Bytes> },
+		ParamType::FixedBytes(32) => quote! { #t_ident: Into<ethabi::Hash> },
+		ParamType::FixedBytes(size) => quote! { #t_ident: Into<[u8; #size]> },
+		ParamType::Int(_) => quote! { #t_ident: Into<ethabi::Int> },
+		ParamType::Uint(_) => quote! { #t_ident: Into<ethabi::Uint> },
+		ParamType::Bool => quote! { #t_ident: Into<bool> },
+		ParamType::String => quote! { T{}: Into<String> },
+		ParamType::Array(ref kind) => {
+			let t = rust_type(&*kind);
+			quote! {
+				#t_ident: IntoIterator<Item = #u_ident>, #u_ident: Into<#t>
+			}
+		},
+		ParamType::FixedArray(ref kind, size) => {
+			let t = rust_type(&*kind);
+			quote! {
+				#t_ident: Into<[#u_ident; #size]>, #u_ident: Into<#t>
+			}
+		}
 	}
 }
 
-fn from_template_param(input: &ParamType, name: &syn::Ident) -> syn::Ident {
+fn from_template_param(input: &ParamType, name: &quote::Tokens) -> quote::Tokens {
 	match *input {
-		ParamType::Array(_) => format!("{}.into_iter().map(Into::into).collect::<Vec<_>>()", name).into(),
-		ParamType::FixedArray(_, _) => format!("(Box::new({}.into()) as Box<[_]>).into_vec().into_iter().map(Into::into).collect::<Vec<_>>()", name).into(),
-		_ => format!("{}.into()", name).into(),
+		ParamType::Array(_) => quote! { #name.into_iter().map(Into::into).collect::<Vec<_>>() },
+		ParamType::FixedArray(_, _) => quote! { (Box::new(#name.into()) as Box<[_]>).into_vec().into_iter().map(Into::into).collect::<Vec<_>>() },
+		_ => quote! {#name.into() },
 	}
 }
 
-fn to_token(name: &syn::Ident, kind: &ParamType) -> quote::Tokens {
+fn to_token(name: &quote::Tokens, kind: &ParamType) -> quote::Tokens {
 	match *kind {
 		ParamType::Address => quote! { ethabi::Token::Address(#name) },
 		ParamType::Bytes => quote! { ethabi::Token::Bytes(#name) },
@@ -238,7 +263,7 @@ fn to_token(name: &syn::Ident, kind: &ParamType) -> quote::Tokens {
 		ParamType::Bool => quote! { ethabi::Token::Bool(#name) },
 		ParamType::String => quote! { ethabi::Token::String(#name) },
 		ParamType::Array(ref kind) => {
-			let inner_name: syn::Ident = "inner".into();
+			let inner_name = quote! { inner };
 			let inner_loop = to_token(&inner_name, kind);
 			quote! {
 				// note the double {{
@@ -249,7 +274,7 @@ fn to_token(name: &syn::Ident, kind: &ParamType) -> quote::Tokens {
 			}
 		}
 		ParamType::FixedArray(ref kind, _) => {
-			let inner_name: syn::Ident = "inner".into();
+			let inner_name = quote! { inner };
 			let inner_loop = to_token(&inner_name, kind);
 			quote! {
 				// note the double {{
@@ -262,7 +287,7 @@ fn to_token(name: &syn::Ident, kind: &ParamType) -> quote::Tokens {
 	}
 }
 
-fn from_token(kind: &ParamType, token: &syn::Ident) -> quote::Tokens {
+fn from_token(kind: &ParamType, token: &quote::Tokens) -> quote::Tokens {
 	match *kind {
 		ParamType::Address => quote! { #token.to_address().expect(super::INTERNAL_ERR) },
 		ParamType::Bytes => quote! { #token.to_bytes().expect(super::INTERNAL_ERR) },
@@ -290,7 +315,7 @@ fn from_token(kind: &ParamType, token: &syn::Ident) -> quote::Tokens {
 		ParamType::Bool => quote! { #token.to_bool().expect(super::INTERNAL_ERR) },
 		ParamType::String => quote! { #token.to_string().expect(super::INTERNAL_ERR) },
 		ParamType::Array(ref kind) => {
-			let inner: syn::Ident = "inner".into();
+			let inner = quote! { inner };
 			let inner_loop = from_token(kind, &inner);
 			quote! {
 				#token.to_array().expect(super::INTERNAL_ERR).into_iter()
@@ -299,7 +324,7 @@ fn from_token(kind: &ParamType, token: &syn::Ident) -> quote::Tokens {
 			}
 		},
 		ParamType::FixedArray(ref kind, size) => {
-			let inner: syn::Ident = "inner".into();
+			let inner = quote! { inner };
 			let inner_loop = from_token(kind, &inner);
 			let to_array = vec![quote! { iter.next() }; size];
 			quote! {
@@ -314,8 +339,8 @@ fn from_token(kind: &ParamType, token: &syn::Ident) -> quote::Tokens {
 }
 
 fn impl_contract_event(event: &Event) -> quote::Tokens {
-	let name = syn::Ident::new(event.name.to_snake_case());
-	let event_name = syn::Ident::new(event.name.to_camel_case());
+	let name = syn::Ident::from(event.name.to_snake_case());
+	let event_name = syn::Ident::from(event.name.to_camel_case());
 	quote! {
 		pub fn #name(&self) -> events::#event_name {
 			events::#event_name::default()
@@ -329,10 +354,11 @@ fn impl_contract_constructor(constructor: &Constructor) -> quote::Tokens {
 		.iter()
 		.enumerate()
 		.map(|(index, param)| if param.name.is_empty() {
-			syn::Ident::new(format!("param{}", index))
+			syn::Ident::from(format!("param{}", index))
 		} else {
 			param.name.to_snake_case().into()
-		}).collect();
+		})
+		.map(|i| quote! { #i }).collect();
 
 	// [Uint, Bytes, Vec<Uint>]
 	let kinds: Vec<_> = constructor.inputs
@@ -342,7 +368,7 @@ fn impl_contract_constructor(constructor: &Constructor) -> quote::Tokens {
 
 	// [T0, T1, T2]
 	let template_names: Vec<_> = kinds.iter().enumerate()
-		.map(|(index, _)| syn::Ident::new(format!("T{}", index)))
+		.map(|(index, _)| syn::Ident::from(format!("T{}", index)))
 		.collect();
 
 	// [T0: Into<Uint>, T1: Into<Bytes>, T2: IntoIterator<Item = U2>, U2 = Into<Uint>]
@@ -363,8 +389,13 @@ fn impl_contract_constructor(constructor: &Constructor) -> quote::Tokens {
 	let constructor_inputs = &constructor.inputs.iter().map(|x| {
 		let name = &x.name;
 		let kind = to_syntax_string(&x.kind);
-		format!(r##"ethabi::Param {{ name: "{}".to_owned(), kind: {} }}"##, name, kind).into()
-	}).collect::<Vec<syn::Ident>>();
+		quote! {
+			ethabi::Param {
+				name: #name.to_owned(),
+				kind: #kind
+			}
+		}
+	}).collect::<Vec<_>>();
 	let constructor_inputs = quote! { vec![ #(#constructor_inputs),* ] };
 
 	quote! {
@@ -381,12 +412,12 @@ fn impl_contract_constructor(constructor: &Constructor) -> quote::Tokens {
 }
 
 fn declare_logs(event: &Event) -> quote::Tokens {
-	let name = syn::Ident::new(event.name.to_camel_case());
+	let name = syn::Ident::from(event.name.to_camel_case());
 	let names: Vec<_> = event.inputs
 		.iter()
 		.enumerate()
 		.map(|(index, param)| if param.name.is_empty() {
-			syn::Ident::new(format!("param{}", index))
+			syn::Ident::from(format!("param{}", index))
 		} else {
 			param.name.to_snake_case().into()
 		}).collect();
@@ -407,7 +438,7 @@ fn declare_logs(event: &Event) -> quote::Tokens {
 }
 
 fn declare_events(event: &Event) -> quote::Tokens {
-	let name = syn::Ident::new(event.name.to_camel_case());
+	let name: syn::Ident = event.name.to_camel_case().into();
 
 	// parse log
 
@@ -416,15 +447,15 @@ fn declare_events(event: &Event) -> quote::Tokens {
 		.enumerate()
 		.map(|(index, param)| if param.name.is_empty() {
 			if param.indexed {
-				syn::Ident::new(format!("topic{}", index))
+				syn::Ident::from(format!("topic{}", index))
 			} else {
-				syn::Ident::new(format!("param{}", index))
+				syn::Ident::from(format!("param{}", index))
 			}
 		} else {
 			param.name.to_snake_case().into()
 		}).collect();
 
-	let log_iter = syn::Ident::new("log.next().expect(super::INTERNAL_ERR).value");
+	let log_iter = quote! { log.next().expect(super::INTERNAL_ERR).value };
 
 	let to_log: Vec<_> = event.inputs
 		.iter()
@@ -442,7 +473,7 @@ fn declare_events(event: &Event) -> quote::Tokens {
 		.enumerate()
 		.filter(|&(_, param)| param.indexed)
 		.map(|(index, param)| if param.name.is_empty() {
-			syn::Ident::new(format!("topic{}", index))
+			syn::Ident::from(format!("topic{}", index))
 		} else {
 			param.name.to_snake_case().into()
 		})
@@ -456,7 +487,7 @@ fn declare_events(event: &Event) -> quote::Tokens {
 
 	// [T0, T1, T2]
 	let template_names: Vec<_> = topic_kinds.iter().enumerate()
-		.map(|(index, _)| syn::Ident::new(format!("T{}", index)))
+		.map(|(index, _)| syn::Ident::from(format!("T{}", index)))
 		.collect();
 
 	let params: Vec<_> = topic_names.iter().zip(template_names.iter())
@@ -471,8 +502,8 @@ fn declare_events(event: &Event) -> quote::Tokens {
 		.enumerate()
 		.take(3)
 		.map(|(index, (param_name, param))| {
-			let topic = syn::Ident::new(format!("topic{}", index));
-			let i = "i".into();
+			let topic = syn::Ident::from(format!("topic{}", index));
+			let i = quote! { i };
 			let to_token = to_token(&i, &param.kind);
 			quote! { #topic: #param_name.into().map(|#i| #to_token), }
 		})
@@ -484,8 +515,15 @@ fn declare_events(event: &Event) -> quote::Tokens {
 		let name = &x.name;
 		let kind = to_syntax_string(&x.kind);
 		let indexed = x.indexed;
-		format!(r##"ethabi::EventParam {{ name: "{}".to_owned(), kind: {}, indexed: {} }}"##, name, kind, indexed.to_string()).into()
-	}).collect::<Vec<syn::Ident>>();
+
+		quote! {
+			ethabi::EventParam {
+				name: #name.to_owned(),
+				kind: #kind,
+				indexed: #indexed
+			}
+		}
+	}).collect::<Vec<_>>();
 	let event_inputs = quote! { vec![ #(#event_inputs),* ] };
 
 	let event_anonymous = &event.anonymous;
@@ -533,17 +571,18 @@ fn declare_events(event: &Event) -> quote::Tokens {
 }
 
 fn declare_functions(function: &Function) -> quote::Tokens {
-	let name = syn::Ident::new(function.name.to_camel_case());
+	let name = syn::Ident::from(function.name.to_camel_case());
 
 	// [param0, hello_world, param2]
 	let ref names: Vec<_> = function.inputs
 		.iter()
 		.enumerate()
 		.map(|(index, param)| if param.name.is_empty() {
-			syn::Ident::new(format!("param{}", index))
+			syn::Ident::from(format!("param{}", index))
 		} else {
 			param.name.to_snake_case().into()
-		}).collect();
+		})
+		.map(|i| quote! { #i }).collect();
 
 	// [Uint, Bytes, Vec<Uint>]
 	let kinds: Vec<_> = function.inputs
@@ -553,7 +592,7 @@ fn declare_functions(function: &Function) -> quote::Tokens {
 
 	// [T0, T1, T2]
 	let template_names: Vec<_> = kinds.iter().enumerate()
-		.map(|(index, _)| syn::Ident::new(format!("T{}", index)))
+		.map(|(index, _)| syn::Ident::from(format!("T{}", index)))
 		.collect();
 
 	// [T0: Into<Uint>, T1: Into<Bytes>, T2: IntoIterator<Item = U2>, U2 = Into<Uint>]
@@ -592,7 +631,7 @@ fn declare_functions(function: &Function) -> quote::Tokens {
 		let o_impl = match function.outputs.len() {
 			0 => quote! { Ok(()) },
 			1 => {
-				let o = "out".into();
+				let o = quote! { out };
 				let from_first = from_token(&function.outputs[0].kind, &o);
 				quote! {
 					let out = self.function.decode_output(output)?.into_iter().next().expect(super::INTERNAL_ERR);
@@ -600,7 +639,7 @@ fn declare_functions(function: &Function) -> quote::Tokens {
 				}
 			},
 			_ => {
-				let o = "out.next().expect(super::INTERNAL_ERR)".into();
+				let o = quote! { out.next().expect(super::INTERNAL_ERR) };
 				let outs: Vec<_> = function.outputs
 					.iter()
 					.map(|param| from_token(&param.kind, &o))
@@ -634,15 +673,25 @@ fn declare_functions(function: &Function) -> quote::Tokens {
 	let function_inputs = &function.inputs.iter().map(|x| {
 		let name = &x.name;
 		let kind = to_syntax_string(&x.kind);
-		format!(r##"ethabi::Param {{ name: "{}".to_owned(), kind: {} }}"##, name, kind).into()
-	}).collect::<Vec<syn::Ident>>();
+		quote! {
+			ethabi::Param {
+				name: #name.to_owned(),
+				kind: #kind,
+			}
+		}
+	}).collect::<Vec<_>>();
 	let function_inputs = quote! { vec![ #(#function_inputs),* ] };
 
 	let function_outputs = &function.outputs.iter().map(|x| {
 		let name = &x.name;
 		let kind = to_syntax_string(&x.kind);
-		format!(r##"ethabi::Param {{ name: "{}".to_owned(), kind: {} }}"##, name, kind).into()
-	}).collect::<Vec<syn::Ident>>();
+		quote! {
+			ethabi::Param {
+				name: #name.to_owned(),
+				kind: #kind,
+			}
+		}
+	}).collect::<Vec<_>>();
 	let function_outputs = quote! { vec![ #(#function_outputs),* ] };
 
 	let function_constant = &function.constant;
