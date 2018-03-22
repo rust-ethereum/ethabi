@@ -1,4 +1,8 @@
-#![deny(warnings)]
+//! Test crate
+
+#![deny(missing_docs)]
+#![deny(dead_code)]
+#![deny(unused_imports)]
 
 extern crate rustc_hex;
 extern crate ethabi;
@@ -10,6 +14,7 @@ extern crate ethabi_contract;
 use_contract!(eip20, "Eip20", "../res/eip20.abi");
 use_contract!(constructor, "Constructor", "../res/con.abi");
 use_contract!(validators, "Validators", "../res/Validators.abi");
+use_contract!(operations, "Operations", "../res/Operations.abi");
 
 #[cfg(test)]
 mod tests {
@@ -22,6 +27,14 @@ mod tests {
 		fn into(self) -> Address {
 			self.0.into()
 		}
+	}
+
+	#[test]
+	fn should_be_cloneable() {
+		use validators::Validators;
+
+		let contract = Validators::default();
+		contract.clone();
 	}
 
 	#[test]
