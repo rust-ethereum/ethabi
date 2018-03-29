@@ -59,7 +59,7 @@ impl fmt::Display for Token {
 			Token::String(ref s) => write!(f, "{}", s),
 			Token::Address(ref a) => write!(f, "{}", a.to_hex()),
 			Token::Bytes(ref bytes) | Token::FixedBytes(ref bytes) => write!(f, "{}", bytes.to_hex()),
-			Token::Uint(ref i) | Token::Int(ref i) => write!(f, "{}", i.to_hex()),
+			Token::Uint(ref i) | Token::Int(ref i) => write!(f, "{:x}", i),
 			Token::Array(ref arr) | Token::FixedArray(ref arr) => {
 				let s = arr.iter()
 					.map(|ref t| format!("{}", t))
