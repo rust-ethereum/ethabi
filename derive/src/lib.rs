@@ -229,7 +229,7 @@ fn template_param_type(input: &ParamType, index: usize) -> quote::Tokens {
 		ParamType::Int(_) => quote! { #t_ident: Into<ethabi::Int> },
 		ParamType::Uint(_) => quote! { #t_ident: Into<ethabi::Uint> },
 		ParamType::Bool => quote! { #t_ident: Into<bool> },
-		ParamType::String => quote! { T{}: Into<String> },
+		ParamType::String => quote! { #t_ident: Into<String> },
 		ParamType::Array(ref kind) => {
 			let t = rust_type(&*kind);
 			quote! {
