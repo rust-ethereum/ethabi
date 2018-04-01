@@ -68,5 +68,19 @@
         ],
         "name": "Changed",
         "type": "event"
+    },
+    {
+        "constant": false,
+        "inputs": [
+            {
+                "name": "title",
+                "type": "string"
+            }
+        ],
+        "name": "setTitle",
+        "outputs": [],
+        "payable": false,
+        "stateMutability": "nonpayable",
+        "type": "function"
     }
 ]
