@@ -100,13 +100,17 @@ mod tests {
 
 		let functions = contract.functions();
 		let add_validators = functions.add_two_validators();
+		let set_title = functions.set_title();
 
 		let encoded_from_array = add_validators.input([first.clone(), second.clone()]);
 		let encoded_from_array_wrapped = add_validators.input([Wrapper(first), Wrapper(second)]);
+		let encoded_from_string = set_title.input("foo");
 
-		let expected = "7de33d2000000000000000000000000011111111111111111111111111111111111111110000000000000000000000002222222222222222222222222222222222222222".to_owned();
-		assert_eq!(expected, encoded_from_array.to_hex());
-		assert_eq!(expected, encoded_from_array_wrapped.to_hex());
+		let expected_array = "7de33d2000000000000000000000000011111111111111111111111111111111111111110000000000000000000000002222222222222222222222222222222222222222".to_owned();
+		let expected_string = "72910be000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000003666f6f0000000000000000000000000000000000000000000000000000000000".to_owned();
+		assert_eq!(expected_array, encoded_from_array.to_hex());
+		assert_eq!(expected_array, encoded_from_array_wrapped.to_hex());
+		assert_eq!(expected_string, encoded_from_string.to_hex())
 	}
 
 	#[test]
@@ -140,6 +144,5 @@ mod tests {
         });
 		assert_eq!(result.unwrap(), "000000000000000000000000000000000000000000000000000000000036455b".into());
 	}
-
 }
 
