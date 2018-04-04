@@ -300,7 +300,7 @@ fn from_token(kind: &ParamType, token: &quote::Tokens) -> quote::Tokens {
 			}
 		},
 		ParamType::FixedBytes(size) => {
-			let size: syn::Ident = format!("{}", size).into();
+			let size: syn::Index = size.into();
 			quote! {
 				{
 					let mut result = [0u8; #size];
