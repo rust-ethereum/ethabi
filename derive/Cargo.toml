@@ -1,6 +1,6 @@
 [package]
 name = "ethabi-derive"
-version = "5.1.1"
+version = "5.1.2"
 authors = ["Parity Technologies <admin@parity.io>"]
 homepage = "https://github.com/paritytech/ethabi"
 license = "MIT"
