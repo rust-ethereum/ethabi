@@ -1,6 +1,6 @@
 [package]
 name = "ethabi-derive"
-version = "5.1.0"
+version = "5.1.1"
 authors = ["Parity Technologies <admin@parity.io>"]
 homepage = "https://github.com/paritytech/ethabi"
 license = "MIT"
@@ -13,5 +13,5 @@ proc-macro = true
 [dependencies]
 ethabi = { path = "../ethabi", version = "5.0" }
 heck = "0.3"
-syn = "0.12.12"
-quote = "0.4.2"
+syn = "0.13"
+quote = "0.5.1"
