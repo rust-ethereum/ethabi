@@ -180,7 +180,7 @@ fn get_option(options: &[syn::NestedMeta], name: &str) -> Result<String> {
 	str_value_of_meta_item(item, name)
 }
 
-fn str_value_of_meta_item<'a>(item: &'a syn::MetaItem, name: &str) -> Result<&'a str> {
+fn str_value_of_meta_item(item: &syn::Meta, name: &str) -> Result<String> {
 	if let syn::Meta::NameValue(ref name_value) = *item {
 		if let syn::Lit::Str(ref value) = name_value.lit {
 			return Ok(value.value());
@@ -222,8 +222,8 @@ fn to_ethabi_param_vec(params: &Vec<Param>) -> quote::Tokens {
 	let p = params.iter().map(|x| {
 		let name = &x.name;
 		let kind = to_syntax_string(&x.kind);
-		format!(r##"ethabi::Param {{ name: "{}".to_owned(), kind: {} }}"##, name, kind).into()
-	}).collect::<Vec<syn::Ident>>();
+		quote! { ethabi::Param { name: #name.to_owned(), kind: #kind } }
+	}).collect::<Vec<quote::Tokens>>();
 	quote! { vec![ #(#p),* ] }
 }
 
@@ -275,7 +275,7 @@ fn template_param_type(input: &ParamType, index: usize) -> quote::Tokens {
 	}
 }
 
-fn from_template_param(input: &ParamType, name: &quote::Tokens) -> quote::Tokens {
+fn from_template_param(input: &ParamType, name: &syn::Ident) -> quote::Tokens {
 	match *input {
 		ParamType::Array(_) => quote! { #name.into_iter().map(Into::into).collect::<Vec<_>>() },
 		ParamType::FixedArray(_, _) => quote! { (Box::new(#name.into()) as Box<[_]>).into_vec().into_iter().map(Into::into).collect::<Vec<_>>() },
@@ -373,17 +373,16 @@ fn input_names(inputs: &Vec<Param>) -> Vec<syn::Ident> {
 		.iter()
 		.enumerate()
 		.map(|(index, param)| if param.name.is_empty() {
-			syn::Ident::new(format!("param{}", index))
+			syn::Ident::from(format!("param{}", index))
 		} else {
 			param.name.to_snake_case().into()
 		})
-		.map(|i| quote! { #i })
-		.collect();
+		.collect()
 }
 
-fn get_template_names(kinds: &Vec<syn::Ident>) -> Vec<syn::Ident> {
+fn get_template_names(kinds: &Vec<quote::Tokens>) -> Vec<syn::Ident> {
 	kinds.iter().enumerate()
-		.map(|(index, _)| syn::Ident::new(format!("T{}", index)))
+		.map(|(index, _)| syn::Ident::from(format!("T{}", index)))
 		.collect()
 }
 
@@ -405,8 +404,8 @@ fn get_output_kinds(outputs: &Vec<Param>) -> quote::Tokens {
 }
 
 fn impl_contract_function(function: &Function) -> quote::Tokens {
-	let name = syn::Ident::new(function.name.to_snake_case());
-	let function_input_wrapper_name = syn::Ident::new(format!("{}WithInput",function.name.to_camel_case()));
+	let name = syn::Ident::from(function.name.to_snake_case());
+	let function_input_wrapper_name = syn::Ident::from(format!("{}WithInput",function.name.to_camel_case()));
 
 	// [param0, hello_world, param2]
 	let ref input_names: Vec<syn::Ident> = input_names(&function.inputs);
@@ -766,8 +765,8 @@ fn declare_functions(function: &Function) -> quote::Tokens {
 }
 
 fn declare_output_functions(function: &Function) -> quote::Tokens {
-	let name_camel = syn::Ident::new(function.name.to_camel_case());
-	let name_snake = syn::Ident::new(function.name.to_snake_case());
+	let name_camel = syn::Ident::from(function.name.to_camel_case());
+	let name_snake = syn::Ident::from(function.name.to_snake_case());
 	let output_kinds = get_output_kinds(&function.outputs);
 
 	quote! {
@@ -779,8 +778,8 @@ fn declare_output_functions(function: &Function) -> quote::Tokens {
 }
 
 fn declare_functions_input_wrappers(function: &Function) -> quote::Tokens {
-	let name = syn::Ident::new(function.name.to_camel_case());
-	let name_with_input = syn::Ident::new(format!("{}WithInput",function.name.to_camel_case()));
+	let name = syn::Ident::from(function.name.to_camel_case());
+	let name_with_input = syn::Ident::from(format!("{}WithInput",function.name.to_camel_case()));
 	let output_kinds = if function.constant {
 		get_output_kinds(&function.outputs)
 	}
