@@ -168,7 +168,6 @@ fn get_options(attrs: &[syn::Attribute], name: &str) -> Result<Vec<syn::NestedMe
 	}
 }
 
-
 fn get_option(options: &[syn::NestedMeta], name: &str) -> Result<String> {
 	let item = options.iter()
 		.flat_map(|nested| match *nested {
@@ -222,8 +221,14 @@ fn to_ethabi_param_vec(params: &Vec<Param>) -> quote::Tokens {
 	let p = params.iter().map(|x| {
 		let name = &x.name;
 		let kind = to_syntax_string(&x.kind);
-		quote! { ethabi::Param { name: #name.to_owned(), kind: #kind } }
-	}).collect::<Vec<quote::Tokens>>();
+		quote! {
+			ethabi::Param {
+				name: #name.to_owned(),
+				kind: #kind
+			}
+		}
+	}).collect::<Vec<_>>();
+
 	quote! { vec![ #(#p),* ] }
 }
 
@@ -368,7 +373,7 @@ fn from_token(kind: &ParamType, token: &quote::Tokens) -> quote::Tokens {
 	}
 }
 
-fn input_names(inputs: &Vec<Param>) -> Vec<syn::Ident> {
+fn input_names(inputs: &Vec<Param>) -> Vec<quote::Tokens> {
 	inputs
 		.iter()
 		.enumerate()
@@ -377,7 +382,7 @@ fn input_names(inputs: &Vec<Param>) -> Vec<syn::Ident> {
 		} else {
 			param.name.to_snake_case().into()
 		})
-		.collect()
+		.map(|i| quote! { #i }).collect()
 }
 
 fn get_template_names(kinds: &Vec<quote::Tokens>) -> Vec<syn::Ident> {
@@ -408,7 +413,7 @@ fn impl_contract_function(function: &Function) -> quote::Tokens {
 	let function_input_wrapper_name = syn::Ident::from(format!("{}WithInput",function.name.to_camel_case()));
 
 	// [param0, hello_world, param2]
-	let ref input_names: Vec<syn::Ident> = input_names(&function.inputs);
+	let ref input_names: Vec<_> = input_names(&function.inputs);
 
 	// [T0: Into<Uint>, T1: Into<Bytes>, T2: IntoIterator<Item = U2>, U2 = Into<Uint>]
 	let ref template_params: Vec<_> = function.inputs.iter().enumerate()
@@ -431,7 +436,7 @@ fn impl_contract_function(function: &Function) -> quote::Tokens {
 
 	// [Token::Uint(param0.into()), Token::Bytes(hello_world.into()), Token::Array(param2.into_iter().map(Into::into).collect())]
 	let usage: Vec<_> = input_names.iter().zip(function.inputs.iter())
-		.map(|(param_name, param)| to_token(&from_template_param(&param.kind, param_name), &param.kind))
+		.map(|(param_name, param)| to_token(&from_template_param(&param.kind, &quote! { #param_name }), &param.kind))
 		.collect();
 
 	quote! {
@@ -478,7 +483,7 @@ fn impl_contract_constructor(constructor: &Constructor) -> quote::Tokens {
 
 	// [Token::Uint(param0.into()), Token::Bytes(hello_world.into()), Token::Array(param2.into())]
 	let usage: Vec<_> = input_names.iter().zip(constructor.inputs.iter())
-		.map(|(param_name, param)| to_token(&from_template_param(&param.kind, param_name), &param.kind))
+		.map(|(param_name, param)| to_token(&from_template_param(&param.kind, &quote! { #param_name }), &param.kind))
 		.collect();
 
 	quote! {
