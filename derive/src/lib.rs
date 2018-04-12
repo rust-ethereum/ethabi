@@ -264,7 +264,7 @@ fn template_param_type(input: &ParamType, index: usize) -> quote::Tokens {
 		ParamType::Int(_) => quote! { #t_ident: Into<ethabi::Int> },
 		ParamType::Uint(_) => quote! { #t_ident: Into<ethabi::Uint> },
 		ParamType::Bool => quote! { #t_ident: Into<bool> },
-		ParamType::String => quote! { T{}: Into<String> },
+		ParamType::String => quote! { #t_ident: Into<String> },
 		ParamType::Array(ref kind) => {
 			let t = rust_type(&*kind);
 			quote! {
@@ -335,7 +335,7 @@ fn from_token(kind: &ParamType, token: &quote::Tokens) -> quote::Tokens {
 			}
 		},
 		ParamType::FixedBytes(size) => {
-			let size: syn::Ident = format!("{}", size).into();
+			let size: syn::Index = size.into();
 			quote! {
 				{
 					let mut result = [0u8; #size];

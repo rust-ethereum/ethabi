@@ -15,6 +15,7 @@ use_contract!(eip20, "Eip20", "../res/eip20.abi");
 use_contract!(constructor, "Constructor", "../res/con.abi");
 use_contract!(validators, "Validators", "../res/Validators.abi");
 use_contract!(operations, "Operations", "../res/Operations.abi");
+use_contract!(urlhint, "UrlHint", "../res/urlhint.abi");
 
 #[cfg(test)]
 mod tests {
@@ -128,13 +129,15 @@ mod tests {
 		let second = [0x22u8; 20];
 
 		let functions = contract.functions();
-
 		let encoded_from_array = functions.add_two_validators([first.clone(), second.clone()]).encoded();
 		let encoded_from_array_wrapped = functions.add_two_validators([Wrapper(first), Wrapper(second)]).encoded();
+		let encoded_from_string = functions.set_title("foo").encoded();
 
-		let expected = "7de33d2000000000000000000000000011111111111111111111111111111111111111110000000000000000000000002222222222222222222222222222222222222222".to_owned();
-		assert_eq!(expected, encoded_from_array.to_hex());
-		assert_eq!(expected, encoded_from_array_wrapped.to_hex());
+		let expected_array = "7de33d2000000000000000000000000011111111111111111111111111111111111111110000000000000000000000002222222222222222222222222222222222222222".to_owned();
+		let expected_string = "72910be000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000003666f6f0000000000000000000000000000000000000000000000000000000000".to_owned();
+		assert_eq!(expected_array, encoded_from_array.to_hex());
+		assert_eq!(expected_array, encoded_from_array_wrapped.to_hex());
+		assert_eq!(expected_string, encoded_from_string.to_hex())
 	}
 
 	#[test]
@@ -168,6 +171,5 @@ mod tests {
 		});
 		assert_eq!(result.wait().unwrap(), "000000000000000000000000000000000000000000000000000000000036455b".into());
 	}
-
 }
 
