@@ -84,11 +84,15 @@ impl Token {
 			Token::Int(_) =>
 				if let ParamType::Int(_) = *param_type {
 					true
+				} else if let ParamType::FixedPoint(_, _) = *param_type {
+					true
 				} else {
 					false
 				},
 			Token::Uint(_) =>
 				if let ParamType::Uint(_) = *param_type {
+					true
+				} else if let ParamType::UfixedPoint(_, _) = *param_type {
 					true
 				} else {
 					false
