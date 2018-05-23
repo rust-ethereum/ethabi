@@ -107,6 +107,26 @@ fn decode_param(param: &ParamType, slices: &[[u8; 32]], offset: usize) -> Result
 
 			Ok(result)
 		},
+		ParamType::FixedPoint(_, _) => {
+			let slice = try!(peek(slices, offset));
+
+			let result = DecodeResult {
+				token: Token::Int(slice.clone().into()),
+				new_offset: offset + 1,
+			};
+
+			Ok(result)
+		},
+		ParamType::UfixedPoint(_, _) => {
+			let slice = try!(peek(slices, offset));
+
+			let result = DecodeResult {
+				token: Token::Uint(slice.clone().into()),
+				new_offset: offset + 1,
+			};
+
+			Ok(result)
+		},
 		ParamType::Bool => {
 			let slice = try!(peek(slices, offset));
 
@@ -476,4 +496,3 @@ mod tests {
 		assert_eq!(decoded, expected);
 	}
 }
-

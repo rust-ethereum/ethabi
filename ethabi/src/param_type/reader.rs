@@ -50,6 +50,24 @@ impl Reader {
 				let len = try!(usize::from_str_radix(&s[5..], 10));
 				ParamType::FixedBytes(len)
 			},
+			s if s.starts_with("fixed") => {
+				let d: Vec<&str> = (&s[5..]).split("x").collect();
+				if d.len() != 2 {
+					return Err(ErrorKind::InvalidName(name.to_owned()).into());
+				}
+				let len = try!(usize::from_str_radix(d[0], 10));
+				let point = try!(usize::from_str_radix(d[1], 10));
+				ParamType::FixedPoint(len, point)
+			},
+			s if s.starts_with("ufixed") => {
+				let d: Vec<&str> = (&s[6..]).split("x").collect();
+				if d.len() != 2 {
+					return Err(ErrorKind::InvalidName(name.to_owned()).into());
+				}
+				let len = try!(usize::from_str_radix(d[0], 10));
+				let point = try!(usize::from_str_radix(d[1], 10));
+				ParamType::UfixedPoint(len, point)
+			},
 			_ => {
 				return Err(ErrorKind::InvalidName(name.to_owned()).into());
 			}
@@ -75,6 +93,8 @@ mod tests {
 		assert_eq!(Reader::read("uint").unwrap(), ParamType::Uint(256));
 		assert_eq!(Reader::read("int32").unwrap(), ParamType::Int(32));
 		assert_eq!(Reader::read("uint32").unwrap(), ParamType::Uint(32));
+		assert_eq!(Reader::read("fixed168x10").unwrap(), ParamType::FixedPoint(168, 10));
+		assert_eq!(Reader::read("ufixed168x10").unwrap(), ParamType::UfixedPoint(168, 10));
 	}
 
 	#[test]

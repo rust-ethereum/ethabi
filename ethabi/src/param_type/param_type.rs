@@ -14,6 +14,10 @@ pub enum ParamType {
 	Int(usize),
 	/// Unisgned integer.
 	Uint(usize),
+	/// Signed fixed point integer.
+	FixedPoint(usize, usize),
+	/// Unsigned fixed point integer.
+	UfixedPoint(usize, usize),
 	/// Boolean.
 	Bool,
 	/// String.
@@ -43,6 +47,8 @@ mod tests {
 		assert_eq!(format!("{}", ParamType::FixedBytes(32)), "bytes32".to_owned());
 		assert_eq!(format!("{}", ParamType::Uint(256)), "uint256".to_owned());
 		assert_eq!(format!("{}", ParamType::Int(64)), "int64".to_owned());
+		assert_eq!(format!("{}", ParamType::FixedPoint(168, 10)), "fixed168x10".to_owned());
+		assert_eq!(format!("{}", ParamType::UfixedPoint(168, 10)), "ufixed168x10".to_owned());
 		assert_eq!(format!("{}", ParamType::Bool), "bool".to_owned());
 		assert_eq!(format!("{}", ParamType::String), "string".to_owned());
 		assert_eq!(format!("{}", ParamType::Array(Box::new(ParamType::Bool))), "bool[]".to_owned());

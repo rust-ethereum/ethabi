@@ -12,6 +12,8 @@ impl Writer {
 			ParamType::FixedBytes(len) => format!("bytes{}", len),
 			ParamType::Int(len) => format!("int{}", len),
 			ParamType::Uint(len) => format!("uint{}", len),
+			ParamType::FixedPoint(len, point) => format!("fixed{}x{}", len, point),
+			ParamType::UfixedPoint(len, point) => format!("ufixed{}x{}", len, point),
 			ParamType::Bool => "bool".to_owned(),
 			ParamType::String => "string".to_owned(),
 			ParamType::FixedArray(ref param, len) => format!("{}[{}]", Writer::write(param), len),
