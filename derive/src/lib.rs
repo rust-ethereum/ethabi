@@ -183,8 +183,8 @@ fn to_syntax_string(param_type : &ethabi::ParamType) -> quote::Tokens {
 		ParamType::Bytes => quote! { ethabi::ParamType::Bytes },
 		ParamType::Int(x) => quote! { ethabi::ParamType::Int(#x) },
 		ParamType::Uint(x) => quote! { ethabi::ParamType::Uint(#x) },
-		ParamType::FixedPoint(x, p) => quote! { ethabi::ParamType::Int(#x, #p) },
-		ParamType::UfixedPoint(x, p) => quote! { ethabi::ParamType::Uint(#x, #p) },
+		ParamType::FixedPoint(x, p) => quote! { ethabi::ParamType::FixedPoint(#x, #p) },
+		ParamType::UfixedPoint(x, p) => quote! { ethabi::ParamType::UfixedPoint(#x, #p) },
 		ParamType::Bool => quote! { ethabi::ParamType::Bool },
 		ParamType::String => quote! { ethabi::ParamType::String },
 		ParamType::Array(ref param_type) => {
