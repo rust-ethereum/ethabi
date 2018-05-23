@@ -183,6 +183,8 @@ fn to_syntax_string(param_type : &ethabi::ParamType) -> quote::Tokens {
 		ParamType::Bytes => quote! { ethabi::ParamType::Bytes },
 		ParamType::Int(x) => quote! { ethabi::ParamType::Int(#x) },
 		ParamType::Uint(x) => quote! { ethabi::ParamType::Uint(#x) },
+		ParamType::FixedPoint(x, p) => quote! { ethabi::ParamType::Int(#x, #p) },
+		ParamType::UfixedPoint(x, p) => quote! { ethabi::ParamType::Uint(#x, #p) },
 		ParamType::Bool => quote! { ethabi::ParamType::Bool },
 		ParamType::String => quote! { ethabi::ParamType::String },
 		ParamType::Array(ref param_type) => {
@@ -205,6 +207,8 @@ fn rust_type(input: &ParamType) -> quote::Tokens {
 		ParamType::FixedBytes(size) => quote! { [u8; #size] },
 		ParamType::Int(_) => quote! { ethabi::Int },
 		ParamType::Uint(_) => quote! { ethabi::Uint },
+		ParamType::FixedPoint(_, _) => quote! { ethabi::Int },
+		ParamType::UfixedPoint(_, _) => quote! { ethabi::Uint },
 		ParamType::Bool => quote! { bool },
 		ParamType::String => quote! { String },
 		ParamType::Array(ref kind) => {
@@ -228,6 +232,8 @@ fn template_param_type(input: &ParamType, index: usize) -> quote::Tokens {
 		ParamType::FixedBytes(size) => quote! { #t_ident: Into<[u8; #size]> },
 		ParamType::Int(_) => quote! { #t_ident: Into<ethabi::Int> },
 		ParamType::Uint(_) => quote! { #t_ident: Into<ethabi::Uint> },
+		ParamType::FixedPoint(_, _) => quote! { #t_ident: Into<ethabi::Int> },
+		ParamType::UfixedPoint(_, _) => quote! { #t_ident: Into<ethabi::Uint> },
 		ParamType::Bool => quote! { #t_ident: Into<bool> },
 		ParamType::String => quote! { #t_ident: Into<String> },
 		ParamType::Array(ref kind) => {
@@ -260,6 +266,8 @@ fn to_token(name: &quote::Tokens, kind: &ParamType) -> quote::Tokens {
 		ParamType::FixedBytes(_) => quote! { ethabi::Token::FixedBytes(#name.to_vec()) },
 		ParamType::Int(_) => quote! { ethabi::Token::Int(#name) },
 		ParamType::Uint(_) => quote! { ethabi::Token::Uint(#name) },
+		ParamType::FixedPoint(_, _) => quote! { ethabi::Token::Int(#name) },
+		ParamType::UfixedPoint(_, _) => quote! { ethabi::Token::Uint(#name) },
 		ParamType::Bool => quote! { ethabi::Token::Bool(#name) },
 		ParamType::String => quote! { ethabi::Token::String(#name) },
 		ParamType::Array(ref kind) => {
@@ -312,6 +320,8 @@ fn from_token(kind: &ParamType, token: &quote::Tokens) -> quote::Tokens {
 		},
 		ParamType::Int(_) => quote! { #token.to_int().expect(super::INTERNAL_ERR) },
 		ParamType::Uint(_) => quote! { #token.to_uint().expect(super::INTERNAL_ERR) },
+		ParamType::FixedPoint(_, _) => quote! { #token.to_int().expect(super::INTERNAL_ERR) },
+		ParamType::UfixedPoint(_, _) => quote! { #token.to_uint().expect(super::INTERNAL_ERR) },
 		ParamType::Bool => quote! { #token.to_bool().expect(super::INTERNAL_ERR) },
 		ParamType::String => quote! { #token.to_string().expect(super::INTERNAL_ERR) },
 		ParamType::Array(ref kind) => {
