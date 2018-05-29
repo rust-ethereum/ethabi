@@ -13,8 +13,6 @@ extern crate serde_derive;
 #[macro_use]
 extern crate error_chain;
 
-#[doc(hidden)]
-pub extern crate futures;
 extern crate ethereum_types;
 
 pub mod param_type;
@@ -47,7 +45,6 @@ pub use param::Param;
 pub use log::{Log, RawLog, LogParam, ParseLog};
 pub use event::Event;
 pub use event_param::EventParam;
-use futures::Future;
 
 /// ABI address.
 pub type Address = ethereum_types::Address;
@@ -77,77 +74,4 @@ pub trait ContractFunction {
 
 	/// Decodes the given bytes output for the contract function
 	fn output(&self, Bytes) -> Result<Self::Output>;
-}
-
-/// Trait that adds `.call(caller)` and `.transact(caller)` to contract functions.
-/// These functions get delegated to the caller.
-pub trait DelegateCall<O> {
-	/// Delegates call to caller
-	fn call<C: Call<O>>(self, caller: C) -> C::Result;
-
-	/// Delegates transaction to caller
-	fn transact<T: Transact<O>>(self, caller: T) -> T::Result;
-}
-impl<O, E: ContractFunction<Output=O> + 'static> DelegateCall<O> for E {
-	fn call<C: Call<O>>(self, caller: C) -> C::Result {
-		caller.call(self.encoded(), move |bytes| self.output(bytes))
-	}
-
-	fn transact<T: Transact<O>>(self, caller: T) -> T::Result {
-		caller.transact(self.encoded(), move |bytes| self.output(bytes))
-	}
-}
-
-/// A caller (for example a closure) that can process a call and
-/// return the decoded output.
-pub trait Call<Out>: Sized {
-	/// Return type of the call
-	type Result;
-
-	/// Processes the call given input bytes and returns decoded output
-	fn call<D: 'static>(self, input: Bytes, output_decoder: D) -> Self::Result
-		where D: FnOnce(Bytes) -> Result<Out>;
-}
-// Blanket implementation for closures
-impl<Out: 'static, F, R: 'static, E: 'static> Call<Out> for F where
-	F: FnOnce(Bytes) -> R,
-	R: futures::IntoFuture<Item=Bytes, Error=E>,
-	E: From<Error>
-{
-	type Result = Box<futures::Future<Item=Out, Error=E>>;
-
-	fn call<D: 'static>(self, input: Bytes, output_decoder: D) -> Self::Result
-		where D: FnOnce(Bytes) -> Result<Out>
-	{
-		Box::new(
-			(self)(input).into_future().and_then(|output: Bytes| output_decoder(output).map_err(Into::into))
-		)
-	}
-}
-
-/// A caller (for example a closure) that can process a transaction and
-/// return the decoded output.
-pub trait Transact<Out>: Sized {
-	/// Return type of the transaction
-	type Result;
-
-	/// Processes the transaction given input bytes and returns decoded output
-	fn transact<D: 'static>(self, input: Bytes, output_decoder: D) -> Self::Result
-		where D: FnOnce(Bytes) -> Result<Out>;
-}
-// Blanket implementation for closures.
-impl<Out: 'static, F, R: 'static, E: 'static> Transact<Out> for F where
-	F: FnOnce(Bytes) -> R,
-	R: futures::IntoFuture<Item=Bytes, Error=E>,
-	E: From<Error>
-{
-	type Result = Box<futures::Future<Item=Out, Error=E>>;
-
-	fn transact<D: 'static>(self, input: Bytes, output_decoder: D) -> Self::Result
-		where D: FnOnce(Bytes) -> Result<Out>
-	{
-		Box::new(
-			(self)(input).into_future().and_then(|output: Bytes| output_decoder(output).map_err(Into::into))
-		)
-	}
 }

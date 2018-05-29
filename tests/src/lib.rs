@@ -20,9 +20,7 @@ use_contract!(urlhint, "UrlHint", "../res/urlhint.abi");
 #[cfg(test)]
 mod tests {
 	use rustc_hex::{ToHex, FromHex};
-	use ethabi::{Address, Uint, Bytes, ContractFunction, DelegateCall};
-	use ethabi::futures;
-	use ethabi::futures::Future;
+	use ethabi::{Address, Uint, ContractFunction};
 
 	struct Wrapper([u8; 20]);
 
@@ -32,23 +30,12 @@ mod tests {
 		}
 	}
 
-	#[derive(Debug)]
-	enum CallError {
-		EthabiError(::ethabi::Error)
-	}
-
-	impl From<::ethabi::Error> for CallError {
-		fn from(err: ::ethabi::Error) -> Self {
-			CallError::EthabiError(err)
-		}
-	}
-
 	#[test]
 	fn should_be_cloneable() {
 		use validators::Validators;
 
 		let contract = Validators::default();
-		contract.clone();
+		let _ = contract.clone();
 	}
 
 	#[test]
@@ -82,23 +69,6 @@ mod tests {
 		let decoded_output = contract.outputs().total_supply(&output).unwrap();
 		let expected_output: Uint = 0x36455b.into();
 		assert_eq!(expected_output, decoded_output);
-	}
-
-	#[test]
-	fn test_constructor_transaction() {
-		use validators::Validators;
-
-		let contract = Validators::default();
-
-		let code = Vec::new();
-		let first = [0x11u8; 20];
-		let second = [0x22u8; 20];
-
-		let address = contract.constructor(code.clone(), vec![first.clone(), second.clone()]).transact(&|_: Bytes| Ok::<Bytes, CallError>("0000000000000000000000002222222222222222222222222222222222222222".from_hex().unwrap())).wait().unwrap();
-		assert_eq!(address, [0x22u8; 20].into());
-
-		let address = contract.constructor(code.clone(), vec![first.clone(), second.clone()]).transact(&|_: Bytes| futures::future::ok::<(Bytes), CallError>("0000000000000000000000002222222222222222222222222222222222222222".from_hex().unwrap())).wait().unwrap();
-		assert_eq!(address, [0x22u8; 20].into());
 	}
 
 	#[test]
@@ -157,19 +127,6 @@ mod tests {
 		let to2: Address = [4u8; 20].into();
 		let _filter = contract.events().transfer().create_filter(from, vec![to, to2]);
 		let _filter = contract.events().transfer().create_filter(None, None);
-	}
-
-	#[test]
-	fn test_calling_function() {
-		use eip20::Eip20;
-
-		let contract = Eip20::default();
-		let address_param = [0u8; 20];
-		let result = contract.functions().balance_of(address_param).call(&|data| {
-			assert_eq!(data, "70a082310000000000000000000000000000000000000000000000000000000000000000".from_hex().unwrap());
-			Ok::<Bytes, CallError>("000000000000000000000000000000000000000000000000000000000036455b".from_hex().unwrap())
-		});
-		assert_eq!(result.wait().unwrap(), "000000000000000000000000000000000000000000000000000000000036455b".into());
 	}
 }
 
