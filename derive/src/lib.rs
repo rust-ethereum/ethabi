@@ -11,7 +11,7 @@ use std::{env, fs};
 use std::path::PathBuf;
 use proc_macro::TokenStream;
 use heck::{SnakeCase, CamelCase};
-use ethabi::{Result, ResultExt, Contract, Event, Function, ParamType, Constructor};
+use ethabi::{Result, ResultExt, Contract, Event, Function, Param, ParamType, Constructor};
 
 const ERROR_MSG: &'static str = "`derive(EthabiContract)` failed";
 
@@ -33,9 +33,12 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 	let functions: Vec<_> = contract.functions().map(impl_contract_function).collect();
 	let events_impl: Vec<_> = contract.events().map(impl_contract_event).collect();
 	let constructor_impl = contract.constructor.as_ref().map(impl_contract_constructor);
+	let constructor_input_wrapper_struct = contract.constructor.as_ref().map(declare_contract_constructor_input_wrapper);
 	let logs_structs: Vec<_> = contract.events().map(declare_logs).collect();
 	let events_structs: Vec<_> = contract.events().map(declare_events).collect();
 	let func_structs: Vec<_> = contract.functions().map(declare_functions).collect();
+	let output_functions: Vec<_> = contract.functions().map(declare_output_functions).collect();
+	let func_input_wrappers_structs: Vec<_> = contract.functions().map(declare_functions_input_wrappers).collect();
 
 	let name = get_option(&options, "name")?;
 	let name = syn::Ident::from(name);
@@ -48,6 +51,7 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 		quote! {
 			pub mod events {
 				use ethabi;
+				use ethabi::ParseLog;
 
 				#(#events_structs)*
 			}
@@ -58,6 +62,7 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 				#(#logs_structs)*
 			}
 
+			/// Contract events
 			#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 			pub struct #events_name {
 			}
@@ -67,6 +72,7 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 			}
 
 			impl #name {
+				/// Get contract events
 				pub fn events(&self) -> #events_name {
 					#events_name {
 					}
@@ -85,18 +91,41 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 				#(#func_structs)*
 			}
 
+			#(#func_input_wrappers_structs)*
+
+			/// Contract functions (for encoding input, making calls, transactions)
 			#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 			pub struct #functions_name {
 			}
+
 			impl #functions_name {
 				#(#functions)*
 			}
 			impl #name {
+				/// Gets contract functions (for encoding input, making calls, transactions)
 				pub fn functions(&self) -> #functions_name {
 					#functions_name {}
 				}
 			}
 
+		}
+	};
+
+	let outputs_quote = if output_functions.is_empty() {
+		quote! {}
+	} else {
+		quote! {
+			/// Contract functions (for decoding output)
+			pub struct Outputs {}
+			impl Outputs {
+				#(#output_functions)*
+			}
+			impl #name {
+				/// Gets contract functions (for decoding output)
+				pub fn outputs(&self) -> Outputs {
+					Outputs {}
+				}
+			}
 		}
 	};
 
@@ -115,8 +144,11 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 		impl #name {
 			#constructor_impl
 		}
+		#constructor_input_wrapper_struct
 
 		#events_and_logs_quote
+
+		#outputs_quote
 
 		#functions_quote
 	};
@@ -135,7 +167,6 @@ fn get_options(attrs: &[syn::Attribute], name: &str) -> Result<Vec<syn::NestedMe
 		_ => Err("Unexpected meta item".into())
 	}
 }
-
 
 fn get_option(options: &[syn::NestedMeta], name: &str) -> Result<String> {
 	let item = options.iter()
@@ -166,18 +197,7 @@ fn normalize_path(relative_path: &str) -> Result<PathBuf> {
 	Ok(path)
 }
 
-fn impl_contract_function(function: &Function) -> quote::Tokens {
-	let name = syn::Ident::from(function.name.to_snake_case());
-	let function_name = syn::Ident::from(function.name.to_camel_case());
-
-	quote! {
-		pub fn #name(&self) -> functions::#function_name {
-			functions::#function_name::default()
-		}
-	}
-}
-
-fn to_syntax_string(param_type : &ethabi::ParamType) -> quote::Tokens {
+fn to_syntax_string(param_type: &ethabi::ParamType) -> quote::Tokens {
 	match *param_type {
 		ParamType::Address => quote! { ethabi::ParamType::Address },
 		ParamType::Bytes => quote! { ethabi::ParamType::Bytes },
@@ -195,6 +215,21 @@ fn to_syntax_string(param_type : &ethabi::ParamType) -> quote::Tokens {
 			quote! { ethabi::ParamType::FixedArray(Box::new(#param_type_quote), #x) }
 		}
 	}
+}
+
+fn to_ethabi_param_vec(params: &Vec<Param>) -> quote::Tokens {
+	let p = params.iter().map(|x| {
+		let name = &x.name;
+		let kind = to_syntax_string(&x.kind);
+		quote! {
+			ethabi::Param {
+				name: #name.to_owned(),
+				kind: #kind
+			}
+		}
+	}).collect::<Vec<_>>();
+
+	quote! { vec![ #(#p),* ] }
 }
 
 fn rust_type(input: &ParamType) -> quote::Tokens {
@@ -245,7 +280,7 @@ fn template_param_type(input: &ParamType, index: usize) -> quote::Tokens {
 	}
 }
 
-fn from_template_param(input: &ParamType, name: &quote::Tokens) -> quote::Tokens {
+fn from_template_param(input: &ParamType, name: &syn::Ident) -> quote::Tokens {
 	match *input {
 		ParamType::Array(_) => quote! { #name.into_iter().map(Into::into).collect::<Vec<_>>() },
 		ParamType::FixedArray(_, _) => quote! { (Box::new(#name.into()) as Box<[_]>).into_vec().into_iter().map(Into::into).collect::<Vec<_>>() },
@@ -338,6 +373,81 @@ fn from_token(kind: &ParamType, token: &quote::Tokens) -> quote::Tokens {
 	}
 }
 
+fn input_names(inputs: &Vec<Param>) -> Vec<syn::Ident> {
+	inputs
+		.iter()
+		.enumerate()
+		.map(|(index, param)| if param.name.is_empty() {
+			syn::Ident::from(format!("param{}", index))
+		} else {
+			param.name.to_snake_case().into()
+		})
+		.collect()
+}
+
+fn get_template_names(kinds: &Vec<quote::Tokens>) -> Vec<syn::Ident> {
+	kinds.iter().enumerate()
+		.map(|(index, _)| syn::Ident::from(format!("T{}", index)))
+		.collect()
+}
+
+fn get_output_kinds(outputs: &Vec<Param>) -> quote::Tokens {
+	match outputs.len() {
+		0 => quote! {()},
+		1 => {
+			let t = rust_type(&outputs[0].kind);
+			quote! { #t }
+		},
+		_ => {
+			let outs: Vec<_> = outputs
+				.iter()
+				.map(|param| rust_type(&param.kind))
+				.collect();
+			quote! { (#(#outs),*) }
+		}
+	}
+}
+
+fn impl_contract_function(function: &Function) -> quote::Tokens {
+	let name = syn::Ident::from(function.name.to_snake_case());
+	let function_input_wrapper_name = syn::Ident::from(format!("{}WithInput",function.name.to_camel_case()));
+
+	// [param0, hello_world, param2]
+	let ref input_names: Vec<_> = input_names(&function.inputs);
+
+	// [T0: Into<Uint>, T1: Into<Bytes>, T2: IntoIterator<Item = U2>, U2 = Into<Uint>]
+	let ref template_params: Vec<_> = function.inputs.iter().enumerate()
+		.map(|(index, param)| template_param_type(&param.kind, index))
+		.collect();
+
+	// [Uint, Bytes, Vec<Uint>]
+	let kinds: Vec<_> = function.inputs
+		.iter()
+		.map(|param| rust_type(&param.kind))
+		.collect();
+
+	// [T0, T1, T2]
+	let template_names: Vec<_> = get_template_names(&kinds);
+
+	// [param0: T0, hello_world: T1, param2: T2]
+	let ref params: Vec<_> = input_names.iter().zip(template_names.iter())
+		.map(|(param_name, template_name)| quote! { #param_name: #template_name })
+		.collect();
+
+	// [Token::Uint(param0.into()), Token::Bytes(hello_world.into()), Token::Array(param2.into_iter().map(Into::into).collect())]
+	let usage: Vec<_> = input_names.iter().zip(function.inputs.iter())
+		.map(|(param_name, param)| to_token(&from_template_param(&param.kind, &param_name), &param.kind))
+		.collect();
+
+	quote! {
+		/// Sets the input (arguments) for this contract function
+		pub fn #name<#(#template_params),*>(&self, #(#params),*) -> #function_input_wrapper_name {
+			let v: Vec<ethabi::Token> = vec![#(#usage),*];
+			#function_input_wrapper_name::new(v)
+		}
+	}
+}
+
 fn impl_contract_event(event: &Event) -> quote::Tokens {
 	let name = syn::Ident::from(event.name.to_snake_case());
 	let event_name = syn::Ident::from(event.name.to_camel_case());
@@ -350,15 +460,7 @@ fn impl_contract_event(event: &Event) -> quote::Tokens {
 
 fn impl_contract_constructor(constructor: &Constructor) -> quote::Tokens {
 	// [param0, hello_world, param2]
-	let names: Vec<_> = constructor.inputs
-		.iter()
-		.enumerate()
-		.map(|(index, param)| if param.name.is_empty() {
-			syn::Ident::from(format!("param{}", index))
-		} else {
-			param.name.to_snake_case().into()
-		})
-		.map(|i| quote! { #i }).collect();
+	let input_names: Vec<_> = input_names(&constructor.inputs);
 
 	// [Uint, Bytes, Vec<Uint>]
 	let kinds: Vec<_> = constructor.inputs
@@ -367,9 +469,7 @@ fn impl_contract_constructor(constructor: &Constructor) -> quote::Tokens {
 		.collect();
 
 	// [T0, T1, T2]
-	let template_names: Vec<_> = kinds.iter().enumerate()
-		.map(|(index, _)| syn::Ident::from(format!("T{}", index)))
-		.collect();
+	let template_names: Vec<_> = get_template_names(&kinds);
 
 	// [T0: Into<Uint>, T1: Into<Bytes>, T2: IntoIterator<Item = U2>, U2 = Into<Uint>]
 	let template_params: Vec<_> = constructor.inputs.iter().enumerate()
@@ -377,37 +477,60 @@ fn impl_contract_constructor(constructor: &Constructor) -> quote::Tokens {
 		.collect();
 
 	// [param0: T0, hello_world: T1, param2: T2]
-	let params: Vec<_> = names.iter().zip(template_names.iter())
+	let params: Vec<_> = input_names.iter().zip(template_names.iter())
 		.map(|(param_name, template_name)| quote! { #param_name: #template_name })
 		.collect();
 
 	// [Token::Uint(param0.into()), Token::Bytes(hello_world.into()), Token::Array(param2.into())]
-	let usage: Vec<_> = names.iter().zip(constructor.inputs.iter())
-		.map(|(param_name, param)| to_token(&from_template_param(&param.kind, param_name), &param.kind))
+	let usage: Vec<_> = input_names.iter().zip(constructor.inputs.iter())
+		.map(|(param_name, param)| to_token(&from_template_param(&param.kind, &param_name), &param.kind))
 		.collect();
 
-	let constructor_inputs = &constructor.inputs.iter().map(|x| {
-		let name = &x.name;
-		let kind = to_syntax_string(&x.kind);
-		quote! {
-			ethabi::Param {
-				name: #name.to_owned(),
-				kind: #kind
-			}
+	quote! {
+		pub fn constructor<#(#template_params),*>(&self, code: ethabi::Bytes, #(#params),* ) -> ConstructorWithInput {
+			let v: Vec<ethabi::Token> = vec![#(#usage),*];
+			ConstructorWithInput::new(code, v)
 		}
-	}).collect::<Vec<_>>();
-	let constructor_inputs = quote! { vec![ #(#constructor_inputs),* ] };
+
+	}
+}
+
+fn declare_contract_constructor_input_wrapper(constructor: &Constructor) -> quote::Tokens {
+	let constructor_inputs = to_ethabi_param_vec(&constructor.inputs);
 
 	quote! {
-		pub fn constructor<#(#template_params),*>(&self, code: ethabi::Bytes, #(#params),* ) -> ethabi::Bytes {
-			let v: Vec<ethabi::Token> = vec![#(#usage),*];
-
-			ethabi::Constructor {
-				inputs: #constructor_inputs
-			}
-			.encode_input(code, &v)
-			.expect(INTERNAL_ERR)
+		pub struct ConstructorWithInput {
+			encoded_input: ethabi::Bytes,
 		}
+		impl ethabi::ContractFunction for ConstructorWithInput {
+			type Output = ethabi::Address;
+
+			fn encoded(&self) -> ethabi::Bytes {
+				self.encoded_input.clone()
+			}
+
+			fn output(&self, output_bytes: ethabi::Bytes) -> ethabi::Result<Self::Output> {
+				let out = ethabi::decode(&vec![ethabi::ParamType::Address], &output_bytes)?
+					.into_iter()
+					.next()
+					.expect(INTERNAL_ERR);
+				Ok(out.to_address().expect(INTERNAL_ERR))
+			}
+		}
+		impl ConstructorWithInput {
+			pub fn new(code: ethabi::Bytes, tokens: Vec<ethabi::Token>) -> Self {
+				let constructor = ethabi::Constructor {
+					inputs: #constructor_inputs
+				};
+
+				let encoded_input: ethabi::Bytes = constructor
+					.encode_input(code, &tokens)
+					.expect(INTERNAL_ERR);
+
+				ConstructorWithInput { encoded_input: encoded_input }
+			}
+		}
+
 	}
 }
 
@@ -486,9 +609,7 @@ fn declare_events(event: &Event) -> quote::Tokens {
 		.collect();
 
 	// [T0, T1, T2]
-	let template_names: Vec<_> = topic_kinds.iter().enumerate()
-		.map(|(index, _)| syn::Ident::from(format!("T{}", index)))
-		.collect();
+	let template_names: Vec<_> = get_template_names(&topic_kinds);
 
 	let params: Vec<_> = topic_names.iter().zip(template_names.iter())
 		.map(|(param_name, template_name)| quote! { #param_name: #template_name })
@@ -547,16 +668,20 @@ fn declare_events(event: &Event) -> quote::Tokens {
 			}
 		}
 
-		impl #name {
+		impl ParseLog for #name {
+			type Log = super::logs::#name;
+
 			/// Parses log.
-			pub fn parse_log(&self, log: ethabi::RawLog) -> ethabi::Result<super::logs::#name> {
+			fn parse_log(&self, log: ethabi::RawLog) -> ethabi::Result<Self::Log> {
 				let mut log = self.event.parse_log(log)?.params.into_iter();
 				let result = super::logs::#name {
 					#(#log_params),*
 				};
 				Ok(result)
 			}
+		}
 
+		impl #name {
 			/// Creates topic filter.
 			pub fn create_filter<#(#template_params),*>(&self, #(#params),*) -> ethabi::TopicFilter {
 				let raw = ethabi::RawTopicFilter {
@@ -573,60 +698,8 @@ fn declare_events(event: &Event) -> quote::Tokens {
 fn declare_functions(function: &Function) -> quote::Tokens {
 	let name = syn::Ident::from(function.name.to_camel_case());
 
-	// [param0, hello_world, param2]
-	let ref names: Vec<_> = function.inputs
-		.iter()
-		.enumerate()
-		.map(|(index, param)| if param.name.is_empty() {
-			syn::Ident::from(format!("param{}", index))
-		} else {
-			param.name.to_snake_case().into()
-		})
-		.map(|i| quote! { #i }).collect();
-
-	// [Uint, Bytes, Vec<Uint>]
-	let kinds: Vec<_> = function.inputs
-		.iter()
-		.map(|param| rust_type(&param.kind))
-		.collect();
-
-	// [T0, T1, T2]
-	let template_names: Vec<_> = kinds.iter().enumerate()
-		.map(|(index, _)| syn::Ident::from(format!("T{}", index)))
-		.collect();
-
-	// [T0: Into<Uint>, T1: Into<Bytes>, T2: IntoIterator<Item = U2>, U2 = Into<Uint>]
-	let ref template_params: Vec<_> = function.inputs.iter().enumerate()
-		.map(|(index, param)| template_param_type(&param.kind, index))
-		.collect();
-
-	// [param0: T0, hello_world: T1, param2: T2]
-	let ref params: Vec<_> = names.iter().zip(template_names.iter())
-		.map(|(param_name, template_name)| quote! { #param_name: #template_name })
-		.collect();
-
-	// [Token::Uint(param0.into()), Token::Bytes(hello_world.into()), Token::Array(param2.into_iter().map(Into::into).collect())]
-	let usage: Vec<_> = names.iter().zip(function.inputs.iter())
-		.map(|(param_name, param)| to_token(&from_template_param(&param.kind, param_name), &param.kind))
-		.collect();
-
-	let output_call_impl = if !function.constant {
-		quote! {}
-	} else {
-		let output_kinds = match function.outputs.len() {
-			0 => quote! {()},
-			1 => {
-				let t = rust_type(&function.outputs[0].kind);
-				quote! { #t }
-			},
-			_ => {
-				let outs: Vec<_> = function.outputs
-					.iter()
-					.map(|param| rust_type(&param.kind))
-					.collect();
-				quote! { (#(#outs),*) }
-			}
-		};
+	let decode_output = {
+		let output_kinds = get_output_kinds(&function.outputs);
 
 		let o_impl = match function.outputs.len() {
 			0 => quote! { Ok(()) },
@@ -652,54 +725,25 @@ fn declare_functions(function: &Function) -> quote::Tokens {
 			},
 		};
 
+		// TODO remove decode_output function for functions without output?
+		// Otherwise the output argument is unused
 		quote! {
-			pub fn output(&self, output: &[u8]) -> ethabi::Result<#output_kinds> {
+			#[allow(unused_variables)]
+			pub fn decode_output(&self, output: &[u8]) -> ethabi::Result<#output_kinds> {
 				#o_impl
-			}
-
-			pub fn call<#(#template_params),*>(&self, #(#params ,)* do_call: &Fn(ethabi::Bytes) -> Result<ethabi::Bytes, String>) -> ethabi::Result<#output_kinds>
-			{
-				let encoded_input = self.input(#(#names),*);
-
-				do_call(encoded_input)
-					.map_err(|x| ethabi::Error::with_chain(ethabi::Error::from(x), ethabi::ErrorKind::CallError))
-					.and_then(|encoded_output| self.output(&encoded_output))
 			}
 		}
 	};
 
 	let function_name = &function.name;
-
-	let function_inputs = &function.inputs.iter().map(|x| {
-		let name = &x.name;
-		let kind = to_syntax_string(&x.kind);
-		quote! {
-			ethabi::Param {
-				name: #name.to_owned(),
-				kind: #kind,
-			}
-		}
-	}).collect::<Vec<_>>();
-	let function_inputs = quote! { vec![ #(#function_inputs),* ] };
-
-	let function_outputs = &function.outputs.iter().map(|x| {
-		let name = &x.name;
-		let kind = to_syntax_string(&x.kind);
-		quote! {
-			ethabi::Param {
-				name: #name.to_owned(),
-				kind: #kind,
-			}
-		}
-	}).collect::<Vec<_>>();
-	let function_outputs = quote! { vec![ #(#function_outputs),* ] };
-
+	let function_inputs = to_ethabi_param_vec(&function.inputs);
+	let function_outputs = to_ethabi_param_vec(&function.outputs);
 	let function_constant = &function.constant;
 
 	quote! {
 		#[derive(Debug, Clone, PartialEq)]
 		pub struct #name {
-			function: ethabi::Function,
+			function: ethabi::Function
 		}
 
 		impl Default for #name {
@@ -716,13 +760,70 @@ fn declare_functions(function: &Function) -> quote::Tokens {
 		}
 
 		impl #name {
+			#decode_output
 
-			pub fn input<#(#template_params),*>(&self, #(#params),*) -> ethabi::Bytes {
-				let v: Vec<ethabi::Token> = vec![#(#usage),*];
-				self.function.encode_input(&v).expect(super::INTERNAL_ERR)
+			pub fn encode_input(&self, tokens: &[ethabi::Token]) -> ethabi::Result<ethabi::Bytes> {
+				self.function.encode_input(tokens)
+			}
+		}
+	}
+}
+
+fn declare_output_functions(function: &Function) -> quote::Tokens {
+	let name_camel = syn::Ident::from(function.name.to_camel_case());
+	let name_snake = syn::Ident::from(function.name.to_snake_case());
+	let output_kinds = get_output_kinds(&function.outputs);
+
+	quote! {
+		/// Returns the decoded output for this contract function
+		pub fn #name_snake(&self, output_bytes : &[u8]) -> ethabi::Result<#output_kinds> {
+			functions::#name_camel::default().decode_output(&output_bytes)
+		}
+	}
+}
+
+fn declare_functions_input_wrappers(function: &Function) -> quote::Tokens {
+	let name = syn::Ident::from(function.name.to_camel_case());
+	let name_with_input = syn::Ident::from(format!("{}WithInput",function.name.to_camel_case()));
+	let output_kinds = if function.constant {
+		get_output_kinds(&function.outputs)
+	}
+	else {
+		quote!{()}
+	};
+	let output_fn_body =  if function.constant {
+		quote!{functions::#name::default().decode_output(&_output_bytes)}
+	}
+	else {
+		quote!{Ok(())}
+	};
+
+	quote! {
+		/// Contract function with already defined input values
+		pub struct #name_with_input {
+			encoded_input: ethabi::Bytes
+		}
+
+		impl ethabi::ContractFunction for #name_with_input {
+			type Output = #output_kinds;
+
+			fn encoded(&self) -> ethabi::Bytes {
+				self.encoded_input.clone()
 			}
 
-			#output_call_impl
+			fn output(&self, _output_bytes: ethabi::Bytes) -> ethabi::Result<Self::Output> {
+				#output_fn_body
+			}
+		}
+
+		impl #name_with_input {
+			#[doc(hidden)]
+			pub fn new(v: Vec<ethabi::Token>) -> Self {
+				let encoded_input : ethabi::Bytes = functions::#name::default().encode_input(&v).expect(INTERNAL_ERR);
+				#name_with_input {
+					encoded_input: encoded_input
+				}
+			}
 		}
 	}
 }
