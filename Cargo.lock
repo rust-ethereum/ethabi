@@ -79,7 +79,7 @@ dependencies = [
 
 [[package]]
 name = "ethabi"
-version = "6.0.0"
+version = "6.0.1"
 dependencies = [
  "error-chain 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "ethereum-types 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -92,11 +92,11 @@ dependencies = [
 
 [[package]]
 name = "ethabi-cli"
-version = "6.0.0"
+version = "6.0.1"
 dependencies = [
  "docopt 0.8.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "error-chain 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "ethabi 6.0.0",
+ "ethabi 6.0.1",
  "rustc-hex 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.37 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.37 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -104,13 +104,13 @@ dependencies = [
 
 [[package]]
 name = "ethabi-contract"
-version = "6.0.0"
+version = "6.0.1"
 
 [[package]]
 name = "ethabi-derive"
-version = "6.0.0"
+version = "6.0.1"
 dependencies = [
- "ethabi 6.0.0",
+ "ethabi 6.0.1",
  "heck 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "quote 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "syn 0.13.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -120,9 +120,9 @@ dependencies = [
 name = "ethabi-tests"
 version = "0.1.0"
 dependencies = [
- "ethabi 6.0.0",
- "ethabi-contract 6.0.0",
- "ethabi-derive 6.0.0",
+ "ethabi 6.0.1",
+ "ethabi-contract 6.0.1",
+ "ethabi-derive 6.0.1",
  "rustc-hex 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
