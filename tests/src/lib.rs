@@ -62,13 +62,22 @@ mod tests {
 	fn test_decoding_function_output() {
 		// Make sure that the output param type of the derived contract is correct
 
-		use eip20::Eip20;
+		// given
 
+		use eip20::Eip20;
 		let contract = Eip20::default();
 		let output = "000000000000000000000000000000000000000000000000000000000036455B".from_hex().unwrap();
+
+		// when
+
 		let decoded_output = contract.outputs().total_supply(&output).unwrap();
+		let decoded_output2 = contract.functions().total_supply().output(output).unwrap();
+
+		// then
+
 		let expected_output: Uint = 0x36455b.into();
 		assert_eq!(expected_output, decoded_output);
+		assert_eq!(expected_output, decoded_output2);
 	}
 
 	#[test]
