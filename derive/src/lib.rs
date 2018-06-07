@@ -785,18 +785,8 @@ fn declare_output_functions(function: &Function) -> quote::Tokens {
 fn declare_functions_input_wrappers(function: &Function) -> quote::Tokens {
 	let name = syn::Ident::from(function.name.to_camel_case());
 	let name_with_input = syn::Ident::from(format!("{}WithInput",function.name.to_camel_case()));
-	let output_kinds = if function.constant {
-		get_output_kinds(&function.outputs)
-	}
-	else {
-		quote!{()}
-	};
-	let output_fn_body =  if function.constant {
-		quote!{functions::#name::default().decode_output(&_output_bytes)}
-	}
-	else {
-		quote!{Ok(())}
-	};
+	let output_kinds = get_output_kinds(&function.outputs);
+	let output_fn_body = quote!{functions::#name::default().decode_output(&_output_bytes)};
 
 	quote! {
 		/// Contract function with already defined input values
