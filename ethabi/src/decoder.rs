@@ -200,6 +200,22 @@ fn decode_param(param: &ParamType, slices: &[[u8; 32]], offset: usize) -> Result
 
 			Ok(result)
 		}
+		ParamType::Tuple(ref params) => {
+			let mut tokens = vec![];
+			let mut new_offset = offset;
+			for param in params.iter() {
+				let res = decode_param(param, &slices, new_offset)?;
+				new_offset = res.new_offset;
+				tokens.push(res.token);
+			}
+
+			let result = DecodeResult {
+				token: Token::Tuple(tokens),
+				new_offset,
+			};
+
+			Ok(result)
+		},
 	}
 }
 
@@ -473,6 +489,18 @@ mod tests {
 		let s = Token::String("gavofyork".to_owned());
 		let expected = vec![s];
 		let decoded = decode(&[ParamType::String], &encoded).unwrap();
+		assert_eq!(decoded, expected);
+	}
+
+	#[test]
+	fn decode_tuple() {
+		let encoded = ("".to_owned() +
+			"0000000000000000000000001111111111111111111111111111111111111111" +
+			"000000000000000000000000000000000000000000000000000000000000250f").from_hex().unwrap();
+		let address = Token::Address([0x11u8; 20].into());
+		let uint = Token::Uint(9487.into());
+		let expected = vec![Token::Tuple(vec![address, uint])];
+		let decoded = decode(&[ParamType::Tuple(vec![ParamType::Address, ParamType::Uint(256)])], &encoded).unwrap();
 		assert_eq!(decoded, expected);
 	}
 }

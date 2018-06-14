@@ -50,6 +50,10 @@ pub enum Token {
 	///
 	/// solidity name eg. int[], bool[], address[5][]
 	Array(Vec<Token>),
+	/// Tuple of params.
+	///
+	/// solidity name eg. (uint256,bool)
+	Tuple(Vec<Token>),
 }
 
 impl fmt::Display for Token {
@@ -67,6 +71,14 @@ impl fmt::Display for Token {
 					.join(",");
 
 				write!(f, "[{}]", s)
+			}
+			Token::Tuple(ref elems) => {
+				let s = elems.iter()
+					.map(|ref t| format!("{}", t))
+					.collect::<Vec<String>>()
+					.join(",");
+
+				write!(f, "({})", s)
 			}
 		}
 	}
@@ -110,6 +122,12 @@ impl Token {
 			Token::FixedArray(ref tokens) =>
 				if let ParamType::FixedArray(ref param_type, size) = *param_type {
 					size == tokens.len() && tokens.iter().all(|t| t.type_check(param_type))
+				} else {
+					false
+				},
+			Token::Tuple(ref tokens) =>
+				if let ParamType::Tuple(ref param_types) = *param_type {
+					param_types.len() == tokens.len() && tokens.iter().zip(param_types).all(|(t, param_type)| t.type_check(param_type))
 				} else {
 					false
 				},
@@ -188,6 +206,14 @@ impl Token {
 		}
 	}
 
+	/// Converts token to...
+	pub fn to_tuple(self) -> Option<Vec<Token>> {
+		match self {
+			Token::Tuple(elems) => Some(elems),
+			_ => None,
+		}
+	}
+
 	/// Check if all the types of the tokens match the given parameter types.
 	pub fn types_check(tokens: &[Token], param_types: &[ParamType]) -> bool {
 		param_types.len() == tokens.len() && {
@@ -232,5 +258,8 @@ mod tests {
 		assert_not_type_check(vec![Token::FixedArray(vec![Token::Bool(false), Token::Bool(true)])], vec![ParamType::FixedArray(Box::new(ParamType::Bool), 3)]);
 		assert_not_type_check(vec![Token::FixedArray(vec![Token::Bool(false), Token::Uint(0.into())])], vec![ParamType::FixedArray(Box::new(ParamType::Bool), 2)]);
 		assert_not_type_check(vec![Token::FixedArray(vec![Token::Bool(false), Token::Bool(true)])], vec![ParamType::FixedArray(Box::new(ParamType::Address), 2)]);
+
+		assert_type_check(vec![Token::Tuple(vec![Token::Bool(false), Token::Uint(0.into())])], vec![ParamType::Tuple(vec![ParamType::Bool, ParamType::Uint(256)])]);
+		assert_not_type_check(vec![Token::Tuple(vec![Token::Bool(false), Token::Uint(0.into())])], vec![ParamType::Tuple(vec![ParamType::Bool, ParamType::Uint(256), ParamType::Uint(256)])]);
 	}
 }

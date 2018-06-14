@@ -7,28 +7,66 @@ impl Reader {
 	/// Converts string to param type.
 	pub fn read(name: &str) -> Result<ParamType, Error> {
 		// check if it is a fixed or dynamic array.
-		if let Some(']') = name.chars().last() {
-			// take number part
-			let num: String = name.chars()
-				.rev()
-				.skip(1)
-				.take_while(|c| *c != '[')
-				.collect::<String>()
-				.chars()
-				.rev()
-				.collect();
+		match name.chars().last() {
+			Some(']') => {
+				// take number part
+				let num: String = name.chars()
+					.rev()
+					.skip(1)
+					.take_while(|c| *c != '[')
+					.collect::<String>()
+					.chars()
+					.rev()
+					.collect();
 
-			let count = name.chars().count();
-			if num.len() == 0 {
-				// we already know it's a dynamic array!
-				let subtype = try!(Reader::read(&name[..count - 2]));
-				return Ok(ParamType::Array(Box::new(subtype)));
-			} else {
-				// it's a fixed array.
-				let len = try!(usize::from_str_radix(&num, 10));
-				let subtype = try!(Reader::read(&name[..count - num.len() - 2]));
-				return Ok(ParamType::FixedArray(Box::new(subtype), len));
+				let count = name.chars().count();
+				if num.len() == 0 {
+					// we already know it's a dynamic array!
+					let subtype = try!(Reader::read(&name[..count - 2]));
+					return Ok(ParamType::Array(Box::new(subtype)));
+				} else {
+					// it's a fixed array.
+					let len = try!(usize::from_str_radix(&num, 10));
+					let subtype = try!(Reader::read(&name[..count - num.len() - 2]));
+					return Ok(ParamType::FixedArray(Box::new(subtype), len));
+				}
 			}
+			Some(')') => {
+				if name.chars().next() == Some('(') {
+					let mut subtypes = Vec::new();
+					let mut nested = 0isize;
+					let mut last_item = 1;
+
+					for (pos, c) in name.chars().enumerate() {
+						match c {
+							'(' => {
+								nested += 1;
+							}
+							')' => {
+								nested -= 1;
+								if nested < 0 {
+									return Err(ErrorKind::InvalidName(name.to_owned()).into());
+								} else if nested == 0 {
+									let sub = &name[last_item..pos];
+									let subtype = Reader::read(sub)?;
+									subtypes.push(subtype);
+									last_item = pos + 1;
+								}
+							}
+							',' if nested == 1 => {
+								let sub = &name[last_item..pos];
+								let subtype = Reader::read(sub)?;
+								subtypes.push(subtype);
+								last_item = pos + 1;
+							}
+							_ => ()
+						}
+					}
+					return Ok(ParamType::Tuple(subtypes));
+				}
+
+			}
+			_ => ()
 		}
 
 		let result = match name {
@@ -90,6 +128,12 @@ mod tests {
 		assert_eq!(Reader::read("address[2]").unwrap(), ParamType::FixedArray(Box::new(ParamType::Address), 2));
 		assert_eq!(Reader::read("bool[17]").unwrap(), ParamType::FixedArray(Box::new(ParamType::Bool), 17));
 		assert_eq!(Reader::read("bytes[45][3]").unwrap(), ParamType::FixedArray(Box::new(ParamType::FixedArray(Box::new(ParamType::Bytes), 45)), 3));
+	}
+
+	#[test]
+	fn test_read_tuple_param() {
+		assert_eq!(Reader::read("(address,bool)").unwrap(), ParamType::Tuple(vec![ParamType::Address, ParamType::Bool]));
+		assert_eq!(Reader::read("(bool[3],uint256)").unwrap(), ParamType::Tuple(vec![ParamType::FixedArray(Box::new(ParamType::Bool), 3), ParamType::Uint(256)]));
 	}
 
 	#[test]

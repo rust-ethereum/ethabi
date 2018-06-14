@@ -24,6 +24,8 @@ pub enum ParamType {
 	FixedBytes(usize),
 	/// Array with fixed size.
 	FixedArray(Box<ParamType>, usize),
+	/// Tuple
+	Tuple(Vec<ParamType>),
 }
 
 impl fmt::Display for ParamType {
@@ -48,5 +50,6 @@ mod tests {
 		assert_eq!(format!("{}", ParamType::Array(Box::new(ParamType::Bool))), "bool[]".to_owned());
 		assert_eq!(format!("{}", ParamType::FixedArray(Box::new(ParamType::String), 2)), "string[2]".to_owned());
 		assert_eq!(format!("{}", ParamType::FixedArray(Box::new(ParamType::Array(Box::new(ParamType::Bool))), 2)), "bool[][2]".to_owned());
+		assert_eq!(format!("{}", ParamType::Tuple(vec![ParamType::Bool, ParamType::Uint(256)])), "(bool,uint256)".to_owned());
 	}
 }

@@ -37,6 +37,7 @@ enum Mediate {
 	Prefixed(Vec<[u8; 32]>),
 	FixedArray(Vec<Mediate>),
 	Array(Vec<Mediate>),
+	Tuple(Vec<Mediate>),
 }
 
 impl Mediate {
@@ -44,7 +45,7 @@ impl Mediate {
 		match *self {
 			Mediate::Raw(ref raw) => 32 * raw.len() as u32,
 			Mediate::Prefixed(_) => 32,
-			Mediate::FixedArray(ref nes) => nes.iter().fold(0, |acc, m| acc + m.init_len()),
+			Mediate::FixedArray(ref nes) | Mediate::Tuple(ref nes) => nes.iter().fold(0, |acc, m| acc + m.init_len()),
 			Mediate::Array(_) => 32,
 		}
 	}
@@ -53,7 +54,7 @@ impl Mediate {
 		match *self {
 			Mediate::Raw(_) => 0,
 			Mediate::Prefixed(ref pre) => pre.len() as u32 * 32,
-			Mediate::FixedArray(ref nes) => nes.iter().fold(0, |acc, m| acc + m.closing_len()),
+			Mediate::FixedArray(ref nes) | Mediate::Tuple(ref nes) => nes.iter().fold(0, |acc, m| acc + m.closing_len()),
 			Mediate::Array(ref nes) => nes.iter().fold(32, |acc, m| acc + m.init_len() + m.closing_len()),
 		}
 	}
@@ -68,7 +69,7 @@ impl Mediate {
 	fn init(&self, suffix_offset: u32) -> Vec<[u8; 32]> {
 		match *self {
 			Mediate::Raw(ref raw) => raw.clone(),
-			Mediate::FixedArray(ref nes) => {
+			Mediate::FixedArray(ref nes) | Mediate::Tuple(ref nes) => {
 				nes.iter()
 					.enumerate()
 					.flat_map(|(i, m)| m.init(Mediate::offset_for(nes, i)))
@@ -84,7 +85,7 @@ impl Mediate {
 		match *self {
 			Mediate::Raw(_) => vec![],
 			Mediate::Prefixed(ref pre) => pre.clone(),
-			Mediate::FixedArray(ref nes) => {
+			Mediate::FixedArray(ref nes) | Mediate::Tuple(ref nes) => {
 				// offset is not taken into account, cause it would be counted twice
 				// fixed array is just raw representations of similar consecutive items
 				nes.iter()
@@ -162,6 +163,13 @@ fn encode_token(token: &Token) -> Mediate {
 
 			Mediate::FixedArray(mediates)
 		},
+		Token::Tuple(ref tokens) => {
+			let mediates = tokens.iter()
+				.map(encode_token)
+				.collect();
+
+			Mediate::Tuple(mediates)
+		}
 	}
 }
 
@@ -519,6 +527,18 @@ mod tests {
 			"0000000000000000000000000000000000000000000000000000000000000005" +
 			"0000000000000000000000000000000000000000000000000000000000000006" +
 			"0000000000000000000000000000000000000000000000000000000000000007").from_hex().unwrap();
+		assert_eq!(encoded, expected);
+	}
+
+	#[test]
+	fn encode_tuple() {
+		let address = Token::Address([0x11u8; 20].into());
+		let uint = Token::Uint(9487.into());
+		let tuple = Token::Tuple(vec![address, uint]);
+		let encoded = encode(&vec![tuple]);
+		let expected = ("".to_owned() +
+			"0000000000000000000000001111111111111111111111111111111111111111" +
+			"000000000000000000000000000000000000000000000000000000000000250f").from_hex().unwrap();
 		assert_eq!(encoded, expected);
 	}
 }
