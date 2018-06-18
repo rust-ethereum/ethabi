@@ -3,6 +3,21 @@
 use std::fmt;
 use super::Writer;
 
+/// Modifier for parameter types.
+#[derive(Debug, Clone, PartialEq)]
+pub enum ParamModifier {
+	/// The storage modifier associated with parameter types.
+	Storage,
+}
+
+impl fmt::Display for ParamModifier {
+	fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+		match *self {
+			ParamModifier::Storage => "storage".fmt(fmt),
+		}
+	}
+}
+
 /// Function and event param types.
 #[derive(Debug, Clone, PartialEq)]
 pub enum ParamType {

@@ -1,4 +1,4 @@
-use {ParamType, Error, ErrorKind};
+use {ParamModifier, ParamType, Error, ErrorKind};
 
 /// Used to convert param type represented as a string to rust structure.
 pub struct Reader;
@@ -50,8 +50,27 @@ impl Reader {
 				let len = try!(usize::from_str_radix(&s[5..], 10));
 				ParamType::FixedBytes(len)
 			},
-			_ => {
-				return Err(ErrorKind::InvalidName(name.to_owned()).into());
+			ty => {
+				let mut parts = ty.split(" ");
+
+				let ty = match parts.next() {
+					Some(ty) => ty,
+					None => return Err(ErrorKind::InvalidName(ty.to_owned()).into()),
+				};
+
+				let mut mods = Vec::new();
+
+				while let Some(modifier) = parts.next() {
+					let modifier = match modifier {
+						"storage" => ParamModifier::Storage,
+						_ => return Err(ErrorKind::InvalidName(ty.to_owned()).into()),
+					};
+
+					mods.push(modifier);
+				}
+
+				// TODO: use some other param type that can actually do something useful?
+				ParamType::Bytes
 			}
 		};
 

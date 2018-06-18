@@ -32,7 +32,7 @@ mod param;
 mod signature;
 mod util;
 
-pub use param_type::ParamType;
+pub use param_type::{ParamModifier, ParamType};
 pub use constructor::Constructor;
 pub use contract::{Contract, Functions, Events};
 pub use token::Token;
