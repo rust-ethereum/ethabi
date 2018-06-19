@@ -380,7 +380,7 @@ fn input_names(inputs: &Vec<Param>) -> Vec<syn::Ident> {
 		.map(|(index, param)| if param.name.is_empty() {
 			syn::Ident::from(format!("param{}", index))
 		} else {
-			param.name.to_snake_case().into()
+			rust_variable(&param.name).into()
 		})
 		.collect()
 }
@@ -815,5 +815,16 @@ fn declare_functions_input_wrappers(function: &Function) -> quote::Tokens {
 				}
 			}
 		}
+	}
+}
+
+/// Convert input into a rust variable name.
+///
+/// Avoid using keywords by escaping them.
+fn rust_variable(name: &str) -> String {
+	// avoid keyword parameters
+	match name {
+		"self" => "_self".to_string(),
+		other => other.to_snake_case(),
 	}
 }
