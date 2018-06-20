@@ -47,6 +47,7 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 			pub mod events {
 				use ethabi;
 				use ethabi::ParseLog;
+				use ethabi::LogFilter;
 
 				#(#events_structs)*
 
@@ -574,6 +575,10 @@ fn declare_events(event: &Event) -> quote::Tokens {
 		.map(|(param_name, template_name)| quote! { #param_name: #template_name })
 		.collect();
 
+	// The number of parameters that creates a filter which matches anything.
+	let any_params: Vec<_> = params.iter().map(|_| quote! { ethabi::Topic::Any })
+		.collect();
+
 	let template_params: Vec<_> = topic_kinds.iter().zip(template_names.iter())
 		.map(|(kind, template_name)| quote! { #template_name: Into<ethabi::Topic<#kind>> })
 		.collect();
@@ -637,6 +642,13 @@ fn declare_events(event: &Event) -> quote::Tokens {
 					#(#log_params),*
 				};
 				Ok(result)
+			}
+		}
+
+		impl LogFilter for #name {
+			/// Create a default topic filter that matches any messages.
+			fn match_any(&self) -> ethabi::TopicFilter {
+				self.create_filter(#(#any_params),*)
 			}
 		}
 
