@@ -40,11 +40,6 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 	let output_functions: Vec<_> = contract.functions().map(declare_output_functions).collect();
 	let func_input_wrappers_structs: Vec<_> = contract.functions().map(declare_functions_input_wrappers).collect();
 
-	let name = get_option(&options, "name")?;
-	let name = syn::Ident::from(name);
-	let functions_name = syn::Ident::from(format!("{}Functions", name));
-	let events_name = syn::Ident::from(format!("{}Events", name));
-
 	let events_and_logs_quote = if events_structs.is_empty() {
 		quote! {}
 	} else {
@@ -54,29 +49,14 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 				use ethabi::ParseLog;
 
 				#(#events_structs)*
+
+				#(#events_impl)*
 			}
 
 			pub mod logs {
 				use ethabi;
 
 				#(#logs_structs)*
-			}
-
-			/// Contract events
-			#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
-			pub struct #events_name {
-			}
-
-			impl #events_name {
-				#(#events_impl)*
-			}
-
-			impl #name {
-				/// Get contract events
-				pub fn events(&self) -> #events_name {
-					#events_name {
-					}
-				}
 			}
 		}
 	};
@@ -89,25 +69,11 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 				use ethabi;
 
 				#(#func_structs)*
+
+				#(#functions)*
 			}
 
 			#(#func_input_wrappers_structs)*
-
-			/// Contract functions (for encoding input, making calls, transactions)
-			#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
-			pub struct #functions_name {
-			}
-
-			impl #functions_name {
-				#(#functions)*
-			}
-			impl #name {
-				/// Gets contract functions (for encoding input, making calls, transactions)
-				pub fn functions(&self) -> #functions_name {
-					#functions_name {}
-				}
-			}
-
 		}
 	};
 
@@ -116,15 +82,8 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 	} else {
 		quote! {
 			/// Contract functions (for decoding output)
-			pub struct Outputs {}
-			impl Outputs {
+			pub mod outputs {
 				#(#output_functions)*
-			}
-			impl #name {
-				/// Gets contract functions (for decoding output)
-				pub fn outputs(&self) -> Outputs {
-					Outputs {}
-				}
 			}
 		}
 	};
@@ -136,14 +95,8 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 		// may not be used
 		const INTERNAL_ERR: &'static str = "`ethabi_derive` internal error";
 
-		/// Contract
-		#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
-		pub struct #name {
-		}
+		#constructor_impl
 
-		impl #name {
-			#constructor_impl
-		}
 		#constructor_input_wrapper_struct
 
 		#events_and_logs_quote
@@ -443,7 +396,7 @@ fn impl_contract_function(function: &Function) -> quote::Tokens {
 
 	quote! {
 		/// Sets the input (arguments) for this contract function
-		pub fn #name<#(#template_params),*>(&self, #(#params),*) -> #function_input_wrapper_name {
+		pub fn #name<#(#template_params),*>(#(#params),*) -> #function_input_wrapper_name {
 			let v: Vec<ethabi::Token> = vec![#(#usage),*];
 			#function_input_wrapper_name::new(v)
 		}
@@ -454,7 +407,7 @@ fn impl_contract_event(event: &Event) -> quote::Tokens {
 	let name = syn::Ident::from(event.name.to_snake_case());
 	let event_name = syn::Ident::from(event.name.to_camel_case());
 	quote! {
-		pub fn #name(&self) -> events::#event_name {
+		pub fn #name() -> events::#event_name {
 			events::#event_name::default()
 		}
 	}
@@ -493,7 +446,7 @@ fn impl_contract_constructor(constructor: Option<&Constructor>) -> quote::Tokens
 		.collect();
 
 	quote! {
-		pub fn constructor<#(#template_params),*>(&self, code: ethabi::Bytes, #(#params),* ) -> ConstructorWithInput {
+		pub fn constructor<#(#template_params),*>(code: ethabi::Bytes, #(#params),* ) -> ConstructorWithInput {
 			let v: Vec<ethabi::Token> = vec![#(#usage),*];
 			ConstructorWithInput::new(code, v)
 		}
@@ -782,7 +735,7 @@ fn declare_output_functions(function: &Function) -> quote::Tokens {
 
 	quote! {
 		/// Returns the decoded output for this contract function
-		pub fn #name_snake(&self, output_bytes : &[u8]) -> ethabi::Result<#output_kinds> {
+		pub fn #name_snake(output_bytes : &[u8]) -> ethabi::Result<#output_kinds> {
 			functions::#name_camel::default().decode_output(&output_bytes)
 		}
 	}
