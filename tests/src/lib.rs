@@ -11,12 +11,12 @@ extern crate ethabi_derive;
 #[macro_use]
 extern crate ethabi_contract;
 
-use_contract!(eip20, "Eip20", "../res/eip20.abi");
-use_contract!(constructor, "Constructor", "../res/con.abi");
-use_contract!(validators, "Validators", "../res/Validators.abi");
-use_contract!(operations, "Operations", "../res/Operations.abi");
-use_contract!(urlhint, "UrlHint", "../res/urlhint.abi");
-use_contract!(test_rust_keywords, "RustKeywords", "../res/test_rust_keywords.abi");
+use_contract!(eip20, "../res/eip20.abi");
+use_contract!(constructor, "../res/con.abi");
+use_contract!(validators, "../res/Validators.abi");
+use_contract!(operations, "../res/Operations.abi");
+use_contract!(urlhint, "../res/urlhint.abi");
+use_contract!(test_rust_keywords, "../res/test_rust_keywords.abi");
 
 #[cfg(test)]
 mod tests {
