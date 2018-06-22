@@ -16,6 +16,7 @@ use_contract!(constructor, "Constructor", "../res/con.abi");
 use_contract!(validators, "Validators", "../res/Validators.abi");
 use_contract!(operations, "Operations", "../res/Operations.abi");
 use_contract!(urlhint, "UrlHint", "../res/urlhint.abi");
+use_contract!(test_rust_keywords, "RustKeywords", "../res/test_rust_keywords.abi");
 
 #[cfg(test)]
 mod tests {
