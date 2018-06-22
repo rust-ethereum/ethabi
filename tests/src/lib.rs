@@ -108,6 +108,7 @@ mod tests {
 	#[test]
 	fn encoding_input_works() {
 		use eip20;
+		use ethabi::LogFilter;
 
 		let expected = "dd62ed3e00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000101010101010101010101010101010101010101".to_owned();
 		let owner = [0u8; 20];
@@ -120,7 +121,9 @@ mod tests {
 		let to: Address = [3u8; 20].into();
 		let to2: Address = [4u8; 20].into();
 		let _filter = eip20::events::transfer().create_filter(from, vec![to, to2]);
-		let _filter = eip20::events::transfer().create_filter(None, None);
+		let match_any = eip20::events::transfer().create_filter(None, None);
+		let match_any_sugared = eip20::events::transfer().match_any();
+		assert_eq!(match_any, match_any_sugared);
 	}
 }
 
