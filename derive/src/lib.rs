@@ -32,8 +32,8 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 
 	let functions: Vec<_> = contract.functions().map(impl_contract_function).collect();
 	let events_impl: Vec<_> = contract.events().map(impl_contract_event).collect();
-	let constructor_impl = contract.constructor.as_ref().map(impl_contract_constructor);
-	let constructor_input_wrapper_struct = contract.constructor.as_ref().map(declare_contract_constructor_input_wrapper);
+	let constructor_impl = impl_contract_constructor(contract.constructor.as_ref());
+	let constructor_input_wrapper_struct = declare_contract_constructor_input_wrapper(contract.constructor.as_ref());
 	let logs_structs: Vec<_> = contract.events().map(declare_logs).collect();
 	let events_structs: Vec<_> = contract.events().map(declare_events).collect();
 	let func_structs: Vec<_> = contract.functions().map(declare_functions).collect();
@@ -217,8 +217,10 @@ fn to_syntax_string(param_type: &ethabi::ParamType) -> quote::Tokens {
 	}
 }
 
-fn to_ethabi_param_vec(params: &Vec<Param>) -> quote::Tokens {
-	let p = params.iter().map(|x| {
+fn to_ethabi_param_vec<'a, P: 'a>(params: P) -> quote::Tokens
+	where P: IntoIterator<Item = &'a Param>
+{
+	let p = params.into_iter().map(|x| {
 		let name = &x.name;
 		let kind = to_syntax_string(&x.kind);
 		quote! {
@@ -458,23 +460,27 @@ fn impl_contract_event(event: &Event) -> quote::Tokens {
 	}
 }
 
-fn impl_contract_constructor(constructor: &Constructor) -> quote::Tokens {
+fn impl_contract_constructor(constructor: Option<&Constructor>) -> quote::Tokens {
 	// [param0, hello_world, param2]
-	let input_names: Vec<_> = input_names(&constructor.inputs);
+	let input_names: Vec<_> = constructor.map(|c| input_names(&c.inputs)).unwrap_or_else(Vec::new);
 
 	// [Uint, Bytes, Vec<Uint>]
-	let kinds: Vec<_> = constructor.inputs
-		.iter()
-		.map(|param| rust_type(&param.kind))
-		.collect();
+	let kinds: Vec<_> = constructor.map(|c| {
+		c.inputs
+			.iter()
+			.map(|param| rust_type(&param.kind))
+			.collect()
+	}).unwrap_or_else(Vec::new);
 
 	// [T0, T1, T2]
 	let template_names: Vec<_> = get_template_names(&kinds);
 
 	// [T0: Into<Uint>, T1: Into<Bytes>, T2: IntoIterator<Item = U2>, U2 = Into<Uint>]
-	let template_params: Vec<_> = constructor.inputs.iter().enumerate()
-		.map(|(index, param)| template_param_type(&param.kind, index))
-		.collect();
+	let template_params: Vec<_> = constructor.map(|c| {
+		c.inputs.iter().enumerate()
+			.map(|(index, param)| template_param_type(&param.kind, index))
+			.collect()
+	}).unwrap_or_else(Vec::new);
 
 	// [param0: T0, hello_world: T1, param2: T2]
 	let params: Vec<_> = input_names.iter().zip(template_names.iter())
@@ -482,7 +488,7 @@ fn impl_contract_constructor(constructor: &Constructor) -> quote::Tokens {
 		.collect();
 
 	// [Token::Uint(param0.into()), Token::Bytes(hello_world.into()), Token::Array(param2.into())]
-	let usage: Vec<_> = input_names.iter().zip(constructor.inputs.iter())
+	let usage: Vec<_> = input_names.iter().zip(constructor.iter().flat_map(|c| c.inputs.iter()))
 		.map(|(param_name, param)| to_token(&from_template_param(&param.kind, &param_name), &param.kind))
 		.collect();
 
@@ -495,8 +501,8 @@ fn impl_contract_constructor(constructor: &Constructor) -> quote::Tokens {
 	}
 }
 
-fn declare_contract_constructor_input_wrapper(constructor: &Constructor) -> quote::Tokens {
-	let constructor_inputs = to_ethabi_param_vec(&constructor.inputs);
+fn declare_contract_constructor_input_wrapper(constructor: Option<&Constructor>) -> quote::Tokens {
+	let constructor_inputs = to_ethabi_param_vec(constructor.iter().flat_map(|c| c.inputs.iter()));
 
 	quote! {
 		pub struct ConstructorWithInput {
