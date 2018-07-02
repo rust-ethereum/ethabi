@@ -479,5 +479,25 @@ mod tests {
 		let decoded = decode(&[ParamType::String], &encoded).unwrap();
 		assert_eq!(decoded, expected);
 	}
+
+	#[test]
+	fn decode_from_empty_byte_slice() {
+        // these can NOT be decoded from empty byte slice
+        assert!(decode(&[ParamType::Address], &[]).is_err());
+        assert!(decode(&[ParamType::Bytes], &[]).is_err());
+        assert!(decode(&[ParamType::Int(0)], &[]).is_err());
+        assert!(decode(&[ParamType::Int(1)], &[]).is_err());
+        assert!(decode(&[ParamType::Int(0)], &[]).is_err());
+        assert!(decode(&[ParamType::Int(1)], &[]).is_err());
+        assert!(decode(&[ParamType::Bool], &[]).is_err());
+        assert!(decode(&[ParamType::String], &[]).is_err());
+        assert!(decode(&[ParamType::Array(Box::new(ParamType::Bool))], &[]).is_err());
+        assert!(decode(&[ParamType::FixedBytes(1)], &[]).is_err());
+        assert!(decode(&[ParamType::FixedArray(Box::new(ParamType::Bool), 1)], &[]).is_err());
+
+        // these are the only ones that can be decoded from empty byte slice
+        assert!(decode(&[ParamType::FixedBytes(0)], &[]).is_ok());
+        assert!(decode(&[ParamType::FixedArray(Box::new(ParamType::Bool), 0)], &[]).is_ok());
+	}
 }
 
