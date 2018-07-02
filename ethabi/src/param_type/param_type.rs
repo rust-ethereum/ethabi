@@ -12,7 +12,7 @@ pub enum ParamType {
 	Bytes,
 	/// Signed integer.
 	Int(usize),
-	/// Unisgned integer.
+	/// Unsigned integer.
 	Uint(usize),
 	/// Boolean.
 	Bool,
