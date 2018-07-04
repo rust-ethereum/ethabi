@@ -647,20 +647,20 @@ fn declare_events(event: &Event) -> quote::Tokens {
 
 		impl LogFilter for #name {
 			/// Create a default topic filter that matches any messages.
-			fn match_any(&self) -> ethabi::TopicFilter {
-				self.create_filter(#(#any_params),*)
+			fn wildcard_filter(&self) -> ethabi::TopicFilter {
+				self.filter(#(#any_params),*)
 			}
 		}
 
 		impl #name {
 			/// Creates topic filter.
-			pub fn create_filter<#(#template_params),*>(&self, #(#params),*) -> ethabi::TopicFilter {
+			pub fn filter<#(#template_params),*>(&self, #(#params),*) -> ethabi::TopicFilter {
 				let raw = ethabi::RawTopicFilter {
 					#(#to_filter)*
 					..Default::default()
 				};
 
-				self.event.create_filter(raw).expect(super::INTERNAL_ERR)
+				self.event.filter(raw).expect(super::INTERNAL_ERR)
 			}
 		}
 	}

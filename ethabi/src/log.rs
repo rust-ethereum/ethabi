@@ -3,7 +3,7 @@ use {Hash, Token, Bytes, Result, TopicFilter};
 /// Common filtering functions that are available for any event.
 pub trait LogFilter {
 	/// Match any log parameters.
-	fn match_any(&self) -> TopicFilter;
+	fn wildcard_filter(&self) -> TopicFilter;
 }
 
 /// trait common to things (events) that have an associated `Log` type
