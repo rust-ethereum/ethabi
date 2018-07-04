@@ -3,7 +3,7 @@
         "inputs": [
             {
                 "name": "storage",
-                "type": "Storage storage"
+                "type": "Storage.Storage storage"
             }
         ],
         "name": "foo",
