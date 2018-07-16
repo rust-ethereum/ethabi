@@ -12,7 +12,7 @@ pub enum ParamType {
 	Bytes,
 	/// Signed integer.
 	Int(usize),
-	/// Unisgned integer.
+	/// Unsigned integer.
 	Uint(usize),
 	/// Boolean.
 	Bool,
@@ -30,6 +30,18 @@ impl fmt::Display for ParamType {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 		write!(f, "{}", Writer::write(self))
 	}
+}
+
+impl ParamType {
+    /// returns whether a zero length byte slice (`0x`) is
+    /// a valid encoded form of this param type
+    pub fn is_empty_bytes_valid_encoding(&self) -> bool {
+        match self {
+            ParamType::FixedBytes(len) => *len == 0,
+            ParamType::FixedArray(_, len) => *len == 0,
+            _ => false,
+        }
+    }
 }
 
 #[cfg(test)]

@@ -36,6 +36,10 @@ fn as_bool(slice: &[u8; 32]) -> Result<bool, Error> {
 
 /// Decodes ABI compliant vector of bytes into vector of tokens described by types param.
 pub fn decode(types: &[ParamType], data: &[u8]) -> Result<Vec<Token>, Error> {
+    let is_empty_bytes_valid_encoding = types.iter().all(|t| t.is_empty_bytes_valid_encoding());
+    if !is_empty_bytes_valid_encoding && data.len() == 0 {
+        bail!("please ensure the contract and method you're calling exist! failed to decode empty bytes. if you're using jsonrpc this is likely due to jsonrpc returning `0x` in case contract or method don't exist");
+    }
 	let slices = slice_data(data)?;
 	let mut tokens = vec![];
 	let mut offset = 0;
@@ -474,6 +478,26 @@ mod tests {
 		let expected = vec![s];
 		let decoded = decode(&[ParamType::String], &encoded).unwrap();
 		assert_eq!(decoded, expected);
+	}
+
+	#[test]
+	fn decode_from_empty_byte_slice() {
+        // these can NOT be decoded from empty byte slice
+        assert!(decode(&[ParamType::Address], &[]).is_err());
+        assert!(decode(&[ParamType::Bytes], &[]).is_err());
+        assert!(decode(&[ParamType::Int(0)], &[]).is_err());
+        assert!(decode(&[ParamType::Int(1)], &[]).is_err());
+        assert!(decode(&[ParamType::Int(0)], &[]).is_err());
+        assert!(decode(&[ParamType::Int(1)], &[]).is_err());
+        assert!(decode(&[ParamType::Bool], &[]).is_err());
+        assert!(decode(&[ParamType::String], &[]).is_err());
+        assert!(decode(&[ParamType::Array(Box::new(ParamType::Bool))], &[]).is_err());
+        assert!(decode(&[ParamType::FixedBytes(1)], &[]).is_err());
+        assert!(decode(&[ParamType::FixedArray(Box::new(ParamType::Bool), 1)], &[]).is_err());
+
+        // these are the only ones that can be decoded from empty byte slice
+        assert!(decode(&[ParamType::FixedBytes(0)], &[]).is_ok());
+        assert!(decode(&[ParamType::FixedArray(Box::new(ParamType::Bool), 0)], &[]).is_ok());
 	}
 }
 
