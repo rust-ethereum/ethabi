@@ -12,7 +12,7 @@ extern crate ethabi_derive;
 extern crate ethabi_contract;
 
 use_contract!(eip20, "../res/eip20.abi");
-use_contract!(constructor, "../res/con.abi");
+use_contract!(constructor, "../res/constructor.abi");
 use_contract!(validators, "../res/Validators.abi");
 use_contract!(operations, "../res/Operations.abi");
 use_contract!(urlhint, "../res/urlhint.abi");
