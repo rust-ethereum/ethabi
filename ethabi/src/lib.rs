@@ -13,6 +13,10 @@ extern crate serde_derive;
 #[macro_use]
 extern crate error_chain;
 
+#[cfg(test)]
+#[macro_use]
+extern crate hex_literal;
+
 extern crate ethereum_types;
 
 pub mod param_type;

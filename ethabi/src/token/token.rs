@@ -57,8 +57,8 @@ impl fmt::Display for Token {
 		match *self {
 			Token::Bool(b) => write!(f, "{}", b),
 			Token::String(ref s) => write!(f, "{}", s),
-			Token::Address(ref a) => write!(f, "{}", a.to_hex()),
-			Token::Bytes(ref bytes) | Token::FixedBytes(ref bytes) => write!(f, "{}", bytes.to_hex()),
+			Token::Address(ref a) => write!(f, "{:x}", a),
+			Token::Bytes(ref bytes) | Token::FixedBytes(ref bytes) => write!(f, "{}", bytes.to_hex::<String>()),
 			Token::Uint(ref i) | Token::Int(ref i) => write!(f, "{:x}", i),
 			Token::Array(ref arr) | Token::FixedArray(ref arr) => {
 				let s = arr.iter()
