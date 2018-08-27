@@ -105,11 +105,11 @@ dependencies = [
 
 [[package]]
 name = "ethabi-contract"
-version = "5.1.0"
+version = "5.1.1"
 
 [[package]]
 name = "ethabi-derive"
-version = "5.1.0"
+version = "5.1.3"
 dependencies = [
  "ethabi 5.1.2",
  "heck 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -122,8 +122,8 @@ name = "ethabi-tests"
 version = "0.1.0"
 dependencies = [
  "ethabi 5.1.2",
- "ethabi-contract 5.1.0",
- "ethabi-derive 5.1.0",
+ "ethabi-contract 5.1.1",
+ "ethabi-derive 5.1.3",
  "rustc-hex 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
