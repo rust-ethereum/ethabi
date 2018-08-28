@@ -1,0 +1,271 @@
+use {syn, quote, ethabi};
+
+use super::{
+	input_names, template_param_type, rust_type, get_template_names, from_template_param, to_token,
+	to_ethabi_param_vec, get_output_kinds, from_token
+};
+
+struct TemplateParam {
+	/// Template param declaration.
+	///
+	/// ```text
+	/// [T0: Into<Uint>, T1: Into<Bytes>, T2: IntoIterator<Item = U2>, U2 = Into<Uint>]
+	/// ```
+	declaration: quote::Tokens,
+	/// Template param definition.
+	///
+	/// ```text
+	/// [param0: T0, hello_world: T1, param2: T2]
+	/// ```
+	definition: quote::Tokens,
+}
+
+struct Inputs {
+	/// Collects template params into vector.
+	///
+	/// ```text
+	/// [Token::Uint(param0.into()), Token::Bytes(hello_world.into()), Token::Array(param2.into_iter().map(Into::into).collect())]
+	/// ```
+	tokenize: Vec<quote::Tokens>,
+	/// Template params.
+	template_params: Vec<TemplateParam>,
+	/// Quote used to recreate `Vec<ethabi::Param>`
+	recreate_quote: quote::Tokens,
+}
+
+struct Outputs {
+	/// Decoding implementation.
+	implementation: quote::Tokens,
+	/// Decode result.
+	result: quote::Tokens,
+	/// Quote used to recreate `Vec<ethabi::Param>`.
+	recreate_quote: quote::Tokens,
+}
+
+pub struct Function {
+	/// Function name.
+	name: String,
+	/// Function input params.
+	inputs: Inputs,
+	/// Function output params.
+	outputs: Outputs,
+	/// Constant function.
+	constant: bool,
+}
+
+impl<'a> From<&'a ethabi::Function> for Function {
+	fn from(f: &'a ethabi::Function) -> Self {
+		// [param0, hello_world, param2]
+		let input_names = input_names(&f.inputs);
+
+		// [T0: Into<Uint>, T1: Into<Bytes>, T2: IntoIterator<Item = U2>, U2 = Into<Uint>]
+		let declarations = f.inputs.iter().enumerate()
+			.map(|(index, param)| template_param_type(&param.kind, index));
+
+		// [Uint, Bytes, Vec<Uint>]
+		let kinds: Vec<_> = f.inputs
+			.iter()
+			.map(|param| rust_type(&param.kind))
+			.collect();
+
+		// [T0, T1, T2]
+		let template_names: Vec<_> = get_template_names(&kinds);
+
+		// [param0: T0, hello_world: T1, param2: T2]
+		let definitions = input_names.iter().zip(template_names.iter())
+			.map(|(param_name, template_name)| quote! { #param_name: #template_name });
+
+		let template_params = declarations.zip(definitions)
+			.map(|(declaration, definition)| TemplateParam { declaration, definition })
+			.collect();
+
+		// [Token::Uint(param0.into()), Token::Bytes(hello_world.into()), Token::Array(param2.into_iter().map(Into::into).collect())]
+		let tokenize: Vec<_> = input_names.iter().zip(f.inputs.iter())
+			.map(|(param_name, param)| to_token(&from_template_param(&param.kind, &param_name), &param.kind))
+			.collect();
+
+		let output_result = get_output_kinds(&f.outputs);
+
+		let output_implementation = match f.outputs.len() {
+			0 => quote! {
+				let _output = output;
+				Ok(())
+			},
+			1 => {
+				let o = quote! { out };
+				let from_first = from_token(&f.outputs[0].kind, &o);
+				quote! {
+					let f = Function::default();
+					let out = f.decode_output(output)?.into_iter().next().expect(super::INTERNAL_ERR);
+					Ok(#from_first)
+				}
+			},
+			_ => {
+				let o = quote! { out.next().expect(super::INTERNAL_ERR) };
+				let outs: Vec<_> = f.outputs
+					.iter()
+					.map(|param| from_token(&param.kind, &o))
+					.collect();
+
+				quote! {
+					let f = Function::default();
+					let mut out = f.decode_output(output)?.into_iter();
+					Ok(( #(#outs),* ))
+				}
+			},
+		};
+
+		Function {
+			name: f.name.clone(),
+			inputs: Inputs {
+				tokenize,
+				template_params,
+				recreate_quote: to_ethabi_param_vec(&f.inputs),
+			},
+			outputs: Outputs {
+				implementation: output_implementation,
+				result: output_result,
+				recreate_quote: to_ethabi_param_vec(&f.outputs),
+			},
+			constant: f.constant,
+		}
+	}
+}
+
+impl Function {
+	pub fn generate(&self) -> quote::Tokens {
+		let name = &self.name;
+		let module_name = syn::Ident::from(&self.name as &str);
+		let tokenize = &self.inputs.tokenize;
+		let declarations: Vec<_> = self.inputs.template_params.iter().map(|i| &i.declaration).collect();
+		let definitions: Vec<_> = self.inputs.template_params.iter().map(|i| &i.definition).collect();
+		let recreate_inputs = &self.inputs.recreate_quote;
+		let recreate_outputs = &self.outputs.recreate_quote;
+		let constant = &self.constant;
+		let outputs_result = &self.outputs.result;
+		let outputs_implementation = &self.outputs.implementation;
+
+		quote! {
+			pub mod #module_name {
+				use ethabi;
+				use super::INTERNAL_ERR;
+
+				struct Function {
+					function: ethabi::Function,
+				}
+
+				impl Default for Function {
+					fn default() -> Self {
+						Function {
+							function: ethabi::Function {
+								name: #name.into(),
+								inputs: #recreate_inputs,
+								outputs: #recreate_outputs,
+								constant: #constant,
+							}
+						}
+					}
+				}
+
+				pub struct Decoder;
+
+				impl Decoder {
+					type Output;
+
+					pub fn decode(output: &[u8]) {
+					}
+				}
+
+				pub fn encode_input<#(#declarations),*>(#(#definitions),*) -> ethabi::Bytes {
+					let f = Function::default();
+					let tokens: Vec<ethabi::Token> = vec![#(#tokenize),*];
+					f.encode_input(&tokens).expect(INTERNAL_ERR)
+				}
+
+				pub fn decode_output(output: &[u8]) -> ethabi::Result<#outputs_result> {
+					#outputs_implementation
+				}
+
+				pub fn call() -> (Vec<u8>, Decoder) {
+					(vec![], Decoder)
+				}
+			}
+		}
+	}
+}
+
+#[cfg(test)]
+mod test {
+	use ethabi;
+	use super::Function;
+
+	#[test]
+	fn test() {
+		let ethabi_function = ethabi::Function {
+			name: "hello".into(),
+			inputs: vec![
+				ethabi::Param {
+					name: "foo".into(),
+					kind: ethabi::ParamType::Address,
+				}
+			],
+			outputs: vec![],
+			constant: false,
+		};
+
+		let f = Function::from(&ethabi_function);
+
+		let expected = quote! {
+			pub mod hello {
+				use ethabi;
+				use super::INTERNAL_ERR;
+
+				struct Function {
+					function: ethabi::Function,
+				}
+
+				impl Default for Function {
+					fn default() -> Self {
+						Function {
+							function: ethabi::Function {
+								name: "hello".into(),
+								inputs: vec![ethabi::Param {
+									name: "foo".to_owned(),
+									kind: ethabi::ParamType::Address
+								}],
+								outputs: vec![],
+								constant: false,
+							}
+						}
+					}
+				}
+
+				pub struct Decoder;
+
+				impl Decoder {
+					type Output;
+
+					pub fn decode(output: &[u8]) {
+					}
+				}
+
+				pub fn encode_input<T0: Into<ethabi::Address> >(foo: T0) -> ethabi::Bytes {
+					let f = Function::default();
+					let tokens: Vec<ethabi::Token> = vec![ethabi::Token::Address(foo.into())];
+					f.encode_input(&tokens).expect(INTERNAL_ERR)
+				}
+
+				pub fn decode_output(output: &[u8]) -> ethabi::Result<()> {
+					let _output = output;
+					Ok(())
+				}
+
+				pub fn call() -> (Vec<u8>, Decoder) {
+					(vec![], Decoder)
+				}
+			}
+		};
+
+		assert_eq!(expected, f.generate());
+	}
+}

@@ -7,6 +7,9 @@ extern crate quote;
 extern crate heck;
 extern crate ethabi;
 
+mod contract;
+mod function;
+
 use std::{env, fs};
 use std::path::PathBuf;
 use proc_macro::TokenStream;
