@@ -29,12 +29,11 @@ fn fill_signature(name: &str, params: &[ParamType], result: &mut [u8]) {
 
 #[cfg(test)]
 mod tests {
-	use hex::FromHex;
 	use super::short_signature;
 	use {ParamType};
 
 	#[test]
 	fn test_signature() {
-		assert_eq!("cdcd77c0".from_hex().unwrap(), short_signature("baz", &[ParamType::Uint(32), ParamType::Bool]));
+		assert_eq!(hex!("cdcd77c0"), short_signature("baz", &[ParamType::Uint(32), ParamType::Bool]));
 	}
 }
