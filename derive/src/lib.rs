@@ -283,12 +283,12 @@ fn to_token(name: &quote::Tokens, kind: &ParamType) -> quote::Tokens {
 
 fn from_token(kind: &ParamType, token: &quote::Tokens) -> quote::Tokens {
 	match *kind {
-		ParamType::Address => quote! { #token.to_address().expect(super::INTERNAL_ERR) },
-		ParamType::Bytes => quote! { #token.to_bytes().expect(super::INTERNAL_ERR) },
+		ParamType::Address => quote! { #token.to_address().expect(INTERNAL_ERR) },
+		ParamType::Bytes => quote! { #token.to_bytes().expect(INTERNAL_ERR) },
 		ParamType::FixedBytes(32) => quote! {
 			{
 				let mut result = [0u8; 32];
-				let v = #token.to_fixed_bytes().expect(super::INTERNAL_ERR);
+				let v = #token.to_fixed_bytes().expect(INTERNAL_ERR);
 				result.copy_from_slice(&v);
 				ethabi::Hash::from(result)
 			}
@@ -298,21 +298,21 @@ fn from_token(kind: &ParamType, token: &quote::Tokens) -> quote::Tokens {
 			quote! {
 				{
 					let mut result = [0u8; #size];
-					let v = #token.to_fixed_bytes().expect(super::INTERNAL_ERR);
+					let v = #token.to_fixed_bytes().expect(INTERNAL_ERR);
 					result.copy_from_slice(&v);
 					result
 				}
 			}
 		},
-		ParamType::Int(_) => quote! { #token.to_int().expect(super::INTERNAL_ERR) },
-		ParamType::Uint(_) => quote! { #token.to_uint().expect(super::INTERNAL_ERR) },
-		ParamType::Bool => quote! { #token.to_bool().expect(super::INTERNAL_ERR) },
-		ParamType::String => quote! { #token.to_string().expect(super::INTERNAL_ERR) },
+		ParamType::Int(_) => quote! { #token.to_int().expect(INTERNAL_ERR) },
+		ParamType::Uint(_) => quote! { #token.to_uint().expect(INTERNAL_ERR) },
+		ParamType::Bool => quote! { #token.to_bool().expect(INTERNAL_ERR) },
+		ParamType::String => quote! { #token.to_string().expect(INTERNAL_ERR) },
 		ParamType::Array(ref kind) => {
 			let inner = quote! { inner };
 			let inner_loop = from_token(kind, &inner);
 			quote! {
-				#token.to_array().expect(super::INTERNAL_ERR).into_iter()
+				#token.to_array().expect(INTERNAL_ERR).into_iter()
 					.map(|#inner| #inner_loop)
 					.collect()
 			}
@@ -323,7 +323,7 @@ fn from_token(kind: &ParamType, token: &quote::Tokens) -> quote::Tokens {
 			let to_array = vec![quote! { iter.next() }; size];
 			quote! {
 				{
-					let iter = #token.to_array().expect(super::INTERNAL_ERR).into_iter()
+					let iter = #token.to_array().expect(INTERNAL_ERR).into_iter()
 						.map(|#inner| #inner_loop);
 					[#(#to_array),*]
 				}
@@ -541,7 +541,7 @@ fn declare_events(event: &Event) -> quote::Tokens {
 			param.name.to_snake_case().into()
 		}).collect();
 
-	let log_iter = quote! { log.next().expect(super::INTERNAL_ERR).value };
+	let log_iter = quote! { log.next().expect(INTERNAL_ERR).value };
 
 	let to_log: Vec<_> = event.inputs
 		.iter()
@@ -663,7 +663,7 @@ fn declare_events(event: &Event) -> quote::Tokens {
 					..Default::default()
 				};
 
-				self.event.filter(raw).expect(super::INTERNAL_ERR)
+				self.event.filter(raw).expect(INTERNAL_ERR)
 			}
 		}
 	}
@@ -681,12 +681,12 @@ fn declare_functions(function: &Function) -> quote::Tokens {
 				let o = quote! { out };
 				let from_first = from_token(&function.outputs[0].kind, &o);
 				quote! {
-					let out = self.function.decode_output(output)?.into_iter().next().expect(super::INTERNAL_ERR);
+					let out = self.function.decode_output(output)?.into_iter().next().expect(INTERNAL_ERR);
 					Ok(#from_first)
 				}
 			},
 			_ => {
-				let o = quote! { out.next().expect(super::INTERNAL_ERR) };
+				let o = quote! { out.next().expect(INTERNAL_ERR) };
 				let outs: Vec<_> = function.outputs
 					.iter()
 					.map(|param| from_token(&param.kind, &o))
