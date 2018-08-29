@@ -20,6 +20,7 @@ impl Contract {
 	fn generate(&self) -> quote::Tokens {
 		let module_name = syn::Ident::from(&self.name as &str);
 		let functions: Vec<_> = self.functions.iter().map(Function::generate).collect();
+		let events: Vec<_> = self.events.iter().map(Event::generate_event).collect();
 		let logs: Vec<_> = self.events.iter().map(Event::generate_log).collect();
 		quote! {
 			pub mod #module_name {
@@ -28,6 +29,7 @@ impl Contract {
 				}
 
 				pub mod events {
+					#(#events)*
 				}
 
 				pub mod logs {
