@@ -1,9 +1,11 @@
 use {syn, quote, ethabi};
 use function::Function;
+use event::Event;
 
 pub struct Contract {
 	name: String,
 	functions: Vec<Function>,
+	events: Vec<Event>,
 }
 
 impl Contract {
@@ -11,13 +13,26 @@ impl Contract {
 		Contract {
 			name,
 			functions: c.functions().map(Into::into).collect(),
+			events: c.events().map(Into::into).collect(),
 		}
 	}
 
 	fn generate(&self) -> quote::Tokens {
 		let module_name = syn::Ident::from(&self.name as &str);
+		let functions: Vec<_> = self.functions.iter().map(Function::generate).collect();
+		let logs: Vec<_> = self.events.iter().map(Event::generate_log).collect();
 		quote! {
 			pub mod #module_name {
+				pub mod functions {
+					#(#functions)*
+				}
+
+				pub mod events {
+				}
+
+				pub mod logs {
+					#(#logs)*
+				}
 			}
 		}
 	}
@@ -29,7 +44,7 @@ mod test {
 	use super::Contract;
 
 	#[test]
-	fn test() {
+	fn test_no_body() {
 		let ethabi_contract = ethabi::Contract {
 			constructor: None,
 			functions: Default::default(),
@@ -41,6 +56,14 @@ mod test {
 
 		let expected = quote! {
 			pub mod foo {
+				pub mod functions {
+				}
+
+				pub mod events {
+				}
+
+				pub mod logs {
+				}
 			}
 		};
 

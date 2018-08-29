@@ -8,6 +8,7 @@ extern crate heck;
 extern crate ethabi;
 
 mod contract;
+mod event;
 mod function;
 
 use std::{env, fs};
