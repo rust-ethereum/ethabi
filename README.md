@@ -165,9 +165,12 @@ ethabi decode log ./examples/event.json Event -l 0000000000000000000000000000000
 
 -  [ethabi-js](https://github.com/jacogr/ethabi-js) - javascript port of this library created by [@jacogr](https://github.com/jacogr)
 
-# Parity toolchain
-*this project is a part of the parity toolchain*
+## Parity Ethereum toolchain
 
-- [**ethkey**](https://github.com/paritytech/ethkey) - Ethereum keys generator and signer.
-- [**ethstore**](https://github.com/paritytech/ethstore) - Ethereum key management.
-- [**ethabi**](https://github.com/paritytech/ethabi) - Ethereum function calls encoding.
+In addition to the Parity Ethereum client, there are additional tools in this repository available:
+
+- [evmbin](https://github.com/paritytech/parity-ethereum/blob/master/evmbin/) - EVM implementation for Parity Ethereum.
+- [ethabi](https://github.com/paritytech/ethabi) - Parity Ethereum function calls encoding.
+- [ethstore](https://github.com/paritytech/parity-ethereum/blob/master/ethstore/) - Parity Ethereum key management.
+- [ethkey](https://github.com/paritytech/parity-ethereum/blob/master/ethkey/) - Parity Ethereum keys generator.
+- [whisper](https://github.com/paritytech/parity-ethereum/blob/master/whisper/) - Implementation of Whisper-v2 PoC.
