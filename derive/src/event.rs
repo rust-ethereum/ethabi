@@ -149,22 +149,13 @@ impl Event {
 				use ethabi;
 				use super::INTERNAL_ERR;
 
-				struct Event {
-					event: ethabi::Event,
-				}
-
-				impl Default for Event {
-					fn default() -> Self {
-						Event {
-							event: ethabi::Event {
-								name: #name_as_string.into(),
-								inputs: #recreate_inputs_quote,
-								anonymous: #anonymous,
-							}
-						}
+				fn event() -> ethabi::Event {
+					ethabi::Event {
+						name: #name_as_string.into(),
+						inputs: #recreate_inputs_quote,
+						anonymous: #anonymous,
 					}
 				}
-
 
 				pub fn filter<#(#filter_declarations),*>(#(#filter_definitions),*) -> ethabi::TopicFilter {
 					let raw = ethabi::RawTopicFilter {
@@ -172,8 +163,8 @@ impl Event {
 						..Default::default()
 					};
 
-					let e = Event::default();
-					e.event.filter(raw).expect(INTERNAL_ERR)
+					let e = event();
+					e.filter(raw).expect(INTERNAL_ERR)
 				}
 
 				pub fn wildcard_filter() -> ethabi::TopicFilter {
@@ -181,8 +172,8 @@ impl Event {
 				}
 
 				pub fn parse_log(log: ethabi::RawLog) -> ethabi::Result<super::super::logs::#camel_name> {
-					let e = Event::default();
-					let mut log = e.event.parse_log(log)?.params.into_iter();
+					let e = event();
+					let mut log = e.parse_log(log)?.params.into_iter();
 					let result = super::super::logs::#camel_name {
 						#(#log_init),*
 					};
@@ -231,19 +222,11 @@ mod tests {
 				use ethabi;
 				use super::INTERNAL_ERR;
 
-				struct Event {
-					event: ethabi::Event,
-				}
-
-				impl Default for Event {
-					fn default() -> Self {
-						Event {
-							event: ethabi::Event {
-								name: "Hello".into(),
-								inputs: vec![],
-								anonymous: false,
-							}
-						}
+				fn event() -> ethabi::Event {
+					ethabi::Event {
+						name: "Hello".into(),
+						inputs: vec![],
+						anonymous: false,
 					}
 				}
 
@@ -252,8 +235,8 @@ mod tests {
 						..Default::default()
 					};
 
-					let e = Event::default();
-					e.event.filter(raw).expect(INTERNAL_ERR)
+					let e = event();
+					e.filter(raw).expect(INTERNAL_ERR)
 				}
 
 				pub fn wildcard_filter() -> ethabi::TopicFilter {
@@ -261,8 +244,8 @@ mod tests {
 				}
 
 				pub fn parse_log(log: ethabi::RawLog) -> ethabi::Result<super::super::logs::Hello> {
-					let e = Event::default();
-					let mut log = e.event.parse_log(log)?.params.into_iter();
+					let e = event();
+					let mut log = e.parse_log(log)?.params.into_iter();
 					let result = super::super::logs::Hello {};
 					Ok(result)
 				}
@@ -291,23 +274,15 @@ mod tests {
 				use ethabi;
 				use super::INTERNAL_ERR;
 
-				struct Event {
-					event: ethabi::Event,
-				}
-
-				impl Default for Event {
-					fn default() -> Self {
-						Event {
-							event: ethabi::Event {
-								name: "One".into(),
-								inputs: vec![ethabi::EventParam {
-									name: "foo".to_owned(),
-									kind: ethabi::ParamType::Address,
-									indexed: true
-								}],
-								anonymous: false,
-							}
-						}
+				fn event() -> ethabi::Event {
+					ethabi::Event {
+						name: "One".into(),
+						inputs: vec![ethabi::EventParam {
+							name: "foo".to_owned(),
+							kind: ethabi::ParamType::Address,
+							indexed: true
+						}],
+						anonymous: false,
 					}
 				}
 
@@ -317,8 +292,8 @@ mod tests {
 						..Default::default()
 					};
 
-					let e = Event::default();
-					e.event.filter(raw).expect(INTERNAL_ERR)
+					let e = event();
+					e.filter(raw).expect(INTERNAL_ERR)
 				}
 
 				pub fn wildcard_filter() -> ethabi::TopicFilter {
@@ -326,8 +301,8 @@ mod tests {
 				}
 
 				pub fn parse_log(log: ethabi::RawLog) -> ethabi::Result<super::super::logs::One> {
-					let e = Event::default();
-					let mut log = e.event.parse_log(log)?.params.into_iter();
+					let e = event();
+					let mut log = e.parse_log(log)?.params.into_iter();
 					let result = super::super::logs::One {
 						foo: log.next().expect(INTERNAL_ERR).value.to_address().expect(INTERNAL_ERR)
 					};
