@@ -1,4 +1,5 @@
 use {syn, quote, ethabi};
+use heck::SnakeCase;
 
 use super::{
 	input_names, template_param_type, rust_type, get_template_names, from_template_param, to_token,
@@ -95,7 +96,7 @@ impl<'a> From<&'a ethabi::Function> for Function {
 				let o = quote! { out };
 				let from_first = from_token(&f.outputs[0].kind, &o);
 				quote! {
-					let out = self.0.decode_output(output)?.into_iter().next().expect(INTERNAL_ERR);
+					let out = self.0.function.decode_output(output)?.into_iter().next().expect(INTERNAL_ERR);
 					Ok(#from_first)
 				}
 			},
@@ -107,7 +108,7 @@ impl<'a> From<&'a ethabi::Function> for Function {
 					.collect();
 
 				quote! {
-					let mut out = self.0.decode_output(output)?.into_iter();
+					let mut out = self.0.function.decode_output(output)?.into_iter();
 					Ok(( #(#outs),* ))
 				}
 			},
@@ -133,7 +134,7 @@ impl<'a> From<&'a ethabi::Function> for Function {
 impl Function {
 	pub fn generate(&self) -> quote::Tokens {
 		let name = &self.name;
-		let module_name = syn::Ident::from(&self.name as &str);
+		let module_name = syn::Ident::from(self.name.to_snake_case());
 		let tokenize = &self.inputs.tokenize;
 		let declarations: &Vec<_> = &self.inputs.template_params.iter().map(|i| &i.declaration).collect();
 		let definitions: &Vec<_> = &self.inputs.template_params.iter().map(|i| &i.definition).collect();
@@ -167,10 +168,10 @@ impl Function {
 
 				pub struct Decoder(Function);
 
-				impl Decoder {
+				impl ethabi::FunctionOutputDecoder for Decoder {
 					type Output = #outputs_result;
 
-					pub fn decode(output: &[u8]) -> ethabi::Result<Self::Output> {
+					fn decode(&self, output: &[u8]) -> ethabi::Result<Self::Output> {
 						#outputs_implementation
 					}
 				}
@@ -178,17 +179,17 @@ impl Function {
 				pub fn encode_input<#(#declarations),*>(#(#definitions),*) -> ethabi::Bytes {
 					let f = Function::default();
 					let tokens = vec![#(#tokenize),*];
-					f.encode_input(&tokens).expect(INTERNAL_ERR)
+					f.function.encode_input(&tokens).expect(INTERNAL_ERR)
 				}
 
 				pub fn decode_output(output: &[u8]) -> ethabi::Result<#outputs_result> {
-					Decoder(f).decode(output)
+					ethabi::FunctionOutputDecoder::decode(&Decoder(Function::default()), output)
 				}
 
 				pub fn call<#(#declarations),*>(#(#definitions),*) -> (ethabi::Bytes, Decoder) {
 					let f = Function::default();
 					let tokens = vec![#(#tokenize),*];
-					(f.encode_input(&tokens).expect(INTERNAL_ERR), Decoder(f))
+					(f.function.encode_input(&tokens).expect(INTERNAL_ERR), Decoder(f))
 				}
 			}
 		}
@@ -235,10 +236,10 @@ mod test {
 
 				pub struct Decoder(Function);
 
-				impl Decoder {
+				impl ethabi::FunctionOutputDecoder for Decoder {
 					type Output = ();
 
-					pub fn decode(output: &[u8]) -> ethabi::Result<Self::Output> {
+					fn decode(&self, output: &[u8]) -> ethabi::Result<Self::Output> {
 						let _output = output;
 						Ok(())
 					}
@@ -247,17 +248,17 @@ mod test {
 				pub fn encode_input<>() -> ethabi::Bytes {
 					let f = Function::default();
 					let tokens = vec![];
-					f.encode_input(&tokens).expect(INTERNAL_ERR)
+					f.function.encode_input(&tokens).expect(INTERNAL_ERR)
 				}
 
 				pub fn decode_output(output: &[u8]) -> ethabi::Result<()> {
-					Decoder(f).decode(output)
+					ethabi::FunctionOutputDecoder::decode(&Decoder(Function::default()), output)
 				}
 
 				pub fn call<>() -> (ethabi::Bytes, Decoder) {
 					let f = Function::default();
 					let tokens = vec![];
-					(f.encode_input(&tokens).expect(INTERNAL_ERR), Decoder(f))
+					(f.function.encode_input(&tokens).expect(INTERNAL_ERR), Decoder(f))
 				}
 			}
 		};
@@ -316,11 +317,11 @@ mod test {
 
 				pub struct Decoder(Function);
 
-				impl Decoder {
+				impl ethabi::FunctionOutputDecoder for Decoder {
 					type Output = ethabi::Uint;
 
-					pub fn decode(output: &[u8]) -> ethabi::Result<Self::Output> {
-						let out = self.0.decode_output(output)?.into_iter().next().expect(INTERNAL_ERR);
+					fn decode(&self, output: &[u8]) -> ethabi::Result<Self::Output> {
+						let out = self.0.function.decode_output(output)?.into_iter().next().expect(INTERNAL_ERR);
 						Ok(out.to_uint().expect(INTERNAL_ERR))
 					}
 				}
@@ -328,17 +329,17 @@ mod test {
 				pub fn encode_input<T0: Into<ethabi::Address> >(foo: T0) -> ethabi::Bytes {
 					let f = Function::default();
 					let tokens = vec![ethabi::Token::Address(foo.into())];
-					f.encode_input(&tokens).expect(INTERNAL_ERR)
+					f.function.encode_input(&tokens).expect(INTERNAL_ERR)
 				}
 
 				pub fn decode_output(output: &[u8]) -> ethabi::Result<ethabi::Uint> {
-					Decoder(f).decode(output)
+					ethabi::FunctionOutputDecoder::decode(&Decoder(Function::default()), output)
 				}
 
 				pub fn call<T0: Into<ethabi::Address> >(foo: T0) -> (ethabi::Bytes, Decoder) {
 					let f = Function::default();
 					let tokens = vec![ethabi::Token::Address(foo.into())];
-					(f.encode_input(&tokens).expect(INTERNAL_ERR), Decoder(f))
+					(f.function.encode_input(&tokens).expect(INTERNAL_ERR), Decoder(f))
 				}
 			}
 		};
@@ -411,11 +412,11 @@ mod test {
 
 				pub struct Decoder(Function);
 
-				impl Decoder {
+				impl ethabi::FunctionOutputDecoder for Decoder {
 					type Output = (ethabi::Uint, String);
 
-					pub fn decode(output: &[u8]) -> ethabi::Result<Self::Output> {
-						let mut out = self.0.decode_output(output)?.into_iter();
+					fn decode(&self, output: &[u8]) -> ethabi::Result<Self::Output> {
+						let mut out = self.0.function.decode_output(output)?.into_iter();
 						Ok((out.next().expect(INTERNAL_ERR).to_uint().expect(INTERNAL_ERR), out.next().expect(INTERNAL_ERR).to_string().expect(INTERNAL_ERR)))
 					}
 				}
@@ -429,11 +430,11 @@ mod test {
 						let v = bar.into_iter().map(Into::into).collect::<Vec<_>>().into_iter().map(|inner| ethabi::Token::Uint(inner)).collect();
 						ethabi::Token::Array(v)
 					}];
-					f.encode_input(&tokens).expect(INTERNAL_ERR)
+					f.function.encode_input(&tokens).expect(INTERNAL_ERR)
 				}
 
 				pub fn decode_output(output: &[u8]) -> ethabi::Result<(ethabi::Uint, String)> {
-					Decoder(f).decode(output)
+					ethabi::FunctionOutputDecoder::decode(&Decoder(Function::default()), output)
 				}
 
 				pub fn call<T0: Into<[U0; 2usize]>, U0: Into<ethabi::Address>, T1: IntoIterator<Item = U1>, U1: Into<ethabi::Uint> >(foo: T0, bar: T1) -> (ethabi::Bytes, Decoder) {
@@ -445,7 +446,7 @@ mod test {
 						let v = bar.into_iter().map(Into::into).collect::<Vec<_>>().into_iter().map(|inner| ethabi::Token::Uint(inner)).collect();
 						ethabi::Token::Array(v)
 					}];
-					(f.encode_input(&tokens).expect(INTERNAL_ERR), Decoder(f))
+					(f.function.encode_input(&tokens).expect(INTERNAL_ERR), Decoder(f))
 				}
 			}
 		};

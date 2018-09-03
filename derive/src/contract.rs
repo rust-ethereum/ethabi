@@ -1,40 +1,43 @@
-use {syn, quote, ethabi};
+use {quote, ethabi};
 use function::Function;
 use event::Event;
 
 pub struct Contract {
-	name: String,
 	functions: Vec<Function>,
 	events: Vec<Event>,
 }
 
-impl Contract {
-	fn new(name: String, c: &ethabi::Contract) -> Contract {
+impl<'a> From<&'a ethabi::Contract> for Contract {
+	fn from(c: &'a ethabi::Contract) -> Self {
 		Contract {
-			name,
 			functions: c.functions().map(Into::into).collect(),
 			events: c.events().map(Into::into).collect(),
 		}
 	}
+}
 
-	fn generate(&self) -> quote::Tokens {
-		let module_name = syn::Ident::from(&self.name as &str);
+impl Contract {
+	pub fn generate(&self) -> quote::Tokens {
 		let functions: Vec<_> = self.functions.iter().map(Function::generate).collect();
 		let events: Vec<_> = self.events.iter().map(Event::generate_event).collect();
 		let logs: Vec<_> = self.events.iter().map(Event::generate_log).collect();
 		quote! {
-			pub mod #module_name {
-				pub mod functions {
-					#(#functions)*
-				}
+			const INTERNAL_ERR: &'static str = "`ethabi_derive` internal error";
 
-				pub mod events {
-					#(#events)*
-				}
+			pub mod functions {
+				use super::INTERNAL_ERR;
+				#(#functions)*
+			}
 
-				pub mod logs {
-					#(#logs)*
-				}
+			pub mod events {
+				use super::INTERNAL_ERR;
+				#(#events)*
+			}
+
+			pub mod logs {
+				use super::INTERNAL_ERR;
+				use ethabi;
+				#(#logs)*
 			}
 		}
 	}
@@ -54,18 +57,21 @@ mod test {
 			fallback: false,
 		};
 
-		let c = Contract::new("foo".into(), &ethabi_contract);
+		let c = Contract::from(&ethabi_contract);
 
 		let expected = quote! {
-			pub mod foo {
-				pub mod functions {
-				}
+			const INTERNAL_ERR: &'static str = "`ethabi_derive` internal error";
+			pub mod functions {
+				use super::INTERNAL_ERR;
+			}
 
-				pub mod events {
-				}
+			pub mod events {
+				use super::INTERNAL_ERR;
+			}
 
-				pub mod logs {
-				}
+			pub mod logs {
+				use super::INTERNAL_ERR;
+				use ethabi;
 			}
 		};
 
