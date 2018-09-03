@@ -97,7 +97,7 @@ impl<'a> From<&'a ethabi::Function> for Function {
 				let o = quote! { out };
 				let from_first = from_token(&f.outputs[0].kind, &o);
 				quote! {
-					let out = self.0.function.decode_output(output)?.into_iter().next().expect(INTERNAL_ERR);
+					let out = self.0.decode_output(output)?.into_iter().next().expect(INTERNAL_ERR);
 					Ok(#from_first)
 				}
 			},
@@ -109,7 +109,7 @@ impl<'a> From<&'a ethabi::Function> for Function {
 					.collect();
 
 				quote! {
-					let mut out = self.0.function.decode_output(output)?.into_iter();
+					let mut out = self.0.decode_output(output)?.into_iter();
 					Ok(( #(#outs),* ))
 				}
 			},
@@ -299,7 +299,7 @@ mod tests {
 					type Output = ethabi::Uint;
 
 					fn decode(&self, output: &[u8]) -> ethabi::Result<Self::Output> {
-						let out = self.0.function.decode_output(output)?.into_iter().next().expect(INTERNAL_ERR);
+						let out = self.0.decode_output(output)?.into_iter().next().expect(INTERNAL_ERR);
 						Ok(out.to_uint().expect(INTERNAL_ERR))
 					}
 				}
@@ -386,7 +386,7 @@ mod tests {
 					type Output = (ethabi::Uint, String);
 
 					fn decode(&self, output: &[u8]) -> ethabi::Result<Self::Output> {
-						let mut out = self.0.function.decode_output(output)?.into_iter();
+						let mut out = self.0.decode_output(output)?.into_iter();
 						Ok((out.next().expect(INTERNAL_ERR).to_uint().expect(INTERNAL_ERR), out.next().expect(INTERNAL_ERR).to_string().expect(INTERNAL_ERR)))
 					}
 				}
