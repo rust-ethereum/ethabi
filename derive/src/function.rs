@@ -43,6 +43,7 @@ struct Outputs {
 	recreate_quote: quote::Tokens,
 }
 
+/// Structure used to generate contract's function interface.
 pub struct Function {
 	/// Function name.
 	name: String,
@@ -132,6 +133,7 @@ impl<'a> From<&'a ethabi::Function> for Function {
 }
 
 impl Function {
+	/// Generates the interface for contract's function.
 	pub fn generate(&self) -> quote::Tokens {
 		let name = &self.name;
 		let module_name = syn::Ident::from(self.name.to_snake_case());

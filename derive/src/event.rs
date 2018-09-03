@@ -3,6 +3,7 @@ use heck::{SnakeCase, CamelCase};
 
 use super::{rust_type, to_syntax_string, from_token, get_template_names, to_token};
 
+/// Structure used to generate contract's event interface.
 pub struct Event {
 	name: String,
 	log_fields: Vec<quote::Tokens>,
@@ -120,6 +121,7 @@ impl<'a> From<&'a ethabi::Event> for Event {
 }
 
 impl Event {
+	/// Generates event log struct.
 	pub fn generate_log(&self) -> quote::Tokens {
 		let name = syn::Ident::from(self.name.to_camel_case());
 		let log_fields = &self.log_fields;
@@ -132,6 +134,7 @@ impl Event {
 		}
 	}
 
+	/// Generates rust interface for contract's event.
 	pub fn generate_event(&self) -> quote::Tokens {
 		let name_as_string = &self.name.to_camel_case();
 		let name = syn::Ident::from(self.name.to_snake_case());

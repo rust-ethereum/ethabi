@@ -3,6 +3,7 @@ use constructor::Constructor;
 use function::Function;
 use event::Event;
 
+/// Structure used to generate rust interface for solidity contract.
 pub struct Contract {
 	constructor: Option<Constructor>,
 	functions: Vec<Function>,
@@ -20,6 +21,7 @@ impl<'a> From<&'a ethabi::Contract> for Contract {
 }
 
 impl Contract {
+	/// Generates rust interface for a contract.
 	pub fn generate(&self) -> quote::Tokens {
 		let constructor = self.constructor.as_ref().map(Constructor::generate);
 		let functions: Vec<_> = self.functions.iter().map(Function::generate).collect();

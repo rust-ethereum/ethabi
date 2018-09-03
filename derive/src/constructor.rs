@@ -5,6 +5,7 @@ use super::{
 	to_ethabi_param_vec,
 };
 
+/// Structure used to generate contract's construtor interface.
 pub struct Constructor {
 	inputs_declarations: Vec<quote::Tokens>,
 	inputs_definitions: Vec<quote::Tokens>,
@@ -54,6 +55,7 @@ impl<'a> From<&'a ethabi::Constructor> for Constructor {
 }
 
 impl Constructor {
+	/// Generates contract constructor interface.
 	pub fn generate(&self) -> quote::Tokens {
 		let declarations = &self.inputs_declarations;
 		let definitions = &self.inputs_definitions;
