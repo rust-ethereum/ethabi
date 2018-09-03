@@ -63,24 +63,12 @@ impl Constructor {
 		let recreate_inputs = &self.recreate_inputs;
 
 		quote! {
-			struct Constructor {
-				constructor: ethabi::Constructor,
-			}
-
-			impl Default for Constructor {
-				fn default() -> Self {
-					Constructor {
-						constructor: ethabi::Constructor {
-							inputs: #recreate_inputs,
-						}
-					}
-				}
-			}
-
 			pub fn constructor<#(#declarations),*>(#(#definitions),*) -> ethabi::Bytes {
-				let c = Constructor::default();
+				let c = ethabi::Constructor {
+					inputs: #recreate_inputs,
+				};
 				let tokens = vec![#(#tokenize),*];
-				c.constructor.encode_input(code, &tokens).expect(INTERNAL_ERR)
+				c.encode_input(code, &tokens).expect(INTERNAL_ERR)
 			}
 		}
 	}
@@ -100,24 +88,12 @@ mod tests {
 		let c = Constructor::from(&ethabi_constructor);
 
 		let expected = quote! {
-			struct Constructor {
-				constructor: ethabi::Constructor,
-			}
-
-			impl Default for Constructor {
-				fn default() -> Self {
-					Constructor {
-						constructor: ethabi::Constructor {
-							inputs: vec![],
-						}
-					}
-				}
-			}
-
 			pub fn constructor<>(code: ethabi::Bytes) -> ethabi::Bytes {
-				let c = Constructor::default();
+				let c = ethabi::Constructor {
+					inputs: vec![],
+				};
 				let tokens = vec![];
-				c.constructor.encode_input(code, &tokens).expect(INTERNAL_ERR)
+				c.encode_input(code, &tokens).expect(INTERNAL_ERR)
 			}
 		};
 
@@ -138,27 +114,15 @@ mod tests {
 		let c = Constructor::from(&ethabi_constructor);
 
 		let expected = quote! {
-			struct Constructor {
-				constructor: ethabi::Constructor,
-			}
-
-			impl Default for Constructor {
-				fn default() -> Self {
-					Constructor {
-						constructor: ethabi::Constructor {
-							inputs: vec![ethabi::Param {
-								name: "foo".to_owned(),
-								kind: ethabi::ParamType::Uint(256usize)
-							}],
-						}
-					}
-				}
-			}
-
 			pub fn constructor<T0: Into<ethabi::Uint> >(code: ethabi::Bytes, foo: T0) -> ethabi::Bytes {
-				let c = Constructor::default();
+				let c = ethabi::Constructor {
+					inputs: vec![ethabi::Param {
+						name: "foo".to_owned(),
+						kind: ethabi::ParamType::Uint(256usize)
+					}],
+				};
 				let tokens = vec![ethabi::Token::Uint(foo.into())];
-				c.constructor.encode_input(code, &tokens).expect(INTERNAL_ERR)
+				c.encode_input(code, &tokens).expect(INTERNAL_ERR)
 			}
 		};
 
