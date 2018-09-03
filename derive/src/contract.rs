@@ -1,8 +1,10 @@
 use {quote, ethabi};
+use constructor::Constructor;
 use function::Function;
 use event::Event;
 
 pub struct Contract {
+	constructor: Option<Constructor>,
 	functions: Vec<Function>,
 	events: Vec<Event>,
 }
@@ -10,6 +12,7 @@ pub struct Contract {
 impl<'a> From<&'a ethabi::Contract> for Contract {
 	fn from(c: &'a ethabi::Contract) -> Self {
 		Contract {
+			constructor: c.constructor.as_ref().map(Into::into),
 			functions: c.functions().map(Into::into).collect(),
 			events: c.events().map(Into::into).collect(),
 		}
@@ -18,11 +21,15 @@ impl<'a> From<&'a ethabi::Contract> for Contract {
 
 impl Contract {
 	pub fn generate(&self) -> quote::Tokens {
+		let constructor = self.constructor.as_ref().map(Constructor::generate);
 		let functions: Vec<_> = self.functions.iter().map(Function::generate).collect();
 		let events: Vec<_> = self.events.iter().map(Event::generate_event).collect();
 		let logs: Vec<_> = self.events.iter().map(Event::generate_log).collect();
 		quote! {
+			use ethabi;
 			const INTERNAL_ERR: &'static str = "`ethabi_derive` internal error";
+
+			#constructor
 
 			pub mod functions {
 				use super::INTERNAL_ERR;
@@ -60,6 +67,7 @@ mod test {
 		let c = Contract::from(&ethabi_contract);
 
 		let expected = quote! {
+			use ethabi;
 			const INTERNAL_ERR: &'static str = "`ethabi_derive` internal error";
 			pub mod functions {
 				use super::INTERNAL_ERR;

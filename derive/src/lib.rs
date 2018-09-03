@@ -7,6 +7,7 @@ extern crate quote;
 extern crate heck;
 extern crate ethabi;
 
+mod constructor;
 mod contract;
 mod event;
 mod function;
@@ -15,7 +16,7 @@ use std::{env, fs};
 use std::path::PathBuf;
 use proc_macro::TokenStream;
 use heck::SnakeCase;
-use ethabi::{Result, ResultExt, Contract, Param, ParamType, Constructor};
+use ethabi::{Result, ResultExt, Contract, Param, ParamType};
 
 const ERROR_MSG: &'static str = "`derive(EthabiContract)` failed";
 
@@ -288,86 +289,6 @@ fn get_output_kinds(outputs: &Vec<Param>) -> quote::Tokens {
 				.collect();
 			quote! { (#(#outs),*) }
 		}
-	}
-}
-
-fn impl_contract_constructor(constructor: Option<&Constructor>) -> quote::Tokens {
-	// [param0, hello_world, param2]
-	let input_names: Vec<_> = constructor.map(|c| input_names(&c.inputs)).unwrap_or_else(Vec::new);
-
-	// [Uint, Bytes, Vec<Uint>]
-	let kinds: Vec<_> = constructor.map(|c| {
-		c.inputs
-			.iter()
-			.map(|param| rust_type(&param.kind))
-			.collect()
-	}).unwrap_or_else(Vec::new);
-
-	// [T0, T1, T2]
-	let template_names: Vec<_> = get_template_names(&kinds);
-
-	// [T0: Into<Uint>, T1: Into<Bytes>, T2: IntoIterator<Item = U2>, U2 = Into<Uint>]
-	let template_params: Vec<_> = constructor.map(|c| {
-		c.inputs.iter().enumerate()
-			.map(|(index, param)| template_param_type(&param.kind, index))
-			.collect()
-	}).unwrap_or_else(Vec::new);
-
-	// [param0: T0, hello_world: T1, param2: T2]
-	let params: Vec<_> = input_names.iter().zip(template_names.iter())
-		.map(|(param_name, template_name)| quote! { #param_name: #template_name })
-		.collect();
-
-	// [Token::Uint(param0.into()), Token::Bytes(hello_world.into()), Token::Array(param2.into())]
-	let usage: Vec<_> = input_names.iter().zip(constructor.iter().flat_map(|c| c.inputs.iter()))
-		.map(|(param_name, param)| to_token(&from_template_param(&param.kind, &param_name), &param.kind))
-		.collect();
-
-	quote! {
-		pub fn constructor<#(#template_params),*>(code: ethabi::Bytes, #(#params),* ) -> ConstructorWithInput {
-			let v: Vec<ethabi::Token> = vec![#(#usage),*];
-			ConstructorWithInput::new(code, v)
-		}
-
-	}
-}
-
-fn declare_contract_constructor_input_wrapper(constructor: Option<&Constructor>) -> quote::Tokens {
-	let constructor_inputs = to_ethabi_param_vec(constructor.iter().flat_map(|c| c.inputs.iter()));
-
-	quote! {
-		pub struct ConstructorWithInput {
-			encoded_input: ethabi::Bytes,
-		}
-		impl ethabi::ContractFunction for ConstructorWithInput {
-			type Output = ethabi::Address;
-
-			fn encoded(&self) -> ethabi::Bytes {
-				self.encoded_input.clone()
-			}
-
-			fn output(&self, output_bytes: ethabi::Bytes) -> ethabi::Result<Self::Output> {
-				let out = ethabi::decode(&vec![ethabi::ParamType::Address], &output_bytes)?
-					.into_iter()
-					.next()
-					.expect(INTERNAL_ERR);
-				Ok(out.to_address().expect(INTERNAL_ERR))
-			}
-		}
-		impl ConstructorWithInput {
-			pub fn new(code: ethabi::Bytes, tokens: Vec<ethabi::Token>) -> Self {
-				let constructor = ethabi::Constructor {
-					inputs: #constructor_inputs
-				};
-
-				let encoded_input: ethabi::Bytes = constructor
-					.encode_input(code, &tokens)
-					.expect(INTERNAL_ERR);
-
-				ConstructorWithInput { encoded_input: encoded_input }
-			}
-		}
-
 	}
 }
 

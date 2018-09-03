@@ -197,7 +197,7 @@ impl Function {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
 	use ethabi;
 	use super::Function;
 

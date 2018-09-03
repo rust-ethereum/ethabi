@@ -11,7 +11,6 @@ extern crate ethabi_derive;
 #[macro_use]
 extern crate ethabi_contract;
 
-//mod gen;
 use_contract!(eip20, "../res/eip20.abi");
 use_contract!(constructor, "../res/constructor.abi");
 use_contract!(validators, "../res/Validators.abi");
@@ -67,23 +66,23 @@ mod tests {
 		assert_eq!(expected_output, decoded_output);
 	}
 
-	//#[test]
-	//fn test_encoding_constructor_as_array() {
-		//use validators::constructor;
+	#[test]
+	fn test_encoding_constructor_as_array() {
+		use validators::constructor;
 
-		//let code = Vec::new();
-		//let first = [0x11u8; 20];
-		//let second = [0x22u8; 20];
+		let code = Vec::new();
+		let first = [0x11u8; 20];
+		let second = [0x22u8; 20];
 
-		//let encoded_from_vec = constructor(code.clone(), vec![first.clone(), second.clone()]).encoded();
-		//let encoded_from_vec_iter = constructor(code.clone(), vec![first.clone(), second.clone()].into_iter()).encoded();
-		//let encoded_from_vec_wrapped = constructor(code.clone(), vec![Wrapper(first), Wrapper(second)]).encoded();
+		let encoded_from_vec = constructor(code.clone(), vec![first.clone(), second.clone()]);
+		let encoded_from_vec_iter = constructor(code.clone(), vec![first.clone(), second.clone()].into_iter());
+		let encoded_from_vec_wrapped = constructor(code.clone(), vec![Wrapper(first), Wrapper(second)]);
 
-		//let expected = "0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000200000000000000000000000011111111111111111111111111111111111111110000000000000000000000002222222222222222222222222222222222222222".to_owned();
-		//assert_eq!(expected, encoded_from_vec.to_hex());
-		//assert_eq!(expected, encoded_from_vec_iter.to_hex());
-		//assert_eq!(expected, encoded_from_vec_wrapped.to_hex());
-	//}
+		let expected = "0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000200000000000000000000000011111111111111111111111111111111111111110000000000000000000000002222222222222222222222222222222222222222".to_owned();
+		assert_eq!(expected, encoded_from_vec.to_hex());
+		assert_eq!(expected, encoded_from_vec_iter.to_hex());
+		assert_eq!(expected, encoded_from_vec_wrapped.to_hex());
+	}
 
 	#[test]
 	fn test_encoding_function_input_as_fixed_array() {
