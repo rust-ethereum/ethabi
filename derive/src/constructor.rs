@@ -5,7 +5,7 @@ use super::{
 	to_ethabi_param_vec,
 };
 
-/// Structure used to generate contract's construtor interface.
+/// Structure used to generate contract's constructor interface.
 pub struct Constructor {
 	inputs_declarations: Vec<quote::Tokens>,
 	inputs_definitions: Vec<quote::Tokens>,
