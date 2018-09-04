@@ -63,6 +63,7 @@ impl Constructor {
 		let recreate_inputs = &self.recreate_inputs;
 
 		quote! {
+			/// Encodes a call to contract's constructor.
 			pub fn constructor<#(#declarations),*>(#(#definitions),*) -> ethabi::Bytes {
 				let c = ethabi::Constructor {
 					inputs: #recreate_inputs,
@@ -88,6 +89,7 @@ mod tests {
 		let c = Constructor::from(&ethabi_constructor);
 
 		let expected = quote! {
+			/// Encodes a call to contract's constructor.
 			pub fn constructor<>(code: ethabi::Bytes) -> ethabi::Bytes {
 				let c = ethabi::Constructor {
 					inputs: vec![],
@@ -114,6 +116,7 @@ mod tests {
 		let c = Constructor::from(&ethabi_constructor);
 
 		let expected = quote! {
+			/// Encodes a call to contract's constructor.
 			pub fn constructor<T0: Into<ethabi::Uint> >(code: ethabi::Bytes, foo: T0) -> ethabi::Bytes {
 				let c = ethabi::Constructor {
 					inputs: vec![ethabi::Param {

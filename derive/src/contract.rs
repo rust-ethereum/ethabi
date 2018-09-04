@@ -33,16 +33,19 @@ impl Contract {
 
 			#constructor
 
+			/// Contract's functions.
 			pub mod functions {
 				use super::INTERNAL_ERR;
 				#(#functions)*
 			}
 
+			/// Contract's events.
 			pub mod events {
 				use super::INTERNAL_ERR;
 				#(#events)*
 			}
 
+			/// Contract's logs.
 			pub mod logs {
 				use super::INTERNAL_ERR;
 				use ethabi;
@@ -71,14 +74,18 @@ mod test {
 		let expected = quote! {
 			use ethabi;
 			const INTERNAL_ERR: &'static str = "`ethabi_derive` internal error";
+
+			/// Contract's functions.
 			pub mod functions {
 				use super::INTERNAL_ERR;
 			}
 
+			/// Contract's events.
 			pub mod events {
 				use super::INTERNAL_ERR;
 			}
 
+			/// Contract's logs.
 			pub mod logs {
 				use super::INTERNAL_ERR;
 				use ethabi;

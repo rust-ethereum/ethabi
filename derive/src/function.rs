@@ -160,6 +160,7 @@ impl Function {
 					}
 				}
 
+				/// Generic function output decoder.
 				pub struct Decoder(ethabi::Function);
 
 				impl ethabi::FunctionOutputDecoder for Decoder {
@@ -170,16 +171,19 @@ impl Function {
 					}
 				}
 
+				/// Encodes function input.
 				pub fn encode_input<#(#declarations),*>(#(#definitions),*) -> ethabi::Bytes {
 					let f = function();
 					let tokens = vec![#(#tokenize),*];
 					f.encode_input(&tokens).expect(INTERNAL_ERR)
 				}
 
+				/// Decodes function output.
 				pub fn decode_output(output: &[u8]) -> ethabi::Result<#outputs_result> {
 					ethabi::FunctionOutputDecoder::decode(&Decoder(function()), output)
 				}
 
+				/// Encodes function output and creates a `Decoder` instance.
 				pub fn call<#(#declarations),*>(#(#definitions),*) -> (ethabi::Bytes, Decoder) {
 					let f = function();
 					let tokens = vec![#(#tokenize),*];
@@ -220,6 +224,7 @@ mod tests {
 					}
 				}
 
+				/// Generic function output decoder.
 				pub struct Decoder(ethabi::Function);
 
 				impl ethabi::FunctionOutputDecoder for Decoder {
@@ -231,16 +236,19 @@ mod tests {
 					}
 				}
 
+				/// Encodes function input.
 				pub fn encode_input<>() -> ethabi::Bytes {
 					let f = function();
 					let tokens = vec![];
 					f.encode_input(&tokens).expect(INTERNAL_ERR)
 				}
 
+				/// Decodes function output.
 				pub fn decode_output(output: &[u8]) -> ethabi::Result<()> {
 					ethabi::FunctionOutputDecoder::decode(&Decoder(function()), output)
 				}
 
+				/// Encodes function output and creates a `Decoder` instance.
 				pub fn call<>() -> (ethabi::Bytes, Decoder) {
 					let f = function();
 					let tokens = vec![];
@@ -293,6 +301,7 @@ mod tests {
 					}
 				}
 
+				/// Generic function output decoder.
 				pub struct Decoder(ethabi::Function);
 
 				impl ethabi::FunctionOutputDecoder for Decoder {
@@ -304,16 +313,19 @@ mod tests {
 					}
 				}
 
+				/// Encodes function input.
 				pub fn encode_input<T0: Into<ethabi::Address> >(foo: T0) -> ethabi::Bytes {
 					let f = function();
 					let tokens = vec![ethabi::Token::Address(foo.into())];
 					f.encode_input(&tokens).expect(INTERNAL_ERR)
 				}
 
+				/// Decodes function output.
 				pub fn decode_output(output: &[u8]) -> ethabi::Result<ethabi::Uint> {
 					ethabi::FunctionOutputDecoder::decode(&Decoder(function()), output)
 				}
 
+				/// Encodes function output and creates a `Decoder` instance.
 				pub fn call<T0: Into<ethabi::Address> >(foo: T0) -> (ethabi::Bytes, Decoder) {
 					let f = function();
 					let tokens = vec![ethabi::Token::Address(foo.into())];
@@ -380,6 +392,7 @@ mod tests {
 					}
 				}
 
+				/// Generic function output decoder.
 				pub struct Decoder(ethabi::Function);
 
 				impl ethabi::FunctionOutputDecoder for Decoder {
@@ -391,6 +404,7 @@ mod tests {
 					}
 				}
 
+				/// Encodes function input.
 				pub fn encode_input<T0: Into<[U0; 2usize]>, U0: Into<ethabi::Address>, T1: IntoIterator<Item = U1>, U1: Into<ethabi::Uint> >(foo: T0, bar: T1) -> ethabi::Bytes {
 					let f = function();
 					let tokens = vec![{
@@ -403,10 +417,12 @@ mod tests {
 					f.encode_input(&tokens).expect(INTERNAL_ERR)
 				}
 
+				/// Decodes function output.
 				pub fn decode_output(output: &[u8]) -> ethabi::Result<(ethabi::Uint, String)> {
 					ethabi::FunctionOutputDecoder::decode(&Decoder(function()), output)
 				}
 
+				/// Encodes function output and creates a `Decoder` instance.
 				pub fn call<T0: Into<[U0; 2usize]>, U0: Into<ethabi::Address>, T1: IntoIterator<Item = U1>, U1: Into<ethabi::Uint> >(foo: T0, bar: T1) -> (ethabi::Bytes, Decoder) {
 					let f = function();
 					let tokens = vec![{
