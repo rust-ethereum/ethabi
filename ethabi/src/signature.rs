@@ -35,6 +35,6 @@ mod tests {
 
 	#[test]
 	fn test_signature() {
-		assert_eq!("cdcd77c0".from_hex().unwrap(), short_signature("baz", &[ParamType::Uint(32), ParamType::Bool]));
+		assert_eq!(hex!("cdcd77c0"), short_signature("baz", &[ParamType::Uint(32), ParamType::Bool]));
 	}
 }

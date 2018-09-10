@@ -152,7 +152,7 @@ fn encode_params(types: &[String], values: &[String], lenient: bool) -> Result<S
 
 fn decode_call_output(path: &str, function: &str, data: &str) -> Result<String, Error> {
 	let function = load_function(path, function)?;
-	let data = data.from_hex().chain_err(|| "Expected <data> to be hex")?;
+	let data : Vec<u8> = data.from_hex().chain_err(|| "Expected <data> to be hex")?;
 	let tokens = function.decode_output(&data)?;
 	let types = function.outputs;
 
@@ -172,7 +172,7 @@ fn decode_params(types: &[String], data: &str) -> Result<String, Error> {
 		.map(|s| Reader::read(s))
 		.collect::<Result<_, _>>()?;
 
-	let data = data.from_hex().chain_err(|| "Expected <data> to be hex")?;
+	let data  : Vec<u8> = data.from_hex().chain_err(|| "Expected <data> to be hex")?;
 
 	let tokens = decode(&types, &data)?;
 
@@ -190,7 +190,7 @@ fn decode_params(types: &[String], data: &str) -> Result<String, Error> {
 fn decode_log(path: &str, event: &str, topics: &[String], data: &str) -> Result<String, Error> {
 	let event = load_event(path, event)?;
 	let topics: Vec<Hash> = topics.into_iter()
-		.map(|t| t.parse())
+		.map(|t| t.parse() )
 		.collect::<Result<_, _>>()?;
 	let data = data.from_hex().chain_err(|| "Expected <data> to be hex")?;
 	let decoded = event.parse_log((topics, data).into())?;

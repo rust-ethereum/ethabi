@@ -10,6 +10,9 @@ extern crate ethabi;
 extern crate ethabi_derive;
 #[macro_use]
 extern crate ethabi_contract;
+#[cfg(test)]
+#[macro_use]
+extern crate hex_literal;
 
 use_contract!(eip20, "../res/eip20.abi");
 use_contract!(constructor, "../res/constructor.abi");
@@ -20,7 +23,7 @@ use_contract!(test_rust_keywords, "../res/test_rust_keywords.abi");
 
 #[cfg(test)]
 mod tests {
-	use rustc_hex::{ToHex, FromHex};
+	use rustc_hex::ToHex;
 	use ethabi::{Address, Uint};
 
 	struct Wrapper([u8; 20]);
@@ -43,9 +46,9 @@ mod tests {
 		let encoded_from_vec_wrapped = functions::set_validators::encode_input(vec![Wrapper(first), Wrapper(second)]);
 
 		let expected = "9300c9260000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000200000000000000000000000011111111111111111111111111111111111111110000000000000000000000002222222222222222222222222222222222222222".to_owned();
-		assert_eq!(expected, encoded_from_vec.to_hex());
-		assert_eq!(expected, encoded_from_vec_iter.to_hex());
-		assert_eq!(expected, encoded_from_vec_wrapped.to_hex());
+		assert_eq!(expected, encoded_from_vec.to_hex::<String>());
+		assert_eq!(expected, encoded_from_vec_iter.to_hex::<String>());
+		assert_eq!(expected, encoded_from_vec_wrapped.to_hex::<String>());
 	}
 
 	#[test]
@@ -55,7 +58,7 @@ mod tests {
 		// given
 
 		use eip20;
-		let output = "000000000000000000000000000000000000000000000000000000000036455B".from_hex().unwrap();
+		let output = hex!("000000000000000000000000000000000000000000000000000000000036455B").to_vec();
 
 		// when
 		let decoded_output = eip20::functions::total_supply::decode_output(&output).unwrap();
@@ -79,9 +82,9 @@ mod tests {
 		let encoded_from_vec_wrapped = constructor(code.clone(), vec![Wrapper(first), Wrapper(second)]);
 
 		let expected = "0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000200000000000000000000000011111111111111111111111111111111111111110000000000000000000000002222222222222222222222222222222222222222".to_owned();
-		assert_eq!(expected, encoded_from_vec.to_hex());
-		assert_eq!(expected, encoded_from_vec_iter.to_hex());
-		assert_eq!(expected, encoded_from_vec_wrapped.to_hex());
+		assert_eq!(expected, encoded_from_vec.to_hex::<String>());
+		assert_eq!(expected, encoded_from_vec_iter.to_hex::<String>());
+		assert_eq!(expected, encoded_from_vec_wrapped.to_hex::<String>());
 	}
 
 	#[test]
@@ -97,9 +100,9 @@ mod tests {
 
 		let expected_array = "7de33d2000000000000000000000000011111111111111111111111111111111111111110000000000000000000000002222222222222222222222222222222222222222".to_owned();
 		let expected_string = "72910be000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000003666f6f0000000000000000000000000000000000000000000000000000000000".to_owned();
-		assert_eq!(expected_array, encoded_from_array.to_hex());
-		assert_eq!(expected_array, encoded_from_array_wrapped.to_hex());
-		assert_eq!(expected_string, encoded_from_string.to_hex())
+		assert_eq!(expected_array, encoded_from_array.to_hex::<String>());
+		assert_eq!(expected_array, encoded_from_array_wrapped.to_hex::<String>());
+		assert_eq!(expected_string, encoded_from_string.to_hex::<String>())
 	}
 
 	#[test]
@@ -111,7 +114,7 @@ mod tests {
 		let spender = [1u8; 20];
 		let encoded = eip20::functions::allowance::encode_input(owner, spender);
 		// 4 bytes signature + 2 * 32 bytes for params
-		assert_eq!(encoded.to_hex(), expected);
+		assert_eq!(encoded.to_hex::<String>(), expected);
 
 		let from: Address = [2u8; 20].into();
 		let to: Address = [3u8; 20].into();
@@ -122,4 +125,3 @@ mod tests {
 		assert_eq!(wildcard_filter, wildcard_filter_sugared);
 	}
 }
-

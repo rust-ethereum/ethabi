@@ -100,12 +100,12 @@ impl Serialize for Topic<Hash> {
 			Topic::Any => Value::Null,
 			Topic::OneOf(ref vec) => {
 				let v = vec.iter()
-					.map(|h| format!("0x{}", h.to_hex()))
+					.map(|h| format!("0x{}", h.to_hex::<String>()))
 					.map(Value::String)
 					.collect();
 				Value::Array(v)
 			},
-			Topic::This(ref hash) => Value::String(format!("0x{}", hash.to_hex())),
+			Topic::This(ref hash) => Value::String(format!("0x{}", hash.to_hex::<String>())),
 		};
 		value.serialize(serializer)
 	}
