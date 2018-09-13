@@ -1,5 +1,7 @@
-use {syn, quote, ethabi};
+use {syn, ethabi};
 use heck::SnakeCase;
+use proc_macro2::TokenStream;
+use syn::export::Span;
 
 use super::{
 	input_names, template_param_type, rust_type, get_template_names, from_template_param, to_token,
@@ -12,13 +14,13 @@ struct TemplateParam {
 	/// ```text
 	/// [T0: Into<Uint>, T1: Into<Bytes>, T2: IntoIterator<Item = U2>, U2 = Into<Uint>]
 	/// ```
-	declaration: quote::Tokens,
+	declaration: TokenStream,
 	/// Template param definition.
 	///
 	/// ```text
 	/// [param0: T0, hello_world: T1, param2: T2]
 	/// ```
-	definition: quote::Tokens,
+	definition: TokenStream,
 }
 
 struct Inputs {
@@ -27,20 +29,20 @@ struct Inputs {
 	/// ```text
 	/// [Token::Uint(param0.into()), Token::Bytes(hello_world.into()), Token::Array(param2.into_iter().map(Into::into).collect())]
 	/// ```
-	tokenize: Vec<quote::Tokens>,
+	tokenize: Vec<TokenStream>,
 	/// Template params.
 	template_params: Vec<TemplateParam>,
 	/// Quote used to recreate `Vec<ethabi::Param>`
-	recreate_quote: quote::Tokens,
+	recreate_quote: TokenStream,
 }
 
 struct Outputs {
 	/// Decoding implementation.
-	implementation: quote::Tokens,
+	implementation: TokenStream,
 	/// Decode result.
-	result: quote::Tokens,
+	result: TokenStream,
 	/// Quote used to recreate `Vec<ethabi::Param>`.
-	recreate_quote: quote::Tokens,
+	recreate_quote: TokenStream,
 }
 
 /// Structure used to generate contract's function interface.
@@ -134,9 +136,9 @@ impl<'a> From<&'a ethabi::Function> for Function {
 
 impl Function {
 	/// Generates the interface for contract's function.
-	pub fn generate(&self) -> quote::Tokens {
+	pub fn generate(&self) -> TokenStream {
 		let name = &self.name;
-		let module_name = syn::Ident::from(self.name.to_snake_case());
+		let module_name = syn::Ident::new(&self.name.to_snake_case(), Span::call_site());
 		let tokenize = &self.inputs.tokenize;
 		let declarations: &Vec<_> = &self.inputs.template_params.iter().map(|i| &i.declaration).collect();
 		let definitions: &Vec<_> = &self.inputs.template_params.iter().map(|i| &i.definition).collect();
@@ -257,7 +259,7 @@ mod tests {
 			}
 		};
 
-		assert_eq!(expected, f.generate());
+		assert_eq!(expected.to_string(), f.generate().to_string());
 	}
 
 	#[test]
@@ -334,7 +336,7 @@ mod tests {
 			}
 		};
 
-		assert_eq!(expected, f.generate());
+		assert_eq!(expected.to_string(), f.generate().to_string());
 	}
 
 	#[test]
@@ -437,6 +439,6 @@ mod tests {
 			}
 		};
 
-		assert_eq!(expected, f.generate());
+		assert_eq!(expected.to_string(), f.generate().to_string());
 	}
 }

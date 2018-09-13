@@ -1,18 +1,20 @@
-use {quote, syn, ethabi};
+use {syn, ethabi};
 use heck::{SnakeCase, CamelCase};
+use proc_macro2::TokenStream;
+use syn::export::Span;
 
 use super::{rust_type, to_syntax_string, from_token, get_template_names, to_token};
 
 /// Structure used to generate contract's event interface.
 pub struct Event {
 	name: String,
-	log_fields: Vec<quote::Tokens>,
-	recreate_inputs_quote: quote::Tokens,
-	log_init: Vec<quote::Tokens>,
-	wildcard_filter_params: Vec<quote::Tokens>,
-	filter_declarations: Vec<quote::Tokens>,
-	filter_definitions: Vec<quote::Tokens>,
-	filter_init: Vec<quote::Tokens>,
+	log_fields: Vec<TokenStream>,
+	recreate_inputs_quote: TokenStream,
+	log_init: Vec<TokenStream>,
+	wildcard_filter_params: Vec<TokenStream>,
+	filter_declarations: Vec<TokenStream>,
+	filter_definitions: Vec<TokenStream>,
+	filter_init: Vec<TokenStream>,
 	anonymous: bool,
 }
 
@@ -23,12 +25,12 @@ impl<'a> From<&'a ethabi::Event> for Event {
 			.enumerate()
 			.map(|(index, param)| if param.name.is_empty() {
 				if param.indexed {
-					syn::Ident::from(format!("topic{}", index))
+					syn::Ident::new(&format!("topic{}", index), Span::call_site())
 				} else {
-					syn::Ident::from(format!("param{}", index))
+					syn::Ident::new(&format!("param{}", index), Span::call_site())
 				}
 			} else {
-				param.name.to_snake_case().into()
+				syn::Ident::new(&param.name.to_snake_case(), Span::call_site())
 			}).collect();
 		let kinds: Vec<_> = e.inputs
 			.iter()
@@ -59,9 +61,9 @@ impl<'a> From<&'a ethabi::Event> for Event {
 			.enumerate()
 			.filter(|&(_, param)| param.indexed)
 			.map(|(index, param)| if param.name.is_empty() {
-				syn::Ident::from(format!("topic{}", index))
+				syn::Ident::new(&format!("topic{}", index), Span::call_site())
 			} else {
-				param.name.to_snake_case().into()
+				syn::Ident::new(&param.name.to_snake_case(), Span::call_site())
 			})
 			.collect();
 
@@ -84,7 +86,7 @@ impl<'a> From<&'a ethabi::Event> for Event {
 			.enumerate()
 			.take(3)
 			.map(|(index, (param_name, param))| {
-				let topic = syn::Ident::from(format!("topic{}", index));
+				let topic = syn::Ident::new(&format!("topic{}", index), Span::call_site());
 				let i = quote! { i };
 				let to_token = to_token(&i, &param.kind);
 				quote! { #topic: #param_name.into().map(|#i| #to_token), }
@@ -122,8 +124,8 @@ impl<'a> From<&'a ethabi::Event> for Event {
 
 impl Event {
 	/// Generates event log struct.
-	pub fn generate_log(&self) -> quote::Tokens {
-		let name = syn::Ident::from(self.name.to_camel_case());
+	pub fn generate_log(&self) -> TokenStream {
+		let name = syn::Ident::new(&self.name.to_camel_case(), Span::call_site());
 		let log_fields = &self.log_fields;
 
 		quote! {
@@ -135,10 +137,10 @@ impl Event {
 	}
 
 	/// Generates rust interface for contract's event.
-	pub fn generate_event(&self) -> quote::Tokens {
+	pub fn generate_event(&self) -> TokenStream {
 		let name_as_string = &self.name.to_camel_case();
-		let name = syn::Ident::from(self.name.to_snake_case());
-		let camel_name = syn::Ident::from(self.name.to_camel_case());
+		let name = syn::Ident::new(&self.name.to_snake_case(), Span::call_site());
+		let camel_name = syn::Ident::new(&self.name.to_camel_case(), Span::call_site());
 		let recreate_inputs_quote = &self.recreate_inputs_quote;
 		let anonymous = &self.anonymous;
 		let log_init = &self.log_init;
@@ -207,7 +209,7 @@ mod tests {
 			pub struct Hello {}
 		};
 
-		assert_eq!(expected, e.generate_log());
+		assert_eq!(expected.to_string(), e.generate_log().to_string());
 	}
 
 	#[test]
@@ -255,7 +257,7 @@ mod tests {
 			}
 		};
 
-		assert_eq!(expected, e.generate_event());
+		assert_eq!(expected.to_string(), e.generate_event().to_string());
 	}
 
 	#[test]
@@ -314,7 +316,7 @@ mod tests {
 			}
 		};
 
-		assert_eq!(expected, e.generate_event());
+		assert_eq!(expected.to_string(), e.generate_event().to_string());
 	}
 
 	#[test]
@@ -338,7 +340,7 @@ mod tests {
 			}
 		};
 
-		assert_eq!(expected, e.generate_log());
+		assert_eq!(expected.to_string(), e.generate_log().to_string());
 	}
 
 	#[test]
@@ -372,6 +374,6 @@ mod tests {
 			}
 		};
 
-		assert_eq!(expected, e.generate_log());
+		assert_eq!(expected.to_string(), e.generate_log().to_string());
 	}
 }

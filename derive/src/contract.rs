@@ -1,4 +1,5 @@
-use {quote, ethabi};
+use ethabi;
+use proc_macro2::TokenStream;
 use constructor::Constructor;
 use function::Function;
 use event::Event;
@@ -22,7 +23,7 @@ impl<'a> From<&'a ethabi::Contract> for Contract {
 
 impl Contract {
 	/// Generates rust interface for a contract.
-	pub fn generate(&self) -> quote::Tokens {
+	pub fn generate(&self) -> TokenStream {
 		let constructor = self.constructor.as_ref().map(Constructor::generate);
 		let functions: Vec<_> = self.functions.iter().map(Function::generate).collect();
 		let events: Vec<_> = self.events.iter().map(Event::generate_event).collect();
@@ -92,6 +93,6 @@ mod test {
 			}
 		};
 
-		assert_eq!(expected, c.generate());
+		assert_eq!(expected.to_string(), c.generate().to_string());
 	}
 }
