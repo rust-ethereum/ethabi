@@ -1,6 +1,7 @@
 #![recursion_limit="256"]
 
 extern crate proc_macro;
+extern crate proc_macro2;
 extern crate syn;
 #[macro_use]
 extern crate quote;
@@ -14,20 +15,20 @@ mod function;
 
 use std::{env, fs};
 use std::path::PathBuf;
-use proc_macro::TokenStream;
 use heck::SnakeCase;
+use syn::export::Span;
 use ethabi::{Result, ResultExt, Contract, Param, ParamType};
 
 const ERROR_MSG: &'static str = "`derive(EthabiContract)` failed";
 
 #[proc_macro_derive(EthabiContract, attributes(ethabi_contract_options))]
-pub fn ethabi_derive(input: TokenStream) -> TokenStream {
+pub fn ethabi_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 	let ast = syn::parse(input).expect(ERROR_MSG);
 	let gen = impl_ethabi_derive(&ast).expect(ERROR_MSG);
 	gen.into()
 }
 
-fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
+fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<proc_macro2::TokenStream> {
 	let options = get_options(&ast.attrs, "ethabi_contract_options")?;
 	let path = get_option(&options, "path")?;
 	let normalized_path = normalize_path(&path)?;
@@ -79,7 +80,7 @@ fn normalize_path(relative_path: &str) -> Result<PathBuf> {
 	Ok(path)
 }
 
-fn to_syntax_string(param_type: &ethabi::ParamType) -> quote::Tokens {
+fn to_syntax_string(param_type: &ethabi::ParamType) -> proc_macro2::TokenStream {
 	match *param_type {
 		ParamType::Address => quote! { ethabi::ParamType::Address },
 		ParamType::Bytes => quote! { ethabi::ParamType::Bytes },
@@ -99,7 +100,7 @@ fn to_syntax_string(param_type: &ethabi::ParamType) -> quote::Tokens {
 	}
 }
 
-fn to_ethabi_param_vec<'a, P: 'a>(params: P) -> quote::Tokens
+fn to_ethabi_param_vec<'a, P: 'a>(params: P) -> proc_macro2::TokenStream
 	where P: IntoIterator<Item = &'a Param>
 {
 	let p = params.into_iter().map(|x| {
@@ -116,7 +117,7 @@ fn to_ethabi_param_vec<'a, P: 'a>(params: P) -> quote::Tokens
 	quote! { vec![ #(#p),* ] }
 }
 
-fn rust_type(input: &ParamType) -> quote::Tokens {
+fn rust_type(input: &ParamType) -> proc_macro2::TokenStream {
 	match *input {
 		ParamType::Address => quote! { ethabi::Address },
 		ParamType::Bytes => quote! { ethabi::Bytes },
@@ -137,9 +138,9 @@ fn rust_type(input: &ParamType) -> quote::Tokens {
 	}
 }
 
-fn template_param_type(input: &ParamType, index: usize) -> quote::Tokens {
-	let t_ident = syn::Ident::from(format!("T{}", index));
-	let u_ident = syn::Ident::from(format!("U{}", index));
+fn template_param_type(input: &ParamType, index: usize) -> proc_macro2::TokenStream {
+	let t_ident = syn::Ident::new(&format!("T{}", index), Span::call_site());
+	let u_ident = syn::Ident::new(&format!("U{}", index), Span::call_site());
 	match *input {
 		ParamType::Address => quote! { #t_ident: Into<ethabi::Address> },
 		ParamType::Bytes => quote! { #t_ident: Into<ethabi::Bytes> },
@@ -164,7 +165,7 @@ fn template_param_type(input: &ParamType, index: usize) -> quote::Tokens {
 	}
 }
 
-fn from_template_param(input: &ParamType, name: &syn::Ident) -> quote::Tokens {
+fn from_template_param(input: &ParamType, name: &syn::Ident) -> proc_macro2::TokenStream {
 	match *input {
 		ParamType::Array(_) => quote! { #name.into_iter().map(Into::into).collect::<Vec<_>>() },
 		ParamType::FixedArray(_, _) => quote! { (Box::new(#name.into()) as Box<[_]>).into_vec().into_iter().map(Into::into).collect::<Vec<_>>() },
@@ -172,7 +173,7 @@ fn from_template_param(input: &ParamType, name: &syn::Ident) -> quote::Tokens {
 	}
 }
 
-fn to_token(name: &quote::Tokens, kind: &ParamType) -> quote::Tokens {
+fn to_token(name: &proc_macro2::TokenStream, kind: &ParamType) -> proc_macro2::TokenStream {
 	match *kind {
 		ParamType::Address => quote! { ethabi::Token::Address(#name) },
 		ParamType::Bytes => quote! { ethabi::Token::Bytes(#name) },
@@ -206,7 +207,7 @@ fn to_token(name: &quote::Tokens, kind: &ParamType) -> quote::Tokens {
 	}
 }
 
-fn from_token(kind: &ParamType, token: &quote::Tokens) -> quote::Tokens {
+fn from_token(kind: &ParamType, token: &proc_macro2::TokenStream) -> proc_macro2::TokenStream {
 	match *kind {
 		ParamType::Address => quote! { #token.to_address().expect(INTERNAL_ERR) },
 		ParamType::Bytes => quote! { #token.to_bytes().expect(INTERNAL_ERR) },
@@ -262,20 +263,20 @@ fn input_names(inputs: &Vec<Param>) -> Vec<syn::Ident> {
 		.iter()
 		.enumerate()
 		.map(|(index, param)| if param.name.is_empty() {
-			syn::Ident::from(format!("param{}", index))
+			syn::Ident::new(&format!("param{}", index), Span::call_site())
 		} else {
-			rust_variable(&param.name).into()
+			syn::Ident::new(&rust_variable(&param.name), Span::call_site())
 		})
 		.collect()
 }
 
-fn get_template_names(kinds: &Vec<quote::Tokens>) -> Vec<syn::Ident> {
+fn get_template_names(kinds: &Vec<proc_macro2::TokenStream>) -> Vec<syn::Ident> {
 	kinds.iter().enumerate()
-		.map(|(index, _)| syn::Ident::from(format!("T{}", index)))
+		.map(|(index, _)| syn::Ident::new(&format!("T{}", index), Span::call_site()))
 		.collect()
 }
 
-fn get_output_kinds(outputs: &Vec<Param>) -> quote::Tokens {
+fn get_output_kinds(outputs: &Vec<Param>) -> proc_macro2::TokenStream {
 	match outputs.len() {
 		0 => quote! {()},
 		1 => {

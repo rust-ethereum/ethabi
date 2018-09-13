@@ -1,4 +1,5 @@
-use {quote, ethabi};
+use ethabi;
+use proc_macro2::TokenStream;
 
 use super::{
 	input_names, template_param_type, rust_type, get_template_names, to_token, from_template_param,
@@ -7,10 +8,10 @@ use super::{
 
 /// Structure used to generate contract's constructor interface.
 pub struct Constructor {
-	inputs_declarations: Vec<quote::Tokens>,
-	inputs_definitions: Vec<quote::Tokens>,
-	tokenize: Vec<quote::Tokens>,
-	recreate_inputs: quote::Tokens,
+	inputs_declarations: Vec<TokenStream>,
+	inputs_definitions: Vec<TokenStream>,
+	tokenize: Vec<TokenStream>,
+	recreate_inputs: TokenStream,
 }
 
 impl<'a> From<&'a ethabi::Constructor> for Constructor {
@@ -56,7 +57,7 @@ impl<'a> From<&'a ethabi::Constructor> for Constructor {
 
 impl Constructor {
 	/// Generates contract constructor interface.
-	pub fn generate(&self) -> quote::Tokens {
+	pub fn generate(&self) -> TokenStream {
 		let declarations = &self.inputs_declarations;
 		let definitions = &self.inputs_definitions;
 		let tokenize = &self.tokenize;
@@ -99,7 +100,7 @@ mod tests {
 			}
 		};
 
-		assert_eq!(expected, c.generate());
+		assert_eq!(expected.to_string(), c.generate().to_string());
 	}
 
 	#[test]
@@ -129,6 +130,6 @@ mod tests {
 			}
 		};
 
-		assert_eq!(expected, c.generate());
+		assert_eq!(expected.to_string(), c.generate().to_string());
 	}
 }
