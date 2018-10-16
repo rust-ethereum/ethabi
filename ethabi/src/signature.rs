@@ -29,7 +29,6 @@ fn fill_signature(name: &str, params: &[ParamType], result: &mut [u8]) {
 
 #[cfg(test)]
 mod tests {
-	use hex::FromHex;
 	use super::short_signature;
 	use {ParamType};
 

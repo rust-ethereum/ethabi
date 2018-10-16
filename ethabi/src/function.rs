@@ -53,7 +53,6 @@ impl Function {
 
 #[cfg(test)]
 mod tests {
-	use hex::FromHex;
 	use {Token, Param, Function, ParamType};
 
 	#[test]
