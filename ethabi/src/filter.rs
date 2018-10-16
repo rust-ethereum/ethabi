@@ -57,7 +57,7 @@ impl<T> Topic<T> {
 	}
 
 	/// Returns true if topic is empty (Topic::Any)
-	pub fn is_empty(&self) -> bool {
+	pub fn is_any(&self) -> bool {
 		match *self {
 			Topic::Any => true,
 			Topic::This(_) | Topic::OneOf(_) => false,
@@ -125,8 +125,13 @@ impl<T> ops::Index<usize> for Topic<T> {
 
 	fn index(&self, index: usize) -> &Self::Output {
 		match *self {
-			Topic::Any => panic!("Topic is empty"),
-			Topic::This(ref topic) => topic,
+			Topic::Any => panic!("Topic unavailable"),
+			Topic::This(ref topic) => {
+				if index != 0 {
+					panic!("Topic unavailable");
+				}
+				topic
+			},
 			Topic::OneOf(ref topics) => topics.index(index),
 		}
 	}
@@ -179,10 +184,10 @@ r#"["0x000000000000000000000000a94f5374fce5edbc8e2a8697c15331677e6ebf0b",null,["
 	}
 
 	#[test]
-	fn test_topic_is_empty() {
-		assert!((Topic::Any as Topic<u8>).is_empty());
-		assert!(!Topic::OneOf(vec![10u64, 20]).is_empty());
-		assert!(!Topic::This(10u64).is_empty());
+	fn test_topic_is_any() {
+		assert!((Topic::Any as Topic<u8>).is_any());
+		assert!(!Topic::OneOf(vec![10u64, 20]).is_any());
+		assert!(!Topic::This(10u64).is_any());
 	}
 
 	#[test]
@@ -193,8 +198,14 @@ r#"["0x000000000000000000000000a94f5374fce5edbc8e2a8697c15331677e6ebf0b",null,["
 	}
 
 	#[test]
-	#[should_panic(expected = "Topic is empty")]
+	#[should_panic(expected = "Topic unavailable")]
 	fn test_topic_index_panic() {
 		let _ = (Topic::Any as Topic<u8>)[0];
+	}
+
+	#[test]
+	#[should_panic(expected = "Topic unavailable")]
+	fn test_topic_index_panic2() {
+		assert_eq!(Topic::This(10u64)[1], 10);
 	}
 }
