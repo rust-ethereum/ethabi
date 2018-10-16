@@ -1,6 +1,6 @@
 [package]
 name = "ethabi"
-version = "6.0.1"
+version = "6.1.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 homepage = "https://github.com/paritytech/ethabi"
 license = "MIT"
