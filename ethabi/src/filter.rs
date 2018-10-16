@@ -1,3 +1,4 @@
+use std::ops;
 use serde::{Serialize, Serializer};
 use serde_json::Value;
 use hex::ToHex;
@@ -52,6 +53,14 @@ impl<T> Topic<T> {
 			Topic::Any => Topic::Any,
 			Topic::OneOf(topics) => Topic::OneOf(topics.into_iter().map(f).collect()),
 			Topic::This(topic) => Topic::This(f(topic)),
+		}
+	}
+
+	/// Returns true if topic is empty (Topic::Any)
+	pub fn is_any(&self) -> bool {
+		match *self {
+			Topic::Any => true,
+			Topic::This(_) | Topic::OneOf(_) => false,
 		}
 	}
 }
@@ -111,6 +120,23 @@ impl Serialize for Topic<Hash> {
 	}
 }
 
+impl<T> ops::Index<usize> for Topic<T> {
+	type Output = T;
+
+	fn index(&self, index: usize) -> &Self::Output {
+		match *self {
+			Topic::Any => panic!("Topic unavailable"),
+			Topic::This(ref topic) => {
+				if index != 0 {
+					panic!("Topic unavailable");
+				}
+				topic
+			},
+			Topic::OneOf(ref topics) => topics.index(index),
+		}
+	}
+}
+
 #[cfg(test)]
 mod tests {
 	use serde_json;
@@ -155,5 +181,31 @@ r#"["0x000000000000000000000000a94f5374fce5edbc8e2a8697c15331677e6ebf0b",null,["
 		let expected: Vec<u64> = vec![10, 20];
 		let is: Vec<u64> = Topic::OneOf(vec![10u64, 20]).into();
 		assert_eq!(expected, is);
+	}
+
+	#[test]
+	fn test_topic_is_any() {
+		assert!((Topic::Any as Topic<u8>).is_any());
+		assert!(!Topic::OneOf(vec![10u64, 20]).is_any());
+		assert!(!Topic::This(10u64).is_any());
+	}
+
+	#[test]
+	fn test_topic_index() {
+		assert_eq!(Topic::OneOf(vec![10u64, 20])[0], 10);
+		assert_eq!(Topic::OneOf(vec![10u64, 20])[1], 20);
+		assert_eq!(Topic::This(10u64)[0], 10);
+	}
+
+	#[test]
+	#[should_panic(expected = "Topic unavailable")]
+	fn test_topic_index_panic() {
+		let _ = (Topic::Any as Topic<u8>)[0];
+	}
+
+	#[test]
+	#[should_panic(expected = "Topic unavailable")]
+	fn test_topic_index_panic2() {
+		assert_eq!(Topic::This(10u64)[1], 10);
 	}
 }
