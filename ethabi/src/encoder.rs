@@ -167,7 +167,6 @@ fn encode_token(token: &Token) -> Mediate {
 
 #[cfg(test)]
 mod tests {
-	use hex::FromHex;
 	use util::pad_u32;
 	use {Token, encode};
 
