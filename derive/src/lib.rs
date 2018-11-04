@@ -19,7 +19,7 @@ use heck::SnakeCase;
 use syn::export::Span;
 use ethabi::{Result, ResultExt, Contract, Param, ParamType};
 
-const ERROR_MSG: &'static str = "`derive(EthabiContract)` failed";
+const ERROR_MSG: &str = "`derive(EthabiContract)` failed";
 
 #[proc_macro_derive(EthabiContract, attributes(ethabi_contract_options))]
 pub fn ethabi_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
@@ -258,7 +258,7 @@ fn from_token(kind: &ParamType, token: &proc_macro2::TokenStream) -> proc_macro2
 	}
 }
 
-fn input_names(inputs: &Vec<Param>) -> Vec<syn::Ident> {
+fn input_names(inputs: &[Param]) -> Vec<syn::Ident> {
 	inputs
 		.iter()
 		.enumerate()
@@ -270,13 +270,13 @@ fn input_names(inputs: &Vec<Param>) -> Vec<syn::Ident> {
 		.collect()
 }
 
-fn get_template_names(kinds: &Vec<proc_macro2::TokenStream>) -> Vec<syn::Ident> {
+fn get_template_names(kinds: &[proc_macro2::TokenStream]) -> Vec<syn::Ident> {
 	kinds.iter().enumerate()
 		.map(|(index, _)| syn::Ident::new(&format!("T{}", index), Span::call_site()))
 		.collect()
 }
 
-fn get_output_kinds(outputs: &Vec<Param>) -> proc_macro2::TokenStream {
+fn get_output_kinds(outputs: &[Param]) -> proc_macro2::TokenStream {
 	match outputs.len() {
 		0 => quote! {()},
 		1 => {

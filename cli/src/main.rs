@@ -18,7 +18,7 @@ use ethabi::token::{Token, Tokenizer, StrictTokenizer, LenientTokenizer};
 use ethabi::{encode, decode, Contract, Function, Event, Hash};
 use error::{Error, ResultExt};
 
-pub const ETHABI: &'static str = r#"
+pub const ETHABI: &str = r#"
 Ethereum ABI coder.
   Copyright 2016-2017 Parity Technologies (UK) Limited
 
@@ -64,11 +64,11 @@ fn main() {
 
 	match result {
 		Ok(s) => println!("{}", s),
-		Err(error) => print_err(error),
+		Err(error) => print_err(&error),
 	}
 }
 
-fn print_err(err: Error) {
+fn print_err(err: &Error) {
 	let message = err.iter()
 		.map(|e| e.to_string())
 		.filter(|e| !e.is_empty())

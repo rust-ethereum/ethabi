@@ -37,7 +37,7 @@ fn as_bool(slice: &[u8; 32]) -> Result<bool, Error> {
 /// Decodes ABI compliant vector of bytes into vector of tokens described by types param.
 pub fn decode(types: &[ParamType], data: &[u8]) -> Result<Vec<Token>, Error> {
     let is_empty_bytes_valid_encoding = types.iter().all(|t| t.is_empty_bytes_valid_encoding());
-    if !is_empty_bytes_valid_encoding && data.len() == 0 {
+    if !is_empty_bytes_valid_encoding && data.is_empty() {
         bail!("please ensure the contract and method you're calling exist! failed to decode empty bytes. if you're using jsonrpc this is likely due to jsonrpc returning `0x` in case contract or method don't exist");
     }
 	let slices = slice_data(data)?;
@@ -60,7 +60,7 @@ fn take_bytes(slices: &[[u8; 32]], position: usize, len: usize) -> Result<BytesT
 
 	let mut bytes_slices = vec![];
 	for i in 0..slices_len {
-		let slice = try!(peek(slices, position + i)).clone();
+		let slice = try!(peek(slices, position + i));
 		bytes_slices.push(slice);
 	}
 
@@ -70,7 +70,7 @@ fn take_bytes(slices: &[[u8; 32]], position: usize, len: usize) -> Result<BytesT
 		.collect();
 
 	let taken = BytesTaken {
-		bytes: bytes,
+		bytes,
 		new_offset: position + slices_len,
 	};
 
@@ -199,7 +199,7 @@ fn decode_param(param: &ParamType, slices: &[[u8; 32]], offset: usize) -> Result
 
 			let result = DecodeResult {
 				token: Token::FixedArray(tokens),
-				new_offset: new_offset,
+				new_offset,
 			};
 
 			Ok(result)

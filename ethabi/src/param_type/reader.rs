@@ -19,7 +19,7 @@ impl Reader {
 				.collect();
 
 			let count = name.chars().count();
-			if num.len() == 0 {
+			if num.is_empty() {
 				// we already know it's a dynamic array!
 				let subtype = try!(Reader::read(&name[..count - 2]));
 				return Ok(ParamType::Array(Box::new(subtype)));
