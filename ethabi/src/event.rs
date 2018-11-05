@@ -161,7 +161,7 @@ impl Event {
 			.into_iter()
 			.map(|name| LogParam {
 				name: name.clone(),
-				value: named_tokens.get(&name).unwrap().clone()
+				value: named_tokens[&name].clone()
 			})
 			.collect();
 

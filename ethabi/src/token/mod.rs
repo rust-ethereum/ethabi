@@ -37,7 +37,7 @@ pub trait Tokenizer {
 
 	/// Tries to parse a value as a vector of tokens.
 	fn tokenize_array(value: &str, param: &ParamType) -> Result<Vec<Token>, Error> {
-		if Some('[') != value.chars().next() || Some(']') != value.chars().last() {
+		if !value.starts_with('[') || !value.ends_with(']') {
 			return Err(ErrorKind::InvalidData.into());
 		}
 
