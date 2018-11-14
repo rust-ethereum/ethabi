@@ -1,24 +1,5 @@
 //! Utils used by different modules.
 
-use {Error, ErrorKind};
-
-/// Convers vector of bytes with len equal n * 32, to a vector of slices.
-pub fn slice_data(data: &[u8]) -> Result<Vec<[u8; 32]>, Error> {
-	if data.len() % 32 != 0 {
-		return Err(ErrorKind::InvalidData.into());
-	}
-
-	let times = data.len() / 32;
-	let mut result = Vec::with_capacity(times);
-	for i in 0..times {
-		let mut slice = [0u8; 32];
-		let offset = 32 * i;
-		slice.copy_from_slice(&data[offset..offset + 32]);
-		result.push(slice);
-	}
-	Ok(result)
-}
-
 /// Converts u32 to right aligned array of 32 bytes.
 pub fn pad_u32(value: u32) -> [u8; 32] {
 	let mut padded = [0u8; 32];
