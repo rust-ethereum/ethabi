@@ -183,7 +183,7 @@ fn decode_param(param: &ParamType, data: &[u8], offset: usize) -> Result<DecodeR
 
 #[cfg(test)]
 mod tests {
-	use {decode, ParamType, Token};
+	use {decode, ParamType, Token, Uint};
 
 	#[test]
 	fn decode_address() {
@@ -484,5 +484,45 @@ mod tests {
         assert!(decode(&[ParamType::FixedBytes(0)], &[]).is_ok());
         assert!(decode(&[ParamType::FixedArray(Box::new(ParamType::Bool), 0)], &[]).is_ok());
 	}
-}
 
+	#[test]
+	fn decode_data_with_size_that_is_not_a_multiple_of_32() {
+		let encoded = hex!(
+			"
+            0000000000000000000000000000000000000000000000000000000000000000
+            00000000000000000000000000000000000000000000000000000000000000a0
+            0000000000000000000000000000000000000000000000000000000000000152
+            0000000000000000000000000000000000000000000000000000000000000001
+            000000000000000000000000000000000000000000000000000000000054840d
+            0000000000000000000000000000000000000000000000000000000000000092
+            3132323033393637623533326130633134633938306235616566666231373034
+            3862646661656632633239336139353039663038656233633662306635663866
+            3039343265376239636337366361353163636132366365353436393230343438
+            6533303866646136383730623565326165313261323430396439343264653432
+            3831313350373230703330667073313678390000000000000000000000000000
+            0000000000000000000000000000000000103933633731376537633061363531
+            3761
+        "
+		);
+
+		assert_eq!(
+			decode(
+				&[
+					ParamType::Uint(256),
+					ParamType::String,
+					ParamType::String,
+					ParamType::Uint(256),
+					ParamType::Uint(256),
+				],
+				&encoded,
+			).unwrap(),
+			&[
+				Token::Uint(Uint::from(0)),
+				Token::String(String::from("12203967b532a0c14c980b5aeffb17048bdfaef2c293a9509f08eb3c6b0f5f8f0942e7b9cc76ca51cca26ce546920448e308fda6870b5e2ae12a2409d942de428113P720p30fps16x9")),
+				Token::String(String::from("93c717e7c0a6517a")),
+				Token::Uint(Uint::from(1)),
+				Token::Uint(Uint::from(5538829))
+			]
+		);
+	}
+}
