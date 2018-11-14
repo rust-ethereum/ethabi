@@ -446,6 +446,31 @@ test_encode_decode! {
 		0000000000000000000000002222222222222222222222222222222222222222"
 }
 test_encode_decode! {
+	name: fixed_array_of_strings,
+	types: [ParamType::FixedArray(Box::new(ParamType::String), 2)],
+	tokens: {
+		let s1 = Token::String("foo".into());
+		let s2 = Token::String("bar".into());
+		[Token::FixedArray(vec![s1, s2])]
+	},
+	data: "
+		0000000000000000000000000000000000000000000000000000000000000020
+		0000000000000000000000000000000000000000000000000000000000000040
+		0000000000000000000000000000000000000000000000000000000000000080
+		0000000000000000000000000000000000000000000000000000000000000003
+		666f6f0000000000000000000000000000000000000000000000000000000000
+		0000000000000000000000000000000000000000000000000000000000000003
+		6261720000000000000000000000000000000000000000000000000000000000"
+	// `data` explained:
+	// line 1 at 0x00 =   0: tail offset for the array
+	// line 2 at 0x20 =  32: offset of string 1
+	// line 3 at 0x40 =  64: offset of string 2
+	// line 4 at 0x60 =  96: length of string 1
+	// line 5 at 0x80 = 128: value  of string 1
+	// line 6 at 0xa0 = 160: length of string 2
+	// line 7 at 0xc0 = 192: value  of string 2
+}
+test_encode_decode! {
 	name: fixed_array_of_fixed_arrays,
 	types: [
 		ParamType::FixedArray(
