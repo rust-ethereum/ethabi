@@ -110,7 +110,7 @@ fn decode_param(param: &ParamType, data: &[u8], offset: usize) -> Result<DecodeR
 			let b = as_bool(&peek_32_bytes(data, offset)?)?;
 			let result = DecodeResult {
 				token: Token::Bool(b),
-				new_offset: offset + 1,
+				new_offset: offset + 32,
 			};
 			Ok(result)
 		}
