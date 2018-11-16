@@ -78,6 +78,10 @@ pub trait Tokenizer {
 			}
 		}
 
+		if ignore {
+			return Err(ErrorKind::InvalidData.into());
+		}
+
 		Ok(result)
 	}
 
