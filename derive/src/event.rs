@@ -154,7 +154,7 @@ impl Event {
 				use ethabi;
 				use super::INTERNAL_ERR;
 
-				fn event() -> ethabi::Event {
+				pub fn event() -> ethabi::Event {
 					ethabi::Event {
 						name: #name_as_string.into(),
 						inputs: #recreate_inputs_quote,
@@ -227,7 +227,7 @@ mod tests {
 				use ethabi;
 				use super::INTERNAL_ERR;
 
-				fn event() -> ethabi::Event {
+				pub fn event() -> ethabi::Event {
 					ethabi::Event {
 						name: "Hello".into(),
 						inputs: vec![],
@@ -279,7 +279,7 @@ mod tests {
 				use ethabi;
 				use super::INTERNAL_ERR;
 
-				fn event() -> ethabi::Event {
+				pub fn event() -> ethabi::Event {
 					ethabi::Event {
 						name: "One".into(),
 						inputs: vec![ethabi::EventParam {
