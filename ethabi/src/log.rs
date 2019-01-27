@@ -18,7 +18,7 @@ pub trait ParseLog {
 }
 
 /// Ethereum log.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct RawLog {
 	/// Indexed event params are represented as log topics.
 	pub topics: Vec<Hash>,
@@ -36,7 +36,7 @@ impl From<(Vec<Hash>, Bytes)> for RawLog {
 }
 
 /// Decoded log param.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct LogParam {
 	/// Decoded log name.
 	pub name: String,
@@ -45,7 +45,7 @@ pub struct LogParam {
 }
 
 /// Decoded log.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Log {
 	/// Log params.
 	pub params: Vec<LogParam>,
