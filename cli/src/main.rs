@@ -17,6 +17,7 @@ use ethabi::param_type::{ParamType, Reader};
 use ethabi::token::{Token, Tokenizer, StrictTokenizer, LenientTokenizer};
 use ethabi::{encode, decode, Contract, Function, Event, Hash};
 use error::{Error, ResultExt};
+use std::str::FromStr;
 
 pub const ETHABI: &str = r#"
 Ethereum ABI coder.
@@ -27,7 +28,7 @@ Usage:
     ethabi encode params [-v <type> <param>]... [-l | --lenient]
     ethabi decode function <abi-path> <function-name> <data>
     ethabi decode params [-t <type>]... <data>
-    ethabi decode log <abi-path> <event-name> [-l <topic>]... <data>
+    ethabi decode log <abi-path> <event-signature> [-l <topic>]... <data>
     ethabi -h | --help
 
 Options:
@@ -51,7 +52,7 @@ struct Args {
 	cmd_log: bool,
 	arg_abi_path: String,
 	arg_function_name: String,
-	arg_event_name: String,
+	arg_event_signature: String,
 	arg_param: Vec<String>,
 	arg_type: Vec<String>,
 	arg_data: String,
@@ -89,7 +90,7 @@ fn execute<S, I>(command: I) -> Result<String, Error> where I: IntoIterator<Item
 	} else if args.cmd_decode && args.cmd_params {
 		decode_params(&args.arg_type, &args.arg_data)
 	} else if args.cmd_decode && args.cmd_log {
-		decode_log(&args.arg_abi_path, &args.arg_event_name, &args.arg_topic, &args.arg_data)
+		decode_log(&args.arg_abi_path, &Hash::from_str(&args.arg_event_signature)?, &args.arg_topic, &args.arg_data)
 	} else {
 		unreachable!()
 	}
@@ -102,10 +103,10 @@ fn load_function(path: &str, function: &str) -> Result<Function, Error> {
 	Ok(function)
 }
 
-fn load_event(path: &str, event: &str) -> Result<Event, Error> {
+fn load_event(path: &str, signature: &Hash) -> Result<Event, Error> {
 	let file = File::open(path)?;
 	let contract = Contract::load(file)?;
-	let event = contract.event(event)?.clone();
+	let event = contract.event(signature)?.clone();
 	Ok(event)
 }
 
@@ -187,8 +188,8 @@ fn decode_params(types: &[String], data: &str) -> Result<String, Error> {
 	Ok(result)
 }
 
-fn decode_log(path: &str, event: &str, topics: &[String], data: &str) -> Result<String, Error> {
-	let event = load_event(path, event)?;
+fn decode_log(path: &str, signature: &Hash, topics: &[String], data: &str) -> Result<String, Error> {
+	let event = load_event(path, signature)?;
 	let topics: Vec<Hash> = topics.into_iter()
 		.map(|t| t.parse() )
 		.collect::<Result<_, _>>()?;
@@ -284,7 +285,7 @@ bool false";
 
 	#[test]
 	fn log_decode() {
-		let command = "ethabi decode log ../res/event.abi Event -l 0000000000000000000000000000000000000000000000000000000000000001 0000000000000000000000004444444444444444444444444444444444444444".split(" ");
+		let command = "ethabi decode log ../res/event.abi e96bdb08c10cfe7a5696e60723d445d4b47f319cac1dab0ed62c9e358f440877 -l 0000000000000000000000000000000000000000000000000000000000000001 0000000000000000000000004444444444444444444444444444444444444444".split(" ");
 		let expected =
 "a true
 b 4444444444444444444444444444444444444444";

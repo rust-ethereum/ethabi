@@ -6,6 +6,7 @@ use serde::de::{Visitor, SeqAccess};
 use serde_json;
 use operation::Operation;
 use {errors, ErrorKind, Event, Constructor, Function};
+use Hash;
 
 /// API building calls to contracts ABI.
 #[derive(Clone, Debug, PartialEq)]
@@ -14,8 +15,8 @@ pub struct Contract {
 	pub constructor: Option<Constructor>,
 	/// Contract functions.
 	pub functions: HashMap<String, Function>,
-	/// Contract events.
-	pub events: HashMap<String, Event>,
+	/// Contract events, maps signature to event.
+	pub events: HashMap<Hash, Event>,
 	/// Contract has fallback function.
 	pub fallback: bool,
 }
@@ -52,7 +53,7 @@ impl<'a> Visitor<'a> for ContractVisitor {
 					result.functions.insert(func.name.clone(), func);
 				},
 				Operation::Event(event) => {
-					result.events.insert(event.name.clone(), event);
+					result.events.insert(event.signature(), event);
 				},
 				Operation::Fallback => {
 					result.fallback = true;
@@ -81,8 +82,9 @@ impl Contract {
 	}
 
 	/// Creates event decoder.
-	pub fn event(&self, name: &str) -> errors::Result<&Event> {
-		self.events.get(name).ok_or_else(|| ErrorKind::InvalidName(name.to_owned()).into())
+	pub fn event(&self, signature: &Hash) -> errors::Result<&Event> {
+		self.events.get(signature)
+					.ok_or_else(|| ErrorKind::InvalidSignature(signature.clone()).into())
 	}
 
 	/// Iterate over all functions of the contract in arbitrary order.
@@ -113,7 +115,7 @@ impl<'a> Iterator for Functions<'a> {
 }
 
 /// Contract events interator.
-pub struct Events<'a>(Values<'a, String, Event>);
+pub struct Events<'a>(Values<'a, Hash, Event>);
 
 impl<'a> Iterator for Events<'a> {
 	type Item = &'a Event;

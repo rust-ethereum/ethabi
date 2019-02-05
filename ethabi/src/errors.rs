@@ -3,6 +3,7 @@
 
 use std::{num, string};
 use {serde_json, hex};
+use Hash;
 
 error_chain! {
 	foreign_links {
@@ -21,6 +22,11 @@ error_chain! {
 		InvalidData {
 			description("Invalid data"),
 			display("Invalid data"),
+		}
+
+		InvalidSignature(signature: Hash) {
+			description("Invalid signature"),
+			display("Invalid signature `{}`", signature),
 		}
 	}
 }
