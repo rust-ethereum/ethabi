@@ -6,6 +6,7 @@ extern crate serde_derive;
 #[macro_use]
 extern crate error_chain;
 extern crate ethabi;
+extern crate tiny_keccak;
 
 mod error;
 
@@ -17,7 +18,7 @@ use ethabi::param_type::{ParamType, Reader};
 use ethabi::token::{Token, Tokenizer, StrictTokenizer, LenientTokenizer};
 use ethabi::{encode, decode, Contract, Function, Event, Hash};
 use error::{Error, ResultExt};
-use std::str::FromStr;
+use tiny_keccak::Keccak;
 
 pub const ETHABI: &str = r#"
 Ethereum ABI coder.
@@ -90,7 +91,7 @@ fn execute<S, I>(command: I) -> Result<String, Error> where I: IntoIterator<Item
 	} else if args.cmd_decode && args.cmd_params {
 		decode_params(&args.arg_type, &args.arg_data)
 	} else if args.cmd_decode && args.cmd_log {
-		decode_log(&args.arg_abi_path, &Hash::from_str(&args.arg_event_signature)?, &args.arg_topic, &args.arg_data)
+		decode_log(&args.arg_abi_path, &hash_signature(&args.arg_event_signature), &args.arg_topic, &args.arg_data)
 	} else {
 		unreachable!()
 	}
@@ -204,6 +205,19 @@ fn decode_log(path: &str, signature: &Hash, topics: &[String], data: &str) -> Re
 	Ok(result)
 }
 
+
+fn hash_signature(sig: &str) -> Hash {
+    let mut result = [0u8; 32];
+    let data = sig.replace(" ", "").into_bytes();
+    let mut sponge = Keccak::new_keccak256();
+    sponge.update(&data);
+    sponge.finalize(&mut result);
+
+    // This was deprecated but the replacement seems to not be availible.
+    #[allow(deprecated)]
+    Hash::from_slice(&result)
+}
+
 #[cfg(test)]
 mod tests {
 	use super::execute;
@@ -285,7 +299,7 @@ bool false";
 
 	#[test]
 	fn log_decode() {
-		let command = "ethabi decode log ../res/event.abi e96bdb08c10cfe7a5696e60723d445d4b47f319cac1dab0ed62c9e358f440877 -l 0000000000000000000000000000000000000000000000000000000000000001 0000000000000000000000004444444444444444444444444444444444444444".split(" ");
+		let command = "ethabi decode log ../res/event.abi Event(bool,address) -l 0000000000000000000000000000000000000000000000000000000000000001 0000000000000000000000004444444444444444444444444444444444444444".split(" ");
 		let expected =
 "a true
 b 4444444444444444444444444444444444444444";
