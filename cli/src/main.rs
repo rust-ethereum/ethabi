@@ -213,7 +213,7 @@ fn hash_signature(sig: &str) -> Hash {
     sponge.update(&data);
     sponge.finalize(&mut result);
 
-    // This was deprecated but the replacement seems to not be availible.
+    // This was deprecated but the replacement seems to not be available.
     #[allow(deprecated)]
     Hash::from_slice(&result)
 }
