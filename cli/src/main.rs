@@ -17,7 +17,7 @@ use hex::{ToHex, FromHex};
 use ethabi::param_type::{ParamType, Reader};
 use ethabi::token::{Token, Tokenizer, StrictTokenizer, LenientTokenizer};
 use ethabi::{encode, decode, Contract, Function, Event, Hash};
-use error::{Error, ResultExt};
+use error::{Error, ErrorKind, ResultExt};
 use tiny_keccak::Keccak;
 
 pub const ETHABI: &str = r#"
@@ -29,7 +29,7 @@ Usage:
     ethabi encode params [-v <type> <param>]... [-l | --lenient]
     ethabi decode function <abi-path> <function-name> <data>
     ethabi decode params [-t <type>]... <data>
-    ethabi decode log <abi-path> <event-signature> [-l <topic>]... <data>
+    ethabi decode log <abi-path> <event-name-or-signature> [-l <topic>]... <data>
     ethabi -h | --help
 
 Options:
@@ -53,7 +53,7 @@ struct Args {
 	cmd_log: bool,
 	arg_abi_path: String,
 	arg_function_name: String,
-	arg_event_signature: String,
+	arg_event_name_or_signature: String,
 	arg_param: Vec<String>,
 	arg_type: Vec<String>,
 	arg_data: String,
@@ -91,7 +91,7 @@ fn execute<S, I>(command: I) -> Result<String, Error> where I: IntoIterator<Item
 	} else if args.cmd_decode && args.cmd_params {
 		decode_params(&args.arg_type, &args.arg_data)
 	} else if args.cmd_decode && args.cmd_log {
-		decode_log(&args.arg_abi_path, &hash_signature(&args.arg_event_signature), &args.arg_topic, &args.arg_data)
+		decode_log(&args.arg_abi_path, &args.arg_event_name_or_signature, &args.arg_topic, &args.arg_data)
 	} else {
 		unreachable!()
 	}
@@ -104,11 +104,31 @@ fn load_function(path: &str, function: &str) -> Result<Function, Error> {
 	Ok(function)
 }
 
-fn load_event(path: &str, signature: &Hash) -> Result<Event, Error> {
+fn load_event(path: &str, name_or_signature: &str) -> Result<Event, Error> {
 	let file = File::open(path)?;
 	let contract = Contract::load(file)?;
-	let event = contract.event(signature)?.clone();
-	Ok(event)
+	let params_start = name_or_signature.find('(');
+
+	match params_start {
+		// It's a signature.
+		Some(params_start) => {
+			let name = &name_or_signature[..params_start];
+			let signature = hash_signature(name_or_signature);
+			contract.event(name)?.iter().find(|event|
+				event.signature() == signature
+			).cloned().ok_or(ErrorKind::InvalidSignature(signature).into())
+		}
+
+		// It's a name.
+		None => {
+			let events = contract.event(name_or_signature)?;
+			match events.len() {
+				0 => unreachable!(),
+				1 => Ok(events[0].clone()),
+				_ => Err(ErrorKind::AmbiguousEventName(name_or_signature.to_owned()).into())
+			}
+		}
+	}
 }
 
 fn parse_tokens(params: &[(ParamType, &str)], lenient: bool) -> Result<Vec<Token>, Error> {
@@ -189,8 +209,8 @@ fn decode_params(types: &[String], data: &str) -> Result<String, Error> {
 	Ok(result)
 }
 
-fn decode_log(path: &str, signature: &Hash, topics: &[String], data: &str) -> Result<String, Error> {
-	let event = load_event(path, signature)?;
+fn decode_log(path: &str, name_or_signature: &str, topics: &[String], data: &str) -> Result<String, Error> {
+	let event = load_event(path, name_or_signature)?;
 	let topics: Vec<Hash> = topics.into_iter()
 		.map(|t| t.parse() )
 		.collect::<Result<_, _>>()?;
@@ -299,6 +319,15 @@ bool false";
 
 	#[test]
 	fn log_decode() {
+		let command = "ethabi decode log ../res/event.abi Event -l 0000000000000000000000000000000000000000000000000000000000000001 0000000000000000000000004444444444444444444444444444444444444444".split(" ");
+		let expected =
+"a true
+b 4444444444444444444444444444444444444444";
+		assert_eq!(execute(command).unwrap(), expected);
+	}
+
+	#[test]
+	fn log_decode_signature() {
 		let command = "ethabi decode log ../res/event.abi Event(bool,address) -l 0000000000000000000000000000000000000000000000000000000000000001 0000000000000000000000004444444444444444444444444444444444444444".split(" ");
 		let expected =
 "a true

@@ -1,12 +1,12 @@
 use std::{io, fmt};
 use std::collections::HashMap;
 use std::collections::hash_map::Values;
+use std::iter::Flatten;
 use serde::{Deserialize, Deserializer};
 use serde::de::{Visitor, SeqAccess};
 use serde_json;
 use operation::Operation;
 use {errors, ErrorKind, Event, Constructor, Function};
-use Hash;
 
 /// API building calls to contracts ABI.
 #[derive(Clone, Debug, PartialEq)]
@@ -16,7 +16,7 @@ pub struct Contract {
 	/// Contract functions.
 	pub functions: HashMap<String, Function>,
 	/// Contract events, maps signature to event.
-	pub events: HashMap<Hash, Event>,
+	pub events: HashMap<String, Vec<Event>>,
 	/// Contract has fallback function.
 	pub fallback: bool,
 }
@@ -53,7 +53,7 @@ impl<'a> Visitor<'a> for ContractVisitor {
 					result.functions.insert(func.name.clone(), func);
 				},
 				Operation::Event(event) => {
-					result.events.insert(event.signature(), event);
+					result.events.entry(event.name.clone()).or_default().push(event);
 				},
 				Operation::Fallback => {
 					result.fallback = true;
@@ -81,10 +81,10 @@ impl Contract {
 		self.functions.get(name).ok_or_else(|| ErrorKind::InvalidName(name.to_owned()).into())
 	}
 
-	/// Creates event decoder.
-	pub fn event(&self, signature: &Hash) -> errors::Result<&Event> {
-		self.events.get(signature)
-					.ok_or_else(|| ErrorKind::InvalidSignature(signature.clone()).into())
+	/// Get all contract events named `name`.
+	pub fn event(&self, name: &str) -> errors::Result<&Vec<Event>> {
+		self.events.get(name)
+					.ok_or_else(|| ErrorKind::InvalidName(name.to_owned()).into())
 	}
 
 	/// Iterate over all functions of the contract in arbitrary order.
@@ -94,7 +94,7 @@ impl Contract {
 
 	/// Iterate over all events of the contract in arbitrary order.
 	pub fn events(&self) -> Events {
-		Events(self.events.values())
+		Events(self.events.values().flatten())
 	}
 
 	/// Returns true if contract has fallback
@@ -115,7 +115,7 @@ impl<'a> Iterator for Functions<'a> {
 }
 
 /// Contract events interator.
-pub struct Events<'a>(Values<'a, Hash, Event>);
+pub struct Events<'a>(Flatten<Values<'a, String, Vec<Event>>>);
 
 impl<'a> Iterator for Events<'a> {
 	type Item = &'a Event;
