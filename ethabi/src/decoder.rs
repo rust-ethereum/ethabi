@@ -525,4 +525,35 @@ mod tests {
 			]
 		);
 	}
+
+	#[test]
+	fn decode_after_fixed_bytes_with_less_than_32_bytes() {
+		let encoded = hex!("
+			0000000000000000000000008497afefdc5ac170a664a231f6efb25526ef813f
+			0000000000000000000000000000000000000000000000000000000000000000
+			0000000000000000000000000000000000000000000000000000000000000000
+			0000000000000000000000000000000000000000000000000000000000000080
+			000000000000000000000000000000000000000000000000000000000000000a
+			3078303030303030314600000000000000000000000000000000000000000000
+		");
+
+		assert_eq!(
+			decode(
+				&[
+					ParamType::Address,
+					ParamType::FixedBytes(32),
+					ParamType::FixedBytes(4),
+					ParamType::String,
+				],
+				&encoded,
+			)
+			.unwrap(),
+			&[
+				Token::Address(hex!("8497afefdc5ac170a664a231f6efb25526ef813f").into()),
+				Token::FixedBytes([0u8; 32].to_vec()),
+				Token::FixedBytes([0u8; 4].to_vec()),
+				Token::String("0x0000001F".into()),
+			]
+		);
+	}
 }
