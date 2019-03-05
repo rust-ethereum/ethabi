@@ -115,6 +115,8 @@ fn decode_param(param: &ParamType, data: &[u8], offset: usize) -> Result<DecodeR
 			Ok(result)
 		}
 		ParamType::FixedBytes(len) => {
+			// FixedBytes is anything from bytes1 to bytes32. These values
+			// are padded with trailing zeros to fill 32 bytes.
 			let bytes = take_bytes(data, offset, len)?;
 			let result = DecodeResult {
 				token: Token::FixedBytes(bytes),
