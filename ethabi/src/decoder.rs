@@ -118,7 +118,7 @@ fn decode_param(param: &ParamType, data: &[u8], offset: usize) -> Result<DecodeR
 			let bytes = take_bytes(data, offset, len)?;
 			let result = DecodeResult {
 				token: Token::FixedBytes(bytes),
-				new_offset: offset + len,
+				new_offset: offset + 32,
 			};
 			Ok(result)
 		}
