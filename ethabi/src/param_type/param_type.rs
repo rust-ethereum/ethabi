@@ -42,6 +42,15 @@ impl ParamType {
             _ => false,
         }
     }
+
+	/// returns whether this param type is dynamic
+	pub fn is_dynamic(&self) -> bool {
+		match self {
+			ParamType::Bytes | ParamType::String | ParamType::Array(_) => true,
+			ParamType::FixedArray(elem_type, _) => elem_type.is_dynamic(),
+			_ => false
+		}
+	}
 }
 
 #[cfg(test)]
@@ -58,7 +67,23 @@ mod tests {
 		assert_eq!(format!("{}", ParamType::Bool), "bool".to_owned());
 		assert_eq!(format!("{}", ParamType::String), "string".to_owned());
 		assert_eq!(format!("{}", ParamType::Array(Box::new(ParamType::Bool))), "bool[]".to_owned());
+		assert_eq!(format!("{}", ParamType::FixedArray(Box::new(ParamType::Uint(256)), 2)), "uint256[2]".to_owned());
 		assert_eq!(format!("{}", ParamType::FixedArray(Box::new(ParamType::String), 2)), "string[2]".to_owned());
 		assert_eq!(format!("{}", ParamType::FixedArray(Box::new(ParamType::Array(Box::new(ParamType::Bool))), 2)), "bool[][2]".to_owned());
+	}
+
+	#[test]
+	fn test_is_dynamic() {
+		assert_eq!(ParamType::Address.is_dynamic(), false);
+		assert_eq!(ParamType::Bytes.is_dynamic(), true);
+		assert_eq!(ParamType::FixedBytes(32).is_dynamic(), false);
+		assert_eq!(ParamType::Uint(256).is_dynamic(), false);
+		assert_eq!(ParamType::Int(64).is_dynamic(), false);
+		assert_eq!(ParamType::Bool.is_dynamic(), false);
+		assert_eq!(ParamType::String.is_dynamic(), true);
+		assert_eq!(ParamType::Array(Box::new(ParamType::Bool)).is_dynamic(), true);
+		assert_eq!(ParamType::FixedArray(Box::new(ParamType::Uint(256)), 2).is_dynamic(), false);
+		assert_eq!(ParamType::FixedArray(Box::new(ParamType::String), 2).is_dynamic(), true);
+		assert_eq!(ParamType::FixedArray(Box::new(ParamType::Array(Box::new(ParamType::Bool))), 2).is_dynamic(), true);
 	}
 }

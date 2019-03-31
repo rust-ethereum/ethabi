@@ -35,100 +35,91 @@ fn pad_fixed_bytes(bytes: &[u8]) -> Vec<Word> {
 enum Mediate {
 	Raw(Vec<Word>),
 	Prefixed(Vec<Word>),
-	FixedArray(Vec<Mediate>),
-	Array(Vec<Mediate>),
+	PrefixedArray(Vec<Mediate>),
+	PrefixedArrayWithLength(Vec<Mediate>),
 }
 
 impl Mediate {
-	fn init_len(&self) -> u32 {
+	fn head_len(&self) -> u32 {
 		match *self {
 			Mediate::Raw(ref raw) => 32 * raw.len() as u32,
-			Mediate::Prefixed(_) => 32,
-			Mediate::FixedArray(ref nes) => nes.iter().fold(0, |acc, m| acc + m.init_len()),
-			Mediate::Array(_) => 32,
+			Mediate::Prefixed(_) | Mediate::PrefixedArray(_) | Mediate::PrefixedArrayWithLength(_) => 32,
 		}
 	}
 
-	fn closing_len(&self) -> u32 {
+	fn tail_len(&self) -> u32 {
 		match *self {
 			Mediate::Raw(_) => 0,
 			Mediate::Prefixed(ref pre) => pre.len() as u32 * 32,
-			Mediate::FixedArray(ref nes) => nes.iter().fold(0, |acc, m| acc + m.closing_len()),
-			Mediate::Array(ref nes) => nes.iter().fold(32, |acc, m| acc + m.init_len() + m.closing_len()),
+			Mediate::PrefixedArray(ref mediates) => mediates.iter().fold(0, |acc, m| acc + m.head_len() + m.tail_len()),
+			Mediate::PrefixedArrayWithLength(ref mediates) => mediates.iter().fold(32, |acc, m| acc + m.head_len() + m.tail_len()),
 		}
 	}
 
-	fn offset_for(mediates: &[Mediate], position: usize) -> u32 {
-		assert!(position < mediates.len());
-
-		let init_len = mediates.iter().fold(0, |acc, m| acc + m.init_len());
-		mediates[0..position].iter().fold(init_len, |acc, m| acc + m.closing_len())
-	}
-
-	fn init(&self, suffix_offset: u32) -> Vec<Word> {
+	fn head(&self, suffix_offset: u32) -> Vec<Word> {
 		match *self {
 			Mediate::Raw(ref raw) => raw.clone(),
-			Mediate::FixedArray(ref nes) => {
-				nes.iter()
-					.enumerate()
-					.flat_map(|(i, m)| m.init(Mediate::offset_for(nes, i)))
-					.collect()
-			},
-			Mediate::Prefixed(_) | Mediate::Array(_) => {
+			Mediate::Prefixed(_) | Mediate::PrefixedArray(_) | Mediate::PrefixedArrayWithLength(_) => {
 				vec![pad_u32(suffix_offset)]
 			}
 		}
 	}
 
-	fn closing(&self, offset: u32) -> Vec<Word> {
+	fn tail(&self) -> Vec<Word> {
 		match *self {
 			Mediate::Raw(_) => vec![],
-			Mediate::Prefixed(ref pre) => pre.clone(),
-			Mediate::FixedArray(ref nes) => {
-				// offset is not taken into account, cause it would be counted twice
-				// fixed array is just raw representations of similar consecutive items
-				nes.iter()
-					.enumerate()
-					.flat_map(|(i, m)| m.closing(Mediate::offset_for(nes, i)))
-					.collect()
-			},
-			Mediate::Array(ref nes) => {
-				// + 32 added to offset represents len of the array prepanded to closing
-				let prefix = vec![pad_u32(nes.len() as u32)].into_iter();
+			Mediate::Prefixed(ref raw) => raw.clone(),
+			Mediate::PrefixedArray(ref mediates) => encode_head_tail(mediates),
+			Mediate::PrefixedArrayWithLength(ref mediates) => {
+				// + 32 added to offset represents len of the array prepanded to tail
+				let mut result = vec![pad_u32(mediates.len() as u32)];
 
-				let inits = nes.iter()
-					.enumerate()
-					.flat_map(|(i, m)| m.init(Mediate::offset_for(nes, i)));
+				let head_tail = encode_head_tail(mediates);
 
-				let closings = nes.iter()
-					.enumerate()
-					.flat_map(|(i, m)| m.closing(offset + Mediate::offset_for(nes, i)));
-
-				prefix.chain(inits).chain(closings).collect()
+				result.extend(head_tail);
+				result
 			},
 		}
 	}
 }
 
-/// Encodes vector of tokens into ABI compliant vector of bytes.
+fn encode_head_tail(mediates: &Vec<Mediate>) -> Vec<Word> {
+	let heads_len = mediates.iter()
+		.fold(0, |acc, m| acc + m.head_len());
+
+	let (mut result, len) = mediates.iter()
+		.fold(
+			(Vec::with_capacity(heads_len as usize), heads_len),
+			|(mut acc, offset), m| {
+				acc.extend(m.head(offset));
+				(acc, offset + m.tail_len())
+			}
+		);
+
+	let tails = mediates.iter()
+		.fold(
+			Vec::with_capacity((len - heads_len) as usize),
+			|mut acc, m| {
+				acc.extend(m.tail());
+				acc
+			}
+		);
+
+	result.extend(tails);
+	result
+}
+
 pub fn encode(tokens: &[Token]) -> Bytes {
-	let mediates: Vec<Mediate> = tokens.iter()
+	let mediates = &tokens.iter()
 		.map(encode_token)
 		.collect();
 
-	let inits = mediates.iter()
-		.enumerate()
-		.flat_map(|(i, m)| m.init(Mediate::offset_for(&mediates, i)));
-
-	let closings = mediates.iter()
-		.enumerate()
-		.flat_map(|(i, m)| m.closing(Mediate::offset_for(&mediates, i)));
-
-	inits.chain(closings)
-		.flat_map(|item| item.to_vec())
+	encode_head_tail(mediates).iter()
+		.flat_map(|word| word.to_vec())
 		.collect()
 }
 
+/// Encodes vector of tokens into ABI compliant vector of bytes.
 fn encode_token(token: &Token) -> Mediate {
 	match *token {
 		Token::Address(ref address) => {
@@ -153,14 +144,18 @@ fn encode_token(token: &Token) -> Mediate {
 				.map(encode_token)
 				.collect();
 
-			Mediate::Array(mediates)
+			Mediate::PrefixedArrayWithLength(mediates)
 		},
 		Token::FixedArray(ref tokens) => {
 			let mediates = tokens.iter()
 				.map(encode_token)
 				.collect();
 
-			Mediate::FixedArray(mediates)
+			if token.is_dynamic() {
+				Mediate::PrefixedArray(mediates)
+			} else {
+				Mediate::Raw(encode_head_tail(&mediates))
+			}
 		},
 	}
 }
@@ -229,6 +224,7 @@ mod tests {
 		let fixed = Token::FixedArray(vec![array0, array1]);
 		let encoded = encode(&vec![fixed]);
 		let expected = hex!("
+			0000000000000000000000000000000000000000000000000000000000000020
 			0000000000000000000000000000000000000000000000000000000000000040
 			00000000000000000000000000000000000000000000000000000000000000a0
 			0000000000000000000000000000000000000000000000000000000000000002

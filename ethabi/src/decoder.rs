@@ -190,13 +190,29 @@ fn decode_param(param: &ParamType, slices: &[Word], offset: usize) -> Result<Dec
 			Ok(result)
 		},
 		ParamType::FixedArray(ref t, len) => {
-			let mut tokens = vec![];
-			let mut new_offset = offset;
-			for _ in 0..len {
-				let res = try!(decode_param(t, &slices, new_offset));
-				new_offset = res.new_offset;
-				tokens.push(res.token);
-			}
+			let mut tokens = Vec::with_capacity(len);
+			let new_offset = if param.is_dynamic() {
+				let offset_slice = peek(slices, offset)?;
+				let tail_offset = (as_u32(offset_slice)? / 32) as usize;
+				let slices = &slices[tail_offset..];
+				let mut new_offset = 0;
+
+				for _ in 0..len {
+					let res = decode_param(t, &slices, new_offset)?;
+					new_offset = res.new_offset;
+					tokens.push(res.token);
+				}
+				offset + 1
+			} else {
+				let mut new_offset = offset;
+
+				for _ in 0..len {
+					let res = decode_param(t, &slices, new_offset)?;
+					new_offset = res.new_offset;
+					tokens.push(res.token);
+				}
+				new_offset
+			};
 
 			let result = DecodeResult {
 				token: Token::FixedArray(tokens),
@@ -395,6 +411,7 @@ mod tests {
 	#[test]
 	fn decode_fixed_array_of_dynamic_array_of_addresses() {
 		let encoded = hex!("
+			0000000000000000000000000000000000000000000000000000000000000020
 			0000000000000000000000000000000000000000000000000000000000000040
 			00000000000000000000000000000000000000000000000000000000000000a0
 			0000000000000000000000000000000000000000000000000000000000000002
