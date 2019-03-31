@@ -1,9 +1,9 @@
 //! Utils used by different modules.
 
-use {Error, ErrorKind};
+use {Word, Error, ErrorKind};
 
 /// Convers vector of bytes with len equal n * 32, to a vector of slices.
-pub fn slice_data(data: &[u8]) -> Result<Vec<[u8; 32]>, Error> {
+pub fn slice_data(data: &[u8]) -> Result<Vec<Word>, Error> {
 	if data.len() % 32 != 0 {
 		return Err(ErrorKind::InvalidData.into());
 	}
@@ -20,7 +20,7 @@ pub fn slice_data(data: &[u8]) -> Result<Vec<[u8; 32]>, Error> {
 }
 
 /// Converts u32 to right aligned array of 32 bytes.
-pub fn pad_u32(value: u32) -> [u8; 32] {
+pub fn pad_u32(value: u32) -> Word {
 	let mut padded = [0u8; 32];
 	padded[28] = (value >> 24) as u8;
 	padded[29] = (value >> 16) as u8;
@@ -30,7 +30,7 @@ pub fn pad_u32(value: u32) -> [u8; 32] {
 }
 
 /// Converts i32 to right aligned array of 32 bytes.
-pub fn pad_i32(value: i32) -> [u8; 32] {
+pub fn pad_i32(value: i32) -> Word {
 	if value >= 0 {
 		return pad_u32(value as u32);
 	}

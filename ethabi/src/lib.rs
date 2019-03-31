@@ -50,6 +50,9 @@ pub use log::{Log, RawLog, LogParam, ParseLog, LogFilter};
 pub use event::Event;
 pub use event_param::EventParam;
 
+/// ABI word.
+pub type Word = [u8; 32];
+
 /// ABI address.
 pub type Address = ethereum_types::Address;
 

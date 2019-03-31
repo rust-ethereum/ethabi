@@ -1,7 +1,7 @@
 //! ABI decoder.
 
 use util::slice_data;
-use {Token, ErrorKind, Error, ResultExt, ParamType};
+use {Word, Token, ErrorKind, Error, ResultExt, ParamType};
 
 struct DecodeResult {
 	token: Token,
@@ -13,7 +13,7 @@ struct BytesTaken {
 	new_offset: usize,
 }
 
-fn as_u32(slice: &[u8; 32]) -> Result<u32, Error> {
+fn as_u32(slice: &Word) -> Result<u32, Error> {
 	if !slice[..28].iter().all(|x| *x == 0) {
 		return Err(ErrorKind::InvalidData.into());
 	}
@@ -26,7 +26,7 @@ fn as_u32(slice: &[u8; 32]) -> Result<u32, Error> {
 	Ok(result)
 }
 
-fn as_bool(slice: &[u8; 32]) -> Result<bool, Error> {
+fn as_bool(slice: &Word) -> Result<bool, Error> {
 	if !slice[..31].iter().all(|x| *x == 0) {
 		return Err(ErrorKind::InvalidData.into());
 	}
@@ -51,11 +51,11 @@ pub fn decode(types: &[ParamType], data: &[u8]) -> Result<Vec<Token>, Error> {
 	Ok(tokens)
 }
 
-fn peek(slices: &[[u8; 32]], position: usize) -> Result<&[u8; 32], Error> {
+fn peek(slices: &[Word], position: usize) -> Result<&Word, Error> {
 	slices.get(position).ok_or_else(|| ErrorKind::InvalidData.into())
 }
 
-fn take_bytes(slices: &[[u8; 32]], position: usize, len: usize) -> Result<BytesTaken, Error> {
+fn take_bytes(slices: &[Word], position: usize, len: usize) -> Result<BytesTaken, Error> {
 	let slices_len = (len + 31) / 32;
 
 	let mut bytes_slices = vec![];
@@ -77,7 +77,7 @@ fn take_bytes(slices: &[[u8; 32]], position: usize, len: usize) -> Result<BytesT
 	Ok(taken)
 }
 
-fn decode_param(param: &ParamType, slices: &[[u8; 32]], offset: usize) -> Result<DecodeResult, Error> {
+fn decode_param(param: &ParamType, slices: &[Word], offset: usize) -> Result<DecodeResult, Error> {
 	match *param {
 		ParamType::Address => {
 			let slice = try!(peek(slices, offset));

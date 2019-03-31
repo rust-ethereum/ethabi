@@ -1,15 +1,15 @@
 //! ABI encoder.
 
 use util::pad_u32;
-use {Token, Bytes};
+use {Word, Token, Bytes};
 
-fn pad_bytes(bytes: &[u8]) -> Vec<[u8; 32]> {
+fn pad_bytes(bytes: &[u8]) -> Vec<Word> {
 	let mut result = vec![pad_u32(bytes.len() as u32)];
 	result.extend(pad_fixed_bytes(bytes));
 	result
 }
 
-fn pad_fixed_bytes(bytes: &[u8]) -> Vec<[u8; 32]> {
+fn pad_fixed_bytes(bytes: &[u8]) -> Vec<Word> {
 	let mut result = vec![];
 	let len = (bytes.len() + 31) / 32;
 	for i in 0..len {
@@ -33,8 +33,8 @@ fn pad_fixed_bytes(bytes: &[u8]) -> Vec<[u8; 32]> {
 
 #[derive(Debug)]
 enum Mediate {
-	Raw(Vec<[u8; 32]>),
-	Prefixed(Vec<[u8; 32]>),
+	Raw(Vec<Word>),
+	Prefixed(Vec<Word>),
 	FixedArray(Vec<Mediate>),
 	Array(Vec<Mediate>),
 }
@@ -65,7 +65,7 @@ impl Mediate {
 		mediates[0..position].iter().fold(init_len, |acc, m| acc + m.closing_len())
 	}
 
-	fn init(&self, suffix_offset: u32) -> Vec<[u8; 32]> {
+	fn init(&self, suffix_offset: u32) -> Vec<Word> {
 		match *self {
 			Mediate::Raw(ref raw) => raw.clone(),
 			Mediate::FixedArray(ref nes) => {
@@ -80,7 +80,7 @@ impl Mediate {
 		}
 	}
 
-	fn closing(&self, offset: u32) -> Vec<[u8; 32]> {
+	fn closing(&self, offset: u32) -> Vec<Word> {
 		match *self {
 			Mediate::Raw(_) => vec![],
 			Mediate::Prefixed(ref pre) => pre.clone(),
