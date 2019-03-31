@@ -17,6 +17,9 @@ extern crate error_chain;
 #[macro_use]
 extern crate hex_literal;
 
+#[cfg(test)]
+extern crate paste;
+
 extern crate ethereum_types;
 
 pub mod param_type;
@@ -35,6 +38,9 @@ mod operation;
 mod param;
 mod signature;
 mod util;
+
+#[cfg(test)]
+mod tests;
 
 pub use param_type::ParamType;
 pub use constructor::Constructor;
