@@ -10,8 +10,8 @@ fn pad_bytes(bytes: &[u8]) -> Vec<Word> {
 }
 
 fn pad_fixed_bytes(bytes: &[u8]) -> Vec<Word> {
-	let mut result = vec![];
 	let len = (bytes.len() + 31) / 32;
+	let mut result = Vec::with_capacity(len);
 	for i in 0..len {
 		let mut padded = [0u8; 32];
 

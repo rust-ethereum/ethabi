@@ -41,7 +41,7 @@ pub fn decode(types: &[ParamType], data: &[u8]) -> Result<Vec<Token>, Error> {
         bail!("please ensure the contract and method you're calling exist! failed to decode empty bytes. if you're using jsonrpc this is likely due to jsonrpc returning `0x` in case contract or method don't exist");
     }
 	let slices = slice_data(data)?;
-	let mut tokens = vec![];
+	let mut tokens = Vec::with_capacity(types.len());
 	let mut offset = 0;
 	for param in types {
 		let res = decode_param(param, &slices, offset).chain_err(|| format!("Cannot decode {}", param))?;
@@ -58,7 +58,7 @@ fn peek(slices: &[Word], position: usize) -> Result<&Word, Error> {
 fn take_bytes(slices: &[Word], position: usize, len: usize) -> Result<BytesTaken, Error> {
 	let slices_len = (len + 31) / 32;
 
-	let mut bytes_slices = vec![];
+	let mut bytes_slices = Vec::with_capacity(slices_len);
 	for i in 0..slices_len {
 		let slice = try!(peek(slices, position + i));
 		bytes_slices.push(slice);
@@ -173,9 +173,8 @@ fn decode_param(param: &ParamType, slices: &[Word], offset: usize) -> Result<Dec
 			let len = try!(as_u32(len_slice)) as usize;
 
 			let sub_slices = &slices[len_offset + 1..];
-			let mut tokens = vec![];
+			let mut tokens = Vec::with_capacity(len);
 			let mut new_offset = 0;
-
 			for _ in 0..len {
 				let res = try!(decode_param(t, &sub_slices, new_offset));
 				new_offset = res.new_offset;
