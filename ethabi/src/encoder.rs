@@ -160,15 +160,3 @@ fn encode_token(token: &Token) -> Mediate {
 	}
 }
 
-#[cfg(test)]
-mod tests {
-	use util::pad_u32;
-
-	#[test]
-	fn test_pad_u32() {
-		// this will fail if endianess is not supported
-		assert_eq!(pad_u32(0x1)[31], 1);
-		assert_eq!(pad_u32(0x100)[30], 1);
-	}
-}
-

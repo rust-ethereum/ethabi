@@ -45,13 +45,22 @@ pub fn pad_i32(value: i32) -> Word {
 
 #[cfg(test)]
 mod tests {
-	use super::pad_i32;
+	use super::{pad_u32, pad_i32};
+
+	#[test]
+	fn test_pad_u32() {
+		// this will fail if endianess is not supported
+        assert_eq!(pad_u32(0).to_vec(), hex!("0000000000000000000000000000000000000000000000000000000000000000").to_vec());
+        assert_eq!(pad_u32(1).to_vec(), hex!("0000000000000000000000000000000000000000000000000000000000000001").to_vec());
+        assert_eq!(pad_u32(0x100).to_vec(), hex!("0000000000000000000000000000000000000000000000000000000000000100").to_vec());
+        assert_eq!(pad_u32(0xffffffff).to_vec(), hex!("00000000000000000000000000000000000000000000000000000000ffffffff").to_vec());
+	}
 
 	#[test]
 	fn test_i32() {
-		assert_eq!(hex!("0000000000000000000000000000000000000000000000000000000000000000").to_vec(), pad_i32(0).to_vec());
-		assert_eq!(hex!("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").to_vec(), pad_i32(-1).to_vec());
-		assert_eq!(hex!("fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe").to_vec(), pad_i32(-2).to_vec());
-		assert_eq!(hex!("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00").to_vec(), pad_i32(-256).to_vec());
+		assert_eq!(pad_i32(0).to_vec(), hex!("0000000000000000000000000000000000000000000000000000000000000000").to_vec());
+		assert_eq!(pad_i32(-1).to_vec(), hex!("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").to_vec());
+		assert_eq!(pad_i32(-2).to_vec(), hex!("fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe").to_vec());
+		assert_eq!(pad_i32(-256).to_vec(), hex!("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00").to_vec());
 	}
 }
