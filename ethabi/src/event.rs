@@ -103,6 +103,20 @@ impl Event {
 		Ok(result)
 	}
 
+	// Converts param types for indexed parameters to bytes32 where appropriate
+	// This applies to strings, arrays and bytes to follow the encoding of
+	// these indexed param types according to
+	// https://solidity.readthedocs.io/en/develop/abi-spec.html#encoding-of-indexed-event-parameters
+	fn convert_topic_param_type(&self, kind: &ParamType) -> ParamType {
+		match kind {
+			ParamType::String
+			| ParamType::Bytes
+			| ParamType::Array(_)
+			| ParamType::FixedArray(_, _) => ParamType::FixedBytes(32),
+			_ => kind.clone()
+		}
+	}
+
 	/// Parses `RawLog` and retrieves all log params from it.
 	pub fn parse_log(&self, log: RawLog) -> Result<Log> {
 		let topics = log.topics;
@@ -124,7 +138,7 @@ impl Event {
 		};
 
 		let topic_types = topic_params.iter()
-			.map(|p| p.kind.clone())
+			.map(|p| self.convert_topic_param_type(&p.kind))
 			.collect::<Vec<ParamType>>();
 
 		let flat_topics = topics.into_iter()
@@ -201,15 +215,38 @@ mod tests {
 				name: "d".to_owned(),
 				kind: ParamType::Address,
 				indexed: true,
+			}, EventParam {
+				name: "e".to_owned(),
+				kind: ParamType::String,
+				indexed: true,
+			}, EventParam {
+				name: "f".to_owned(),
+				kind: ParamType::Array(Box::new(ParamType::Int(256))),
+				indexed: true
+			}, EventParam {
+				name: "g".to_owned(),
+				kind: ParamType::FixedArray(Box::new(ParamType::Address), 5),
+				indexed: true,
 			}],
 			anonymous: false,
 		};
 
 		let log = RawLog {
 			topics: vec![
-				long_signature("foo", &[ParamType::Int(256), ParamType::Int(256), ParamType::Address, ParamType::Address]),
+				long_signature("foo", &[
+					ParamType::Int(256),
+					ParamType::Int(256),
+					ParamType::Address,
+					ParamType::Address,
+					ParamType::String,
+					ParamType::Array(Box::new(ParamType::Int(256))),
+					ParamType::FixedArray(Box::new(ParamType::Address), 5),
+				]),
 				"0000000000000000000000000000000000000000000000000000000000000002".into(),
 				"0000000000000000000000001111111111111111111111111111111111111111".into(),
+				"00000000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into(),
+				"00000000000000000bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb".into(),
+				"00000000000000000ccccccccccccccccccccccccccccccccccccccccccccccc".into(),
 			],
 			data:
 			("".to_owned() +
@@ -223,6 +260,9 @@ mod tests {
 			("b".to_owned(), Token::Int("0000000000000000000000000000000000000000000000000000000000000002".into())),
 			("c".to_owned(), Token::Address("2222222222222222222222222222222222222222".into())),
 			("d".to_owned(), Token::Address("1111111111111111111111111111111111111111".into())),
+			("e".to_owned(), Token::FixedBytes("00000000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".from_hex().unwrap())),
+			("f".to_owned(), Token::FixedBytes("00000000000000000bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb".from_hex().unwrap())),
+			("g".to_owned(), Token::FixedBytes("00000000000000000ccccccccccccccccccccccccccccccccccccccccccccccc".from_hex().unwrap())),
 		].into_iter().map(|(name, value)| LogParam { name, value }).collect::<Vec<_>>()});
 	}
 }
