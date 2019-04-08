@@ -129,7 +129,7 @@ impl Event {
 
 		let flat_topics = topics.into_iter()
 			.skip(to_skip)
-			.flat_map(|t| t.to_vec())
+			.flat_map(|t| t.as_ref().to_vec())
 			.collect::<Vec<u8>>();
 
 		let topic_tokens = try!(decode(&topic_types, &flat_topics));
@@ -208,8 +208,8 @@ mod tests {
 		let log = RawLog {
 			topics: vec![
 				long_signature("foo", &[ParamType::Int(256), ParamType::Int(256), ParamType::Address, ParamType::Address]),
-				"0000000000000000000000000000000000000000000000000000000000000002".into(),
-				"0000000000000000000000001111111111111111111111111111111111111111".into(),
+				"0000000000000000000000000000000000000000000000000000000000000002".parse().unwrap(),
+				"0000000000000000000000001111111111111111111111111111111111111111".parse().unwrap(),
 			],
 			data:
 			("".to_owned() +
@@ -221,8 +221,8 @@ mod tests {
 		assert_eq!(result, Log { params: vec![
 			("a".to_owned(), Token::Int("0000000000000000000000000000000000000000000000000000000000000003".into())),
 			("b".to_owned(), Token::Int("0000000000000000000000000000000000000000000000000000000000000002".into())),
-			("c".to_owned(), Token::Address("2222222222222222222222222222222222222222".into())),
-			("d".to_owned(), Token::Address("1111111111111111111111111111111111111111".into())),
+			("c".to_owned(), Token::Address("2222222222222222222222222222222222222222".parse().unwrap())),
+			("d".to_owned(), Token::Address("1111111111111111111111111111111111111111".parse().unwrap())),
 		].into_iter().map(|(name, value)| LogParam { name, value }).collect::<Vec<_>>()});
 	}
 }

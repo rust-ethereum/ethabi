@@ -1,7 +1,6 @@
 use std::ops;
 use serde::{Serialize, Serializer};
 use serde_json::Value;
-use hex::ToHex;
 use {Hash, Token};
 
 /// Raw topic filter.
@@ -109,12 +108,12 @@ impl Serialize for Topic<Hash> {
 			Topic::Any => Value::Null,
 			Topic::OneOf(ref vec) => {
 				let v = vec.iter()
-					.map(|h| format!("0x{}", h.to_hex::<String>()))
+					.map(|h| format!("0x{:x}", h))
 					.map(Value::String)
 					.collect();
 				Value::Array(v)
 			},
-			Topic::This(ref hash) => Value::String(format!("0x{}", hash.to_hex::<String>())),
+			Topic::This(ref hash) => Value::String(format!("0x{:x}", hash)),
 		};
 		value.serialize(serializer)
 	}
@@ -144,7 +143,7 @@ mod tests {
 	use Hash;
 
 	fn hash(s: &'static str) -> Hash {
-		s.into()
+		s.parse().unwrap()
 	}
 
 	#[test]
