@@ -1,7 +1,7 @@
 //! ABI encoder.
 
 use util::pad_u32;
-use {Token, Hash, Bytes};
+use {Token, Bytes};
 
 fn pad_bytes(bytes: &[u8]) -> Vec<[u8; 32]> {
 	let mut result = vec![pad_u32(bytes.len() as u32)];
@@ -133,14 +133,14 @@ fn encode_token(token: &Token) -> Mediate {
 	match *token {
 		Token::Address(ref address) => {
 			let mut padded = [0u8; 32];
-			padded[12..].copy_from_slice(address);
+			padded[12..].copy_from_slice(address.as_ref());
 			Mediate::Raw(vec![padded])
 		},
 		Token::Bytes(ref bytes) => Mediate::Prefixed(pad_bytes(bytes)),
 		Token::String(ref s) => Mediate::Prefixed(pad_bytes(s.as_bytes())),
 		Token::FixedBytes(ref bytes) => Mediate::Raw(pad_fixed_bytes(bytes)),
-		Token::Int(ref int) => Mediate::Raw(vec![Hash::from(int).0]),
-		Token::Uint(ref uint) => Mediate::Raw(vec![Hash::from(uint).0]),
+		Token::Int(int) => Mediate::Raw(vec![int.into()]),
+		Token::Uint(uint) => Mediate::Raw(vec![uint.into()]),
 		Token::Bool(b) => {
 			let mut value = [0u8; 32];
 			if b {
