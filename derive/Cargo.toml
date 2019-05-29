@@ -1,6 +1,6 @@
 [package]
 name = "ethabi-derive"
-version = "7.0.0"
+version = "8.0.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 homepage = "https://github.com/paritytech/ethabi"
 license = "MIT/Apache-2.0"
@@ -11,7 +11,7 @@ description = "Easy to use conversion of ethereum contract calls to bytecode."
 proc-macro = true
 
 [dependencies]
-ethabi = { path = "../ethabi", version = "7.0" }
+ethabi = { path = "../ethabi", version = "8.0.0" }
 heck = "0.3"
 syn = "0.15"
 quote = "0.6"
