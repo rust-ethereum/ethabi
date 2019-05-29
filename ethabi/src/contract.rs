@@ -81,8 +81,16 @@ impl Contract {
 		self.functions.get(name).ok_or_else(|| ErrorKind::InvalidName(name.to_owned()).into())
 	}
 
+	/// Get the contract event named `name`, the first if there are multiple.
+	pub fn event(&self, name: &str) -> errors::Result<&Event> {
+		self.events.get(name).into_iter()
+							.flatten()
+							.next()
+							.ok_or_else(|| ErrorKind::InvalidName(name.to_owned()).into())
+	}
+
 	/// Get all contract events named `name`.
-	pub fn event(&self, name: &str) -> errors::Result<&Vec<Event>> {
+	pub fn events_by_name(&self, name: &str) -> errors::Result<&Vec<Event>> {
 		self.events.get(name)
 					.ok_or_else(|| ErrorKind::InvalidName(name.to_owned()).into())
 	}

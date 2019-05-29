@@ -114,14 +114,14 @@ fn load_event(path: &str, name_or_signature: &str) -> Result<Event, Error> {
 		Some(params_start) => {
 			let name = &name_or_signature[..params_start];
 			let signature = hash_signature(name_or_signature);
-			contract.event(name)?.iter().find(|event|
+			contract.events_by_name(name)?.iter().find(|event|
 				event.signature() == signature
 			).cloned().ok_or(ErrorKind::InvalidSignature(signature).into())
 		}
 
 		// It's a name.
 		None => {
-			let events = contract.event(name_or_signature)?;
+			let events = contract.events_by_name(name_or_signature)?;
 			match events.len() {
 				0 => unreachable!(),
 				1 => Ok(events[0].clone()),
