@@ -1,6 +1,7 @@
 use std::{io, fmt};
 use std::collections::HashMap;
 use std::collections::hash_map::Values;
+use std::iter::Flatten;
 use serde::{Deserialize, Deserializer};
 use serde::de::{Visitor, SeqAccess};
 use serde_json;
@@ -14,8 +15,8 @@ pub struct Contract {
 	pub constructor: Option<Constructor>,
 	/// Contract functions.
 	pub functions: HashMap<String, Function>,
-	/// Contract events.
-	pub events: HashMap<String, Event>,
+	/// Contract events, maps signature to event.
+	pub events: HashMap<String, Vec<Event>>,
 	/// Contract has fallback function.
 	pub fallback: bool,
 }
@@ -52,7 +53,7 @@ impl<'a> Visitor<'a> for ContractVisitor {
 					result.functions.insert(func.name.clone(), func);
 				},
 				Operation::Event(event) => {
-					result.events.insert(event.name.clone(), event);
+					result.events.entry(event.name.clone()).or_default().push(event);
 				},
 				Operation::Fallback => {
 					result.fallback = true;
@@ -80,9 +81,18 @@ impl Contract {
 		self.functions.get(name).ok_or_else(|| ErrorKind::InvalidName(name.to_owned()).into())
 	}
 
-	/// Creates event decoder.
+	/// Get the contract event named `name`, the first if there are multiple.
 	pub fn event(&self, name: &str) -> errors::Result<&Event> {
-		self.events.get(name).ok_or_else(|| ErrorKind::InvalidName(name.to_owned()).into())
+		self.events.get(name).into_iter()
+							.flatten()
+							.next()
+							.ok_or_else(|| ErrorKind::InvalidName(name.to_owned()).into())
+	}
+
+	/// Get all contract events named `name`.
+	pub fn events_by_name(&self, name: &str) -> errors::Result<&Vec<Event>> {
+		self.events.get(name)
+					.ok_or_else(|| ErrorKind::InvalidName(name.to_owned()).into())
 	}
 
 	/// Iterate over all functions of the contract in arbitrary order.
@@ -92,7 +102,7 @@ impl Contract {
 
 	/// Iterate over all events of the contract in arbitrary order.
 	pub fn events(&self) -> Events {
-		Events(self.events.values())
+		Events(self.events.values().flatten())
 	}
 
 	/// Returns true if contract has fallback
@@ -113,7 +123,7 @@ impl<'a> Iterator for Functions<'a> {
 }
 
 /// Contract events interator.
-pub struct Events<'a>(Values<'a, String, Event>);
+pub struct Events<'a>(Flatten<Values<'a, String, Vec<Event>>>);
 
 impl<'a> Iterator for Events<'a> {
 	type Item = &'a Event;
