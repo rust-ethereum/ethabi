@@ -143,7 +143,7 @@ impl Event {
 
 		let flat_topics = topics.into_iter()
 			.skip(to_skip)
-			.flat_map(|t| t.to_vec())
+			.flat_map(|t| t.as_ref().to_vec())
 			.collect::<Vec<u8>>();
 
 		let topic_tokens = try!(decode(&topic_types, &flat_topics));
@@ -242,11 +242,11 @@ mod tests {
 					ParamType::Array(Box::new(ParamType::Int(256))),
 					ParamType::FixedArray(Box::new(ParamType::Address), 5),
 				]),
-				"0000000000000000000000000000000000000000000000000000000000000002".into(),
-				"0000000000000000000000001111111111111111111111111111111111111111".into(),
-				"00000000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into(),
-				"00000000000000000bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb".into(),
-				"00000000000000000ccccccccccccccccccccccccccccccccccccccccccccccc".into(),
+				"0000000000000000000000000000000000000000000000000000000000000002".parse().unwrap(),
+				"0000000000000000000000001111111111111111111111111111111111111111".parse().unwrap(),
+				"00000000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".parse().unwrap(),
+				"00000000000000000bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb".parse().unwrap(),
+				"00000000000000000ccccccccccccccccccccccccccccccccccccccccccccccc".parse().unwrap(),
 			],
 			data:
 			("".to_owned() +
@@ -258,8 +258,8 @@ mod tests {
 		assert_eq!(result, Log { params: vec![
 			("a".to_owned(), Token::Int("0000000000000000000000000000000000000000000000000000000000000003".into())),
 			("b".to_owned(), Token::Int("0000000000000000000000000000000000000000000000000000000000000002".into())),
-			("c".to_owned(), Token::Address("2222222222222222222222222222222222222222".into())),
-			("d".to_owned(), Token::Address("1111111111111111111111111111111111111111".into())),
+			("c".to_owned(), Token::Address("2222222222222222222222222222222222222222".parse().unwrap())),
+			("d".to_owned(), Token::Address("1111111111111111111111111111111111111111".parse().unwrap())),
 			("e".to_owned(), Token::FixedBytes("00000000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".from_hex().unwrap())),
 			("f".to_owned(), Token::FixedBytes("00000000000000000bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb".from_hex().unwrap())),
 			("g".to_owned(), Token::FixedBytes("00000000000000000ccccccccccccccccccccccccccccccccccccccccccccccc".from_hex().unwrap())),

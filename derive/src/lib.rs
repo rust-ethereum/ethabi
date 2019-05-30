@@ -177,7 +177,7 @@ fn to_token(name: &proc_macro2::TokenStream, kind: &ParamType) -> proc_macro2::T
 	match *kind {
 		ParamType::Address => quote! { ethabi::Token::Address(#name) },
 		ParamType::Bytes => quote! { ethabi::Token::Bytes(#name) },
-		ParamType::FixedBytes(_) => quote! { ethabi::Token::FixedBytes(#name.to_vec()) },
+		ParamType::FixedBytes(_) => quote! { ethabi::Token::FixedBytes(#name.as_ref().to_vec()) },
 		ParamType::Int(_) => quote! { ethabi::Token::Int(#name) },
 		ParamType::Uint(_) => quote! { ethabi::Token::Uint(#name) },
 		ParamType::Bool => quote! { ethabi::Token::Bool(#name) },
