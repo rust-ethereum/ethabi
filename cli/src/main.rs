@@ -232,9 +232,6 @@ fn hash_signature(sig: &str) -> Hash {
     let mut sponge = Keccak::new_keccak256();
     sponge.update(&data);
     sponge.finalize(&mut result);
-
-    // This was deprecated but the replacement seems to not be available.
-    #[allow(deprecated)]
     Hash::from_slice(&result)
 }
 
