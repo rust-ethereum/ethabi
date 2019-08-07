@@ -17,6 +17,9 @@ extern crate error_chain;
 #[macro_use]
 extern crate hex_literal;
 
+#[cfg(test)]
+extern crate paste;
+
 extern crate ethereum_types;
 
 pub mod param_type;
@@ -36,6 +39,9 @@ mod param;
 mod signature;
 mod util;
 
+#[cfg(test)]
+mod tests;
+
 pub use param_type::ParamType;
 pub use constructor::Constructor;
 pub use contract::{Contract, Functions, Events};
@@ -49,6 +55,9 @@ pub use param::Param;
 pub use log::{Log, RawLog, LogParam, ParseLog, LogFilter};
 pub use event::Event;
 pub use event_param::EventParam;
+
+/// ABI word.
+pub type Word = [u8; 32];
 
 /// ABI address.
 pub type Address = ethereum_types::Address;

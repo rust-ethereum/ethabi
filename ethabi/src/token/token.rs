@@ -73,6 +73,15 @@ impl fmt::Display for Token {
 }
 
 impl Token {
+	/// Returns whether this token is dynamic
+	pub fn is_dynamic(&self) -> bool {
+		match self {
+			Token::Bytes(_) | Token::String(_) | Token::Array(_) => true,
+			Token::FixedArray(ref tokens) => tokens.iter().any(|ref token| token.is_dynamic()),
+			_ => false
+		}
+	}
+
 	/// Check whether the type of the token matches the given parameter type.
 	///
 	/// Numeric types (`Int` and `Uint`) type check if the size of the token
@@ -232,5 +241,20 @@ mod tests {
 		assert_not_type_check(vec![Token::FixedArray(vec![Token::Bool(false), Token::Bool(true)])], vec![ParamType::FixedArray(Box::new(ParamType::Bool), 3)]);
 		assert_not_type_check(vec![Token::FixedArray(vec![Token::Bool(false), Token::Uint(0.into())])], vec![ParamType::FixedArray(Box::new(ParamType::Bool), 2)]);
 		assert_not_type_check(vec![Token::FixedArray(vec![Token::Bool(false), Token::Bool(true)])], vec![ParamType::FixedArray(Box::new(ParamType::Address), 2)]);
+	}
+
+	#[test]
+	fn test_is_dynamic() {
+		assert_eq!(Token::Address("0000000000000000000000000000000000000000".parse().unwrap()).is_dynamic(), false);
+		assert_eq!(Token::Bytes(vec![0, 0, 0, 0]).is_dynamic(), true);
+		assert_eq!(Token::FixedBytes(vec![0, 0, 0, 0]).is_dynamic(), false);
+		assert_eq!(Token::Uint(0.into()).is_dynamic(), false);
+		assert_eq!(Token::Int(0.into()).is_dynamic(), false);
+		assert_eq!(Token::Bool(false).is_dynamic(), false);
+		assert_eq!(Token::String("".into()).is_dynamic(), true);
+		assert_eq!(Token::Array(vec![Token::Bool(false)]).is_dynamic(), true);
+		assert_eq!(Token::FixedArray(vec![Token::Uint(0.into())]).is_dynamic(), false);
+		assert_eq!(Token::FixedArray(vec![Token::String("".into())]).is_dynamic(), true);
+		assert_eq!(Token::FixedArray(vec![Token::Array(vec![Token::Bool(false)])]).is_dynamic(), true);
 	}
 }
