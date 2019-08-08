@@ -4,13 +4,7 @@
 #![deny(dead_code)]
 #![deny(unused_imports)]
 
-extern crate rustc_hex;
-extern crate ethabi;
-#[macro_use]
-extern crate ethabi_contract;
-#[cfg(test)]
-#[macro_use]
-extern crate hex_literal;
+use ethabi_contract::use_contract;
 
 use_contract!(eip20, "../res/eip20.abi");
 use_contract!(constructor, "../res/constructor.abi");
@@ -23,6 +17,8 @@ use_contract!(test_rust_keywords, "../res/test_rust_keywords.abi");
 mod tests {
 	use rustc_hex::ToHex;
 	use ethabi::{Address, Uint};
+	use hex_literal::hex;
+	use crate::{validators, eip20};
 
 	struct Wrapper([u8; 20]);
 
@@ -55,7 +51,6 @@ mod tests {
 
 		// given
 
-		use eip20;
 		let output = hex!("000000000000000000000000000000000000000000000000000000000036455B").to_vec();
 
 		// when
@@ -105,8 +100,6 @@ mod tests {
 
 	#[test]
 	fn encoding_input_works() {
-		use eip20;
-
 		let expected = "dd62ed3e00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000101010101010101010101010101010101010101".to_owned();
 		let owner = [0u8; 20];
 		let spender = [1u8; 20];

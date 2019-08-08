@@ -2,6 +2,7 @@
 name = "ethabi-tests"
 version = "0.1.1"
 authors = ["debris <marek.kotewicz@gmail.com>"]
+edition = "2018"
 
 [dependencies]
 ethabi = { path = "../ethabi" }
