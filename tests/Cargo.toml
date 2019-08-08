@@ -1,11 +1,12 @@
 [package]
 name = "ethabi-tests"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["debris <marek.kotewicz@gmail.com>"]
+edition = "2018"
 
 [dependencies]
 ethabi = { path = "../ethabi" }
 ethabi-derive = { path = "../derive" }
 ethabi-contract = { path = "../contract" }
 rustc-hex = "2.0"
-hex-literal = "0.1.1"
+hex-literal = "0.2.0"
