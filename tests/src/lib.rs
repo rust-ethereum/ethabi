@@ -7,8 +7,6 @@
 extern crate rustc_hex;
 extern crate ethabi;
 #[macro_use]
-extern crate ethabi_derive;
-#[macro_use]
 extern crate ethabi_contract;
 #[cfg(test)]
 #[macro_use]

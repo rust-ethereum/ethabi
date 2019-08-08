@@ -7,7 +7,7 @@ macro_rules! use_contract {
 		#[allow(unused_mut)]
 		#[allow(unused_variables)]
 		pub mod $module {
-			#[derive(EthabiContract)]
+			#[derive(ethabi_derive::EthabiContract)]
 			#[ethabi_contract_options(path = $path)]
 			struct _Dummy;
 		}
