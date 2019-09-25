@@ -11,7 +11,7 @@ description = "Easy to use conversion of ethereum contract calls to bytecode."
 proc-macro = true
 
 [dependencies]
-ethabi = { path = "../ethabi", version = "8.0.0" }
+ethabi = { path = "../ethabi", version = "9.0.0" }
 heck = "0.3"
 syn = "0.15"
 quote = "0.6"
