@@ -1,6 +1,6 @@
 [package]
 name = "ethabi"
-version = "8.0.1"
+version = "8.0.2"
 authors = ["Parity Technologies <admin@parity.io>"]
 homepage = "https://github.com/paritytech/ethabi"
 license = "MIT/Apache-2.0"
@@ -14,7 +14,7 @@ serde_json = "1.0"
 serde_derive = "1.0"
 tiny-keccak = "1.4"
 error-chain = { version = "0.12", default-features = false }
-ethereum-types = "0.6.0"
+ethereum-types = "0.7.0"
 
 [dev-dependencies]
 hex-literal = "0.2.0"
