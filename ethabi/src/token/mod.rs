@@ -28,7 +28,7 @@ pub trait Tokenizer {
 
 	/// Tries to parse a value as a vector of tokens of fixed size.
 	fn tokenize_fixed_array(value: &str, param: &ParamType, len: usize) -> Result<Vec<Token>, Error> {
-		let result = try!(Self::tokenize_array(value, param));
+		let result = Self::tokenize_array(value, param)?;
 		match result.len() == len {
 			true => Ok(result),
 			false => Err(ErrorKind::InvalidData.into()),
@@ -60,7 +60,7 @@ pub trait Tokenizer {
 						return Err(ErrorKind::InvalidData.into());
 					} else if nested == 0 {
 						let sub = &value[last_item..i];
-						let token = try!(Self::tokenize(param, sub));
+						let token = Self::tokenize(param, sub)?;
 						result.push(token);
 						last_item = i + 1;
 					}
@@ -70,7 +70,7 @@ pub trait Tokenizer {
 				},
 				',' if nested == 1 && ignore == false => {
 					let sub = &value[last_item..i];
-					let token = try!(Self::tokenize(param, sub));
+					let token = Self::tokenize(param, sub)?;
 					result.push(token);
 					last_item = i + 1;
 				},

@@ -32,7 +32,7 @@ impl Tokenizer for LenientTokenizer {
 			return result;
 		}
 
-		let uint = try!(u32::from_str_radix(value, 10));
+		let uint = u32::from_str_radix(value, 10)?;
 		Ok(pad_u32(uint))
 	}
 
@@ -42,7 +42,7 @@ impl Tokenizer for LenientTokenizer {
 			return result;
 		}
 
-		let int = try!(i32::from_str_radix(value, 10));
+		let int = i32::from_str_radix(value, 10)?;
 		Ok(pad_i32(int))
 	}
 }

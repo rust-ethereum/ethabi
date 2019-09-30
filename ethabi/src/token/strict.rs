@@ -7,7 +7,7 @@ pub struct StrictTokenizer;
 
 impl Tokenizer for StrictTokenizer {
 	fn tokenize_address(value: &str) -> Result<[u8; 20], Error> {
-		let hex : Vec<u8> = try!(value.from_hex());
+		let hex: Vec<u8> = value.from_hex()?;
 		match hex.len() == 20 {
 			false => Err(ErrorKind::InvalidData.into()),
 			true => {
@@ -31,12 +31,11 @@ impl Tokenizer for StrictTokenizer {
 	}
 
 	fn tokenize_bytes(value: &str) -> Result<Vec<u8>, Error> {
-		let hex = try!(value.from_hex());
-		Ok(hex)
+		value.from_hex().map_err(Into::into)
 	}
 
 	fn tokenize_fixed_bytes(value: &str, len: usize) -> Result<Vec<u8>, Error> {
-		let hex : Vec<u8> = try!(value.from_hex());
+		let hex: Vec<u8> = value.from_hex()?;
 		match hex.len() == len {
 			true => Ok(hex),
 			false => Err(ErrorKind::InvalidData.into()),
@@ -44,7 +43,7 @@ impl Tokenizer for StrictTokenizer {
 	}
 
 	fn tokenize_uint(value: &str) -> Result<[u8; 32], Error> {
-		let hex : Vec<u8> = try!(value.from_hex());
+		let hex: Vec<u8> = value.from_hex()?;
 		match hex.len() == 32 {
 			true => {
 				let mut uint = [0u8; 32];
@@ -56,7 +55,7 @@ impl Tokenizer for StrictTokenizer {
 	}
 
 	fn tokenize_int(value: &str) -> Result<[u8; 32], Error> {
-		let hex : Vec<u8> = try!(value.from_hex());
+		let hex: Vec<u8> = value.from_hex()?;
 		match hex.len() == 32 {
 			true => {
 				let mut int = [0u8; 32];

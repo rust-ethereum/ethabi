@@ -21,10 +21,9 @@ pub enum Operation {
 
 impl<'a> Deserialize<'a> for Operation {
 	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'a> {
-		let v: Value = try!(Deserialize::deserialize(deserializer));
-		let cloned = v.clone();
-		let map = try!(cloned.as_object().ok_or_else(|| SerdeError::custom("Invalid operation")));
-		let s = try!(map.get("type").and_then(Value::as_str).ok_or_else(|| SerdeError::custom("Invalid operation type")));
+		let v: Value = Deserialize::deserialize(deserializer)?;
+		let map = v.as_object().ok_or_else(|| SerdeError::custom("Invalid operation"))?;
+		let s = map.get("type").and_then(Value::as_str).ok_or_else(|| SerdeError::custom("Invalid operation type"))?;
 
 		// This is a workaround to support non-spec compliant function and event names,
 		// see: https://github.com/paritytech/parity/issues/4122
