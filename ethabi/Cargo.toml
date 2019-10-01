@@ -14,7 +14,7 @@ serde_json = "1.0"
 serde_derive = "1.0"
 tiny-keccak = "1.4"
 error-chain = { version = "0.12", default-features = false }
-ethereum-types = "0.7.0"
+ethereum-types = "0.8.0"
 
 [dev-dependencies]
 hex-literal = "0.2.0"
