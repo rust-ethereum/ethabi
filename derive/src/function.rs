@@ -55,6 +55,8 @@ pub struct Function {
 	outputs: Outputs,
 	/// Constant function.
 	constant: bool,
+    /// Payable function.
+    payable: bool,
 }
 
 impl<'a> From<&'a ethabi::Function> for Function {
@@ -130,6 +132,7 @@ impl<'a> From<&'a ethabi::Function> for Function {
 				recreate_quote: to_ethabi_param_vec(&f.outputs),
 			},
 			constant: f.constant,
+			payable: f.payable,
 		}
 	}
 }
@@ -145,6 +148,7 @@ impl Function {
 		let recreate_inputs = &self.inputs.recreate_quote;
 		let recreate_outputs = &self.outputs.recreate_quote;
 		let constant = &self.constant;
+		let payable = &self.payable;
 		let outputs_result = &self.outputs.result;
 		let outputs_implementation = &self.outputs.implementation;
 
@@ -159,6 +163,7 @@ impl Function {
 						inputs: #recreate_inputs,
 						outputs: #recreate_outputs,
 						constant: #constant,
+						payable: #payable,
 					}
 				}
 
@@ -208,6 +213,7 @@ mod tests {
 			inputs: vec![],
 			outputs: vec![],
 			constant: false,
+			payable: false,
 		};
 
 		let f = Function::from(&ethabi_function);
@@ -223,6 +229,7 @@ mod tests {
 						inputs: vec![],
 						outputs: vec![],
 						constant: false,
+						payable: false,
 					}
 				}
 
@@ -279,6 +286,7 @@ mod tests {
 				}
 			],
 			constant: false,
+			payable: false,
 		};
 
 		let f = Function::from(&ethabi_function);
@@ -300,6 +308,7 @@ mod tests {
 							kind: ethabi::ParamType::Uint(256usize)
 						}],
 						constant: false,
+						payable: false,
 					}
 				}
 
@@ -364,6 +373,7 @@ mod tests {
 				}
 			],
 			constant: false,
+			payable: false,
 		};
 
 		let f = Function::from(&ethabi_function);
@@ -391,6 +401,7 @@ mod tests {
 							kind: ethabi::ParamType::String
 						}],
 						constant: false,
+						payable: false,
 					}
 				}
 

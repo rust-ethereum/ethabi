@@ -15,6 +15,9 @@ pub struct Function {
 	/// Constant function.
 	#[serde(default)]
 	pub constant: bool,
+	/// Payable function
+	#[serde(default)]
+	pub payable: bool,
 }
 
 impl Function {
@@ -68,6 +71,7 @@ mod tests {
 			}],
 			outputs: vec![],
 			constant: false,
+			payable: false,
 		};
 
 		let func = Function::from(interface);

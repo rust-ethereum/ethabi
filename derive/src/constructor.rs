@@ -12,6 +12,7 @@ pub struct Constructor {
 	inputs_definitions: Vec<TokenStream>,
 	tokenize: Vec<TokenStream>,
 	recreate_inputs: TokenStream,
+	payable: bool,
 }
 
 impl<'a> From<&'a ethabi::Constructor> for Constructor {
@@ -51,6 +52,7 @@ impl<'a> From<&'a ethabi::Constructor> for Constructor {
 			inputs_definitions,
 			tokenize,
 			recreate_inputs: to_ethabi_param_vec(&c.inputs),
+			payable: c.payable,
 		}
 	}
 }
@@ -62,12 +64,14 @@ impl Constructor {
 		let definitions = &self.inputs_definitions;
 		let tokenize = &self.tokenize;
 		let recreate_inputs = &self.recreate_inputs;
+		let payable = &self.payable;
 
 		quote! {
 			/// Encodes a call to contract's constructor.
 			pub fn constructor<#(#declarations),*>(#(#definitions),*) -> ethabi::Bytes {
 				let c = ethabi::Constructor {
 					inputs: #recreate_inputs,
+					payable: #payable,
 				};
 				let tokens = vec![#(#tokenize),*];
 				c.encode_input(code, &tokens).expect(INTERNAL_ERR)
@@ -85,6 +89,7 @@ mod tests {
 	fn test_no_params() {
 		let ethabi_constructor = ethabi::Constructor {
 			inputs: vec![],
+			payable: false,
 		};
 
 		let c = Constructor::from(&ethabi_constructor);
@@ -94,6 +99,7 @@ mod tests {
 			pub fn constructor<>(code: ethabi::Bytes) -> ethabi::Bytes {
 				let c = ethabi::Constructor {
 					inputs: vec![],
+					payable: false,
 				};
 				let tokens = vec![];
 				c.encode_input(code, &tokens).expect(INTERNAL_ERR)
@@ -112,6 +118,7 @@ mod tests {
 					kind: ethabi::ParamType::Uint(256),
 				}
 			],
+			payable: false,
 		};
 
 		let c = Constructor::from(&ethabi_constructor);
@@ -124,6 +131,7 @@ mod tests {
 						name: "foo".to_owned(),
 						kind: ethabi::ParamType::Uint(256usize)
 					}],
+					payable: false,
 				};
 				let tokens = vec![ethabi::Token::Uint(foo.into())];
 				c.encode_input(code, &tokens).expect(INTERNAL_ERR)

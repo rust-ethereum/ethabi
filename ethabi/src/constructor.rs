@@ -6,6 +6,9 @@ use {Param, Result, ErrorKind, Token, ParamType, encode, Bytes};
 pub struct Constructor {
 	/// Constructor input.
 	pub inputs: Vec<Param>,
+	/// Payable constructor.
+	#[serde(default)]
+	pub payable: bool,
 }
 
 impl Constructor {

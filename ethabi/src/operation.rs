@@ -80,6 +80,7 @@ mod tests {
 			],
 			outputs: vec![],
 			constant: false,
+			payable: false,
 		}));
 	}
 
