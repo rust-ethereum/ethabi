@@ -66,7 +66,10 @@ fn main() {
 
 	match result {
 		Ok(s) => println!("{}", s),
-		Err(error) => print_err(&error),
+		Err(error) => {
+			print_err(&error);
+			std::process::exit(1);
+		},
 	}
 }
 
