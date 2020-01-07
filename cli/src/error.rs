@@ -1,7 +1,7 @@
 #![allow(unknown_lints)]
 
 use std::io;
-use {ethabi, docopt, hex};
+use {ethabi, hex};
 use ethabi::Hash;
 
 error_chain! {
@@ -11,7 +11,6 @@ error_chain! {
 
 	foreign_links {
 		Io(io::Error);
-		Docopt(docopt::Error);
 		Hex(hex::FromHexError);
 	}
 
