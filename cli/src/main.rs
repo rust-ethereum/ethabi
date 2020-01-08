@@ -1,13 +1,10 @@
 #[macro_use]
-extern crate serde_derive;
-#[macro_use]
 extern crate error_chain;
 
 mod error;
 
 use structopt::StructOpt;
 use std::fs::File;
-use std::env;
 use rustc_hex::{ToHex, FromHex};
 use ethabi::param_type::{ParamType, Reader};
 use ethabi::token::{Token, Tokenizer, StrictTokenizer, LenientTokenizer};
