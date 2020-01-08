@@ -39,7 +39,7 @@ enum Encode {
 	},
 	/// Specify types of input params inline.
 	Params {
-		/// Pairs of types directly followed by parms in the form:
+		/// Pairs of types directly followed by params in the form:
 		///
 		/// -v <type1> <param1> -v <type2> <param2> ...
 		#[structopt(short = "v", name = "type-or-param", number_of_values = 2)]
