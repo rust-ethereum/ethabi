@@ -34,6 +34,7 @@ enum Encode {
 		function_name: String,
 		#[structopt(short, number_of_values = 1)]
 		params: Vec<String>,
+		/// Allow short representation of input params.
 		#[structopt(short, long)]
 		lenient: bool,
 	},
@@ -44,6 +45,7 @@ enum Encode {
 		/// -v <type1> <param1> -v <type2> <param2> ...
 		#[structopt(short = "v", name = "type-or-param", number_of_values = 2)]
 		params: Vec<String>,
+		/// Allow short representation of input params.
 		#[structopt(short, long)]
 		lenient: bool,
 	},
