@@ -1,102 +1,105 @@
-extern crate docopt;
-extern crate rustc_hex as hex;
-extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 #[macro_use]
 extern crate error_chain;
-extern crate ethabi;
-extern crate tiny_keccak;
 
 mod error;
 
+use structopt::StructOpt;
 use std::fs::File;
 use std::env;
-use docopt::Docopt;
-use hex::{ToHex, FromHex};
+use rustc_hex::{ToHex, FromHex};
 use ethabi::param_type::{ParamType, Reader};
 use ethabi::token::{Token, Tokenizer, StrictTokenizer, LenientTokenizer};
 use ethabi::{encode, decode, Contract, Function, Event, Hash};
-use error::{Error, ErrorKind, ResultExt};
+use itertools::Itertools;
+use crate::error::{Error, ErrorKind, ResultExt};
 use tiny_keccak::Keccak;
 
-pub const ETHABI: &str = r#"
-Ethereum ABI coder.
-  Copyright 2016-2018 Parity Technologies (UK) Limited
-
-Usage:
-    ethabi encode function <abi-path> <function-name> [-p <param>]... [-l | --lenient]
-    ethabi encode params [-v <type> <param>]... [-l | --lenient]
-    ethabi decode function <abi-path> <function-name> <data>
-    ethabi decode params [-t <type>]... <data>
-    ethabi decode log <abi-path> <event-name-or-signature> [-l <topic>]... <data>
-    ethabi -h | --help
-
-Options:
-    -h, --help         Display this message and exit.
-    -l, --lenient      Allow short representation of input params.
-
-Commands:
-    encode             Encode ABI call.
-    decode             Decode ABI call result.
-    function           Load function from json ABI file.
-    params             Specify types of input params inline.
-    log                Decode event log.
-"#;
-
-#[derive(Debug, Deserialize)]
-struct Args {
-	cmd_encode: bool,
-	cmd_decode: bool,
-	cmd_function: bool,
-	cmd_params: bool,
-	cmd_log: bool,
-	arg_abi_path: String,
-	arg_function_name: String,
-	arg_event_name_or_signature: String,
-	arg_param: Vec<String>,
-	arg_type: Vec<String>,
-	arg_data: String,
-	arg_topic: Vec<String>,
-	flag_lenient: bool,
+#[derive(StructOpt, Debug)]
+/// Ethereum ABI coder.
+///
+/// Copyright 2016-2019 Parity Technologies (UK) Limited
+enum Opt {
+	/// Encode ABI call.
+	Encode(Encode),
+	/// Decode ABI call result.
+	Decode(Decode),
 }
 
-fn main() {
-	let result = execute(env::args());
-
-	match result {
-		Ok(s) => println!("{}", s),
-		Err(error) => {
-			print_err(&error);
-			std::process::exit(1);
-		},
-	}
+#[derive(StructOpt, Debug)]
+enum Encode {
+	/// Load function from JSON ABI file.
+	Function {
+		abi_path: String,
+		function_name: String,
+		#[structopt(short, number_of_values = 1)]
+		params: Vec<String>,
+		/// Allow short representation of input params.
+		#[structopt(short, long)]
+		lenient: bool,
+	},
+	/// Specify types of input params inline.
+	Params {
+		/// Pairs of types directly followed by params in the form:
+		///
+		/// -v <type1> <param1> -v <type2> <param2> ...
+		#[structopt(short = "v", name = "type-or-param", number_of_values = 2)]
+		params: Vec<String>,
+		/// Allow short representation of input params.
+		#[structopt(short, long)]
+		lenient: bool,
+	},
 }
 
-fn print_err(err: &Error) {
-	let message = err.iter()
-		.map(|e| e.to_string())
-		.filter(|e| !e.is_empty())
-		.collect::<Vec<_>>().join("\n\nCaused by:\n  ");
-	println!("{}", message);
+#[derive(StructOpt, Debug)]
+enum Decode {
+	/// Load function from JSON ABI file.
+	Function {
+		abi_path: String,
+		function_name: String,
+		data: String,
+	},
+	/// Specify types of input params inline.
+	Params {
+		#[structopt(short, name = "type", number_of_values = 1)]
+		types: Vec<String>,
+		data: String,
+	},
+	/// Decode event log.
+	Log {
+		abi_path: String,
+		event_name_or_signature: String,
+		#[structopt(short = "l", name = "topic", number_of_values = 1)]
+		topics: Vec<String>,
+		data: String,
+	},
 }
 
-fn execute<S, I>(command: I) -> Result<String, Error> where I: IntoIterator<Item=S>, S: AsRef<str> {
-	let args: Args = Docopt::new(ETHABI)
-		.and_then(|d| d.argv(command).deserialize())?;
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+	println!("{}", execute(std::env::args())?);
 
-	if args.cmd_encode && args.cmd_function {
-		encode_input(&args.arg_abi_path, &args.arg_function_name, &args.arg_param, args.flag_lenient)
-	} else if args.cmd_encode && args.cmd_params {
-		encode_params(&args.arg_type, &args.arg_param, args.flag_lenient)
-	} else if args.cmd_decode && args.cmd_function {
-		decode_call_output(&args.arg_abi_path, &args.arg_function_name, &args.arg_data)
-	} else if args.cmd_decode && args.cmd_params {
-		decode_params(&args.arg_type, &args.arg_data)
-	} else if args.cmd_decode && args.cmd_log {
-		decode_log(&args.arg_abi_path, &args.arg_event_name_or_signature, &args.arg_topic, &args.arg_data)
-	} else {
-		unreachable!()
+	Ok(())
+}
+
+fn execute<I>(args: I) -> Result<String, Error>
+where
+	I: IntoIterator,
+	I::Item: Into<std::ffi::OsString> + Clone
+{
+	let opt = Opt::from_iter(args);
+
+	match opt {
+		Opt::Encode(Encode::Function { abi_path, function_name, params, lenient }) =>
+			encode_input(&abi_path, &function_name, &params, lenient),
+		Opt::Encode(Encode::Params { params, lenient }) =>
+			encode_params(&params, lenient),
+		Opt::Decode(Decode::Function { abi_path, function_name, data }) =>
+			decode_call_output(&abi_path, &function_name, &data),
+		Opt::Decode(Decode::Params { types, data }) =>
+			decode_params(&types, &data),
+		Opt::Decode(Decode::Log { abi_path, event_name_or_signature, topics, data }) =>
+			decode_log(&abi_path, &event_name_or_signature, &topics, &data),
 	}
 }
 
@@ -104,6 +107,7 @@ fn load_function(path: &str, function: &str) -> Result<Function, Error> {
 	let file = File::open(path)?;
 	let contract = Contract::load(file)?;
 	let function = contract.function(function)?.clone();
+
 	Ok(function)
 }
 
@@ -158,18 +162,16 @@ fn encode_input(path: &str, function: &str, values: &[String], lenient: bool) ->
 	Ok(result.to_hex())
 }
 
-fn encode_params(types: &[String], values: &[String], lenient: bool) -> Result<String, Error> {
-	assert_eq!(types.len(), values.len());
+fn encode_params(params: &[String], lenient: bool) -> Result<String, Error> {
+	assert_eq!(params.len() % 2, 0);
 
-	let types: Vec<ParamType> = types.iter()
-		.map(|s| Reader::read(s))
-		.collect::<Result<_, _>>()?;
+	let params = params
+		.iter()
+		.tuples::<(_, _)>()
+		.map(|(x, y)| Reader::read(x).map(|z| (z, y.as_str())))
+		.collect::<Result<Vec<_>, _>>()?;
 
-	let params: Vec<_> = types.into_iter()
-		.zip(values.iter().map(|v| v as &str))
-		.collect();
-
-	let tokens = parse_tokens(&params, lenient)?;
+	let tokens = parse_tokens(params.as_slice(), lenient)?;
 	let result = encode(&tokens);
 
 	Ok(result.to_hex())
@@ -227,7 +229,6 @@ fn decode_log(path: &str, name_or_signature: &str, topics: &[String], data: &str
 
 	Ok(result)
 }
-
 
 fn hash_signature(sig: &str) -> Hash {
     let mut result = [0u8; 32];

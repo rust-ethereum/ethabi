@@ -6,15 +6,17 @@ keywords = ["ethereum", "eth", "abi", "solidity", "cli"]
 description = "Easy to use cli for conversion of ethereum contract calls to bytecode."
 homepage = "https://github.com/paritytech/ethabi"
 license = "MIT/Apache-2.0"
+edition = "2018"
 
 [dependencies]
 rustc-hex = "2.0"
 serde = "1.0"
 serde_derive = "1.0"
-docopt = "1.0"
 ethabi = { version = "9.0.1", path = "../ethabi" }
 error-chain = { version = "0.12.1", default-features = false }
 tiny-keccak = "1.0"
+structopt = "0.3"
+itertools = "0.8"
 
 [features]
 backtrace = ["error-chain/backtrace"]
