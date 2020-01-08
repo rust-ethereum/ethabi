@@ -126,7 +126,7 @@ dependencies = [
 
 [[package]]
 name = "ethabi"
-version = "9.0.1"
+version = "10.0.0"
 dependencies = [
  "error-chain 0.12.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "ethereum-types 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -141,10 +141,10 @@ dependencies = [
 
 [[package]]
 name = "ethabi-cli"
-version = "9.0.1"
+version = "10.0.0"
 dependencies = [
  "error-chain 0.12.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "ethabi 9.0.1",
+ "ethabi 10.0.0",
  "itertools 0.8.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-hex 2.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "structopt 0.3.7 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -153,13 +153,13 @@ dependencies = [
 
 [[package]]
 name = "ethabi-contract"
-version = "9.0.0"
+version = "10.0.0"
 
 [[package]]
 name = "ethabi-derive"
-version = "9.0.1"
+version = "10.0.0"
 dependencies = [
- "ethabi 9.0.1",
+ "ethabi 10.0.0",
  "heck 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "proc-macro2 0.4.19 (registry+https://github.com/rust-lang/crates.io-index)",
  "quote 0.6.8 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -170,9 +170,9 @@ dependencies = [
 name = "ethabi-tests"
 version = "0.1.1"
 dependencies = [
- "ethabi 9.0.1",
- "ethabi-contract 9.0.0",
- "ethabi-derive 9.0.1",
+ "ethabi 10.0.0",
+ "ethabi-contract 10.0.0",
+ "ethabi-derive 10.0.0",
  "hex-literal 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-hex 2.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
