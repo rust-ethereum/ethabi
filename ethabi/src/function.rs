@@ -1,5 +1,7 @@
 //! Contract function call builder.
 
+use std::string::ToString;
+
 use signature::short_signature;
 use {Param, Token, Result, ErrorKind, Bytes, decode, ParamType, encode};
 
@@ -48,6 +50,37 @@ impl Function {
 	/// Parses the ABI function output to list of tokens.
 	pub fn decode_output(&self, data: &[u8]) -> Result<Vec<Token>> {
 		decode(&self.output_param_types(), &data)
+	}
+
+	/// Parses the ABI function input to a list of tokens.
+	pub fn decode_input(&self, data: &[u8]) -> Result<Vec<Token>> {
+		decode(&self.input_param_types(), &data)
+	}
+
+	/// Returns a signature that uniquely identifies this function.
+	///
+	/// Examples:
+	/// - `functionName()`
+	/// - `functionName():(uint256)`
+	/// - `functionName(bool):(uint256,string)`
+	/// - `functionName(uint256,bytes32):(string,uint256)`
+	pub fn signature(&self) -> String {
+		let inputs = self.inputs
+			.iter()
+			.map(|p| p.kind.to_string())
+			.collect::<Vec<_>>()
+			.join(",");
+
+		let outputs = self.outputs
+			.iter()
+			.map(|p| p.kind.to_string())
+			.collect::<Vec<_>>()
+			.join(",");
+
+		match (inputs.len(), outputs.len()) {
+			(_, 0) => format!("{}({})", self.name, inputs),
+			(_, _) => format!("{}({}):({})", self.name, inputs, outputs)
+		}
 	}
 }
 

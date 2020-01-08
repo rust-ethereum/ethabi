@@ -24,5 +24,16 @@ error_chain! {
 			description("More than one event found for name, try providing the full signature"),
 			display("Ambiguous event name `{}`", name),
 		}
+
+		InvalidFunctionSignature(signature: String) {
+			description("Invalid function signature"),
+			display("Invalid function signature `{}`", signature),
+		}
+
+		AmbiguousFunctionName(name: String) {
+			description("More than one function found for name, try providing the full signature"),
+			display("Ambiguous function name `{}`", name),
+		}
+
 	}
 }
