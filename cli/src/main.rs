@@ -18,6 +18,7 @@ use crate::error::{Error, ErrorKind, ResultExt};
 use tiny_keccak::Keccak;
 
 #[derive(StructOpt, Debug)]
+#[structopt(about = "Copyright 2016-2019 Parity Technologies (UK) Limited")]
 enum Opt {
 	/// Encode ABI call.
 	Encode(Encode),
