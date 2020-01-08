@@ -1,7 +1,7 @@
 #![allow(unknown_lints)]
 
 use std::io;
-use {ethabi, hex};
+use {ethabi, rustc_hex};
 use ethabi::Hash;
 
 error_chain! {
@@ -11,7 +11,7 @@ error_chain! {
 
 	foreign_links {
 		Io(io::Error);
-		Hex(hex::FromHexError);
+		Hex(rustc_hex::FromHexError);
 	}
 
 	errors {

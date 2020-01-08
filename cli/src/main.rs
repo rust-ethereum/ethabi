@@ -1,4 +1,3 @@
-extern crate rustc_hex as hex;
 #[macro_use]
 extern crate serde_derive;
 #[macro_use]
@@ -9,7 +8,7 @@ mod error;
 use structopt::StructOpt;
 use std::fs::File;
 use std::env;
-use hex::{ToHex, FromHex};
+use rustc_hex::{ToHex, FromHex};
 use ethabi::param_type::{ParamType, Reader};
 use ethabi::token::{Token, Tokenizer, StrictTokenizer, LenientTokenizer};
 use ethabi::{encode, decode, Contract, Function, Event, Hash};
