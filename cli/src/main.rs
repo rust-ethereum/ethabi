@@ -173,7 +173,7 @@ fn encode_params(params: &[String], lenient: bool) -> Result<String, Error> {
 
 fn decode_call_output(path: &str, function: &str, data: &str) -> Result<String, Error> {
 	let function = load_function(path, function)?;
-	let data : Vec<u8> = data.from_hex()?;
+	let data: Vec<u8> = data.from_hex()?;
 	let tokens = function.decode_output(&data)?;
 	let types = function.outputs;
 
