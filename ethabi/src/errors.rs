@@ -19,6 +19,8 @@ pub enum Error {
 	Utf8(string::FromUtf8Error),
 	/// Hex string parsing error.
 	Hex(hex::FromHexError),
+	/// Other errors.
+	Other(String)
 }
 
 impl std::error::Error for Error {
@@ -44,10 +46,21 @@ impl fmt::Display for Error {
 			ParseInt(ref err) => write!(f, "Integer parsing error: {}", err),
 			Utf8(ref err) => write!(f, "UTF-8 parsing error: {}", err),
 			Hex(ref err) => write!(f, "Hex parsing error: {}", err),
+			Other(ref error_string) => write!(f, "{}", error_string),
 		}
 	}
 }
 
+impl From<&str> for Error {
+	fn from(err: &str) -> Self {
+		Error::Other(err.to_owned())
+	}
+}
+impl From<String> for Error {
+	fn from(err: String) -> Self {
+		Error::Other(err)
+	}
+}
 impl From<serde_json::Error> for Error {
 	fn from(err: serde_json::Error) -> Self {
 		Error::SerdeJson(err)
