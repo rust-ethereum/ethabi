@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog].
 
 ## [Unreleased]
 ### Changed
-- Removed `error_chain` and reworked errors manually (#167)
+- Removed `error_chain` and reworked errors manually. Also removes the `backtrace` feature. (#167)
 
 ## [10.0.0] - 2020-01-08
 ### Changed
