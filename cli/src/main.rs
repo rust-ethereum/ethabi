@@ -1,6 +1,3 @@
-#[macro_use]
-extern crate error_chain;
-
 mod error;
 
 use structopt::StructOpt;
@@ -10,7 +7,7 @@ use ethabi::param_type::{ParamType, Reader};
 use ethabi::token::{Token, Tokenizer, StrictTokenizer, LenientTokenizer};
 use ethabi::{encode, decode, Contract, Function, Event, Hash};
 use itertools::Itertools;
-use crate::error::{Error, ErrorKind, ResultExt};
+use crate::error::Error;
 use tiny_keccak::Keccak;
 
 #[derive(StructOpt, Debug)]
@@ -120,7 +117,7 @@ fn load_event(path: &str, name_or_signature: &str) -> Result<Event, Error> {
 			let signature = hash_signature(name_or_signature);
 			contract.events_by_name(name)?.iter().find(|event|
 				event.signature() == signature
-			).cloned().ok_or(ErrorKind::InvalidSignature(signature).into())
+			).cloned().ok_or(Error::InvalidSignature(signature))
 		}
 
 		// It's a name.
@@ -129,7 +126,7 @@ fn load_event(path: &str, name_or_signature: &str) -> Result<Event, Error> {
 			match events.len() {
 				0 => unreachable!(),
 				1 => Ok(events[0].clone()),
-				_ => Err(ErrorKind::AmbiguousEventName(name_or_signature.to_owned()).into())
+				_ => Err(Error::AmbiguousEventName(name_or_signature.to_string()))
 			}
 		}
 	}
@@ -176,7 +173,7 @@ fn encode_params(params: &[String], lenient: bool) -> Result<String, Error> {
 
 fn decode_call_output(path: &str, function: &str, data: &str) -> Result<String, Error> {
 	let function = load_function(path, function)?;
-	let data : Vec<u8> = data.from_hex().chain_err(|| "Expected <data> to be hex")?;
+	let data : Vec<u8> = data.from_hex()?;
 	let tokens = function.decode_output(&data)?;
 	let types = function.outputs;
 
@@ -196,7 +193,7 @@ fn decode_params(types: &[String], data: &str) -> Result<String, Error> {
 		.map(|s| Reader::read(s))
 		.collect::<Result<_, _>>()?;
 
-	let data  : Vec<u8> = data.from_hex().chain_err(|| "Expected <data> to be hex")?;
+	let data  : Vec<u8> = data.from_hex()?;
 
 	let tokens = decode(&types, &data)?;
 
@@ -216,7 +213,7 @@ fn decode_log(path: &str, name_or_signature: &str, topics: &[String], data: &str
 	let topics: Vec<Hash> = topics.into_iter()
 		.map(|t| t.parse() )
 		.collect::<Result<_, _>>()?;
-	let data = data.from_hex().chain_err(|| "Expected <data> to be hex")?;
+	let data = data.from_hex()?;
 	let decoded = event.parse_log((topics, data).into())?;
 
 	let result = decoded.params.into_iter()

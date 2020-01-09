@@ -11,13 +11,9 @@ edition = "2018"
 [dependencies]
 rustc-hex = "2.0"
 ethabi = { version = "10.0.0", path = "../ethabi" }
-error-chain = { version = "0.12.1", default-features = false }
 tiny-keccak = "1.0"
 structopt = "0.3"
 itertools = "0.8"
-
-[features]
-backtrace = ["error-chain/backtrace"]
 
 [[bin]]
 name = "ethabi"
