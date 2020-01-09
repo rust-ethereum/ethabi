@@ -4,7 +4,7 @@ mod lenient;
 mod strict;
 mod token;
 
-use {ParamType, Error, ErrorKind, ResultExt};
+use {ParamType, Error};
 pub use self::lenient::LenientTokenizer;
 pub use self::strict::StrictTokenizer;
 pub use self::token::Token;
@@ -23,7 +23,7 @@ pub trait Tokenizer {
 			ParamType::Int(_) => Self::tokenize_int(value).map(Into::into).map(Token::Int),
 			ParamType::Array(ref p) => Self::tokenize_array(value, p).map(Token::Array),
 			ParamType::FixedArray(ref p, len) => Self::tokenize_fixed_array(value, p, len).map(Token::FixedArray),
-		}.chain_err(|| format!("Cannot parse {}", param))
+		}
 	}
 
 	/// Tries to parse a value as a vector of tokens of fixed size.
@@ -31,14 +31,14 @@ pub trait Tokenizer {
 		let result = Self::tokenize_array(value, param)?;
 		match result.len() == len {
 			true => Ok(result),
-			false => Err(ErrorKind::InvalidData.into()),
+			false => Err(Error::InvalidData),
 		}
 	}
 
 	/// Tries to parse a value as a vector of tokens.
 	fn tokenize_array(value: &str, param: &ParamType) -> Result<Vec<Token>, Error> {
 		if !value.starts_with('[') || !value.ends_with(']') {
-			return Err(ErrorKind::InvalidData.into());
+			return Err(Error::InvalidData);
 		}
 
 		if value.chars().count() == 2 {
@@ -57,7 +57,7 @@ pub trait Tokenizer {
 				']' if ignore == false => {
 					nested -= 1;
 					if nested < 0 {
-						return Err(ErrorKind::InvalidData.into());
+						return Err(Error::InvalidData);
 					} else if nested == 0 {
 						let sub = &value[last_item..i];
 						let token = Self::tokenize(param, sub)?;
@@ -79,7 +79,7 @@ pub trait Tokenizer {
 		}
 
 		if ignore {
-			return Err(ErrorKind::InvalidData.into());
+			return Err(Error::InvalidData);
 		}
 
 		Ok(result)

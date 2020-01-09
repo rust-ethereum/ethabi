@@ -3,15 +3,10 @@
 #![warn(missing_docs)]
 
 extern crate rustc_hex as hex;
-extern crate serde;
 extern crate serde_json;
 extern crate tiny_keccak;
-
 #[macro_use]
-extern crate serde_derive;
-
-#[macro_use]
-extern crate error_chain;
+extern crate serde;
 
 #[cfg(test)]
 #[macro_use]
@@ -46,7 +41,7 @@ pub use param_type::ParamType;
 pub use constructor::Constructor;
 pub use contract::{Contract, Functions, Events};
 pub use token::Token;
-pub use errors::{Error, ErrorKind, Result, ResultExt};
+pub use errors::{Error, Result};
 pub use encoder::encode;
 pub use decoder::decode;
 pub use filter::{Topic, TopicFilter, RawTopicFilter};

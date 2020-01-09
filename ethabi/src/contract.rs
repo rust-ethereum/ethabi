@@ -6,7 +6,7 @@ use serde::{Deserialize, Deserializer};
 use serde::de::{Visitor, SeqAccess};
 use serde_json;
 use operation::Operation;
-use {errors, ErrorKind, Event, Constructor, Function};
+use {errors, Error, Event, Constructor, Function};
 
 /// API building calls to contracts ABI.
 #[derive(Clone, Debug, PartialEq)]
@@ -78,7 +78,7 @@ impl Contract {
 
 	/// Creates function call builder.
 	pub fn function(&self, name: &str) -> errors::Result<&Function> {
-		self.functions.get(name).ok_or_else(|| ErrorKind::InvalidName(name.to_owned()).into())
+		self.functions.get(name).ok_or_else(|| Error::InvalidName(name.to_owned()).into())
 	}
 
 	/// Get the contract event named `name`, the first if there are multiple.
@@ -86,13 +86,13 @@ impl Contract {
 		self.events.get(name).into_iter()
 							.flatten()
 							.next()
-							.ok_or_else(|| ErrorKind::InvalidName(name.to_owned()).into())
+							.ok_or_else(|| Error::InvalidName(name.to_owned()))
 	}
 
 	/// Get all contract events named `name`.
 	pub fn events_by_name(&self, name: &str) -> errors::Result<&Vec<Event>> {
 		self.events.get(name)
-					.ok_or_else(|| ErrorKind::InvalidName(name.to_owned()).into())
+					.ok_or_else(|| Error::InvalidName(name.to_owned()))
 	}
 
 	/// Iterate over all functions of the contract in arbitrary order.
