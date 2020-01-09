@@ -1,4 +1,4 @@
-use {ParamType, Error, ErrorKind};
+use {ParamType, Error};
 
 /// Used to convert param type represented as a string to rust structure.
 pub struct Reader;
@@ -51,7 +51,7 @@ impl Reader {
 				ParamType::FixedBytes(len)
 			},
 			_ => {
-				return Err(ErrorKind::InvalidName(name.to_owned()).into());
+				return Err(Error::InvalidName(name.to_owned()));
 			}
 		};
 

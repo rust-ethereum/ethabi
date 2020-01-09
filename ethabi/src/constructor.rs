@@ -1,5 +1,5 @@
 //! Contract constructor call builder.
-use {Param, Result, ErrorKind, Token, ParamType, encode, Bytes};
+use {Param, Error, Result, Token, ParamType, encode, Bytes};
 
 /// Contract constructor specification.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -23,7 +23,7 @@ impl Constructor {
 		if Token::types_check(tokens, &params) {
 			Ok(code.into_iter().chain(encode(tokens)).collect())
 		} else {
-			Err(ErrorKind::InvalidData.into())
+			Err(Error::InvalidData)
 		}
 	}
 }

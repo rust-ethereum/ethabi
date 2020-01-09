@@ -3,7 +3,7 @@
 use std::string::ToString;
 
 use signature::short_signature;
-use {Param, Token, Result, ErrorKind, Bytes, decode, ParamType, encode};
+use {Param, Token, Error, Result, Bytes, decode, ParamType, encode};
 
 /// Contract function specification.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -39,7 +39,7 @@ impl Function {
 		let params = self.input_param_types();
 
 		if !Token::types_check(tokens, &params) {
-			return Err(ErrorKind::InvalidData.into());
+			return Err(Error::InvalidData);
 		}
 
 		let signed = short_signature(&self.name, &params).to_vec();

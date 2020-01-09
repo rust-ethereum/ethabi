@@ -1,7 +1,7 @@
 //! ABI decoder.
 
 use util::slice_data;
-use {Word, Token, ErrorKind, Error, ResultExt, ParamType};
+use {Word, Token, Error, ParamType};
 
 struct DecodeResult {
 	token: Token,
@@ -15,7 +15,7 @@ struct BytesTaken {
 
 fn as_u32(slice: &Word) -> Result<u32, Error> {
 	if !slice[..28].iter().all(|x| *x == 0) {
-		return Err(ErrorKind::InvalidData.into());
+		return Err(Error::InvalidData);
 	}
 
 	let result = ((slice[28] as u32) << 24) +
@@ -28,7 +28,7 @@ fn as_u32(slice: &Word) -> Result<u32, Error> {
 
 fn as_bool(slice: &Word) -> Result<bool, Error> {
 	if !slice[..31].iter().all(|x| *x == 0) {
-		return Err(ErrorKind::InvalidData.into());
+		return Err(Error::InvalidData);
 	}
 
 	Ok(slice[31] == 1)
@@ -36,15 +36,15 @@ fn as_bool(slice: &Word) -> Result<bool, Error> {
 
 /// Decodes ABI compliant vector of bytes into vector of tokens described by types param.
 pub fn decode(types: &[ParamType], data: &[u8]) -> Result<Vec<Token>, Error> {
-    let is_empty_bytes_valid_encoding = types.iter().all(|t| t.is_empty_bytes_valid_encoding());
-    if !is_empty_bytes_valid_encoding && data.is_empty() {
-        bail!("please ensure the contract and method you're calling exist! failed to decode empty bytes. if you're using jsonrpc this is likely due to jsonrpc returning `0x` in case contract or method don't exist");
-    }
+	let is_empty_bytes_valid_encoding = types.iter().all(|t| t.is_empty_bytes_valid_encoding());
+	if !is_empty_bytes_valid_encoding && data.is_empty() {
+		return Err(Error::InvalidName("please ensure the contract and method you're calling exist! failed to decode empty bytes. if you're using jsonrpc this is likely due to jsonrpc returning `0x` in case contract or method don't exist".into()));
+	}
 	let slices = slice_data(data)?;
 	let mut tokens = Vec::with_capacity(types.len());
 	let mut offset = 0;
 	for param in types {
-		let res = decode_param(param, &slices, offset).chain_err(|| format!("Cannot decode {}", param))?;
+		let res = decode_param(param, &slices, offset)?;
 		offset = res.new_offset;
 		tokens.push(res.token);
 	}
@@ -52,7 +52,7 @@ pub fn decode(types: &[ParamType], data: &[u8]) -> Result<Vec<Token>, Error> {
 }
 
 fn peek(slices: &[Word], position: usize) -> Result<&Word, Error> {
-	slices.get(position).ok_or_else(|| ErrorKind::InvalidData.into())
+	slices.get(position).ok_or_else(|| Error::InvalidData)
 }
 
 fn take_bytes(slices: &[Word], position: usize, len: usize) -> Result<BytesTaken, Error> {
@@ -229,22 +229,22 @@ mod tests {
 
 	#[test]
 	fn decode_from_empty_byte_slice() {
-        // these can NOT be decoded from empty byte slice
-        assert!(decode(&[ParamType::Address], &[]).is_err());
-        assert!(decode(&[ParamType::Bytes], &[]).is_err());
-        assert!(decode(&[ParamType::Int(0)], &[]).is_err());
-        assert!(decode(&[ParamType::Int(1)], &[]).is_err());
-        assert!(decode(&[ParamType::Int(0)], &[]).is_err());
-        assert!(decode(&[ParamType::Int(1)], &[]).is_err());
-        assert!(decode(&[ParamType::Bool], &[]).is_err());
-        assert!(decode(&[ParamType::String], &[]).is_err());
-        assert!(decode(&[ParamType::Array(Box::new(ParamType::Bool))], &[]).is_err());
-        assert!(decode(&[ParamType::FixedBytes(1)], &[]).is_err());
-        assert!(decode(&[ParamType::FixedArray(Box::new(ParamType::Bool), 1)], &[]).is_err());
+		// these can NOT be decoded from empty byte slice
+		assert!(decode(&[ParamType::Address], &[]).is_err());
+		assert!(decode(&[ParamType::Bytes], &[]).is_err());
+		assert!(decode(&[ParamType::Int(0)], &[]).is_err());
+		assert!(decode(&[ParamType::Int(1)], &[]).is_err());
+		assert!(decode(&[ParamType::Int(0)], &[]).is_err());
+		assert!(decode(&[ParamType::Int(1)], &[]).is_err());
+		assert!(decode(&[ParamType::Bool], &[]).is_err());
+		assert!(decode(&[ParamType::String], &[]).is_err());
+		assert!(decode(&[ParamType::Array(Box::new(ParamType::Bool))], &[]).is_err());
+		assert!(decode(&[ParamType::FixedBytes(1)], &[]).is_err());
+		assert!(decode(&[ParamType::FixedArray(Box::new(ParamType::Bool), 1)], &[]).is_err());
 
-        // these are the only ones that can be decoded from empty byte slice
-        assert!(decode(&[ParamType::FixedBytes(0)], &[]).is_ok());
-        assert!(decode(&[ParamType::FixedArray(Box::new(ParamType::Bool), 0)], &[]).is_ok());
+		// these are the only ones that can be decoded from empty byte slice
+		assert!(decode(&[ParamType::FixedBytes(0)], &[]).is_ok());
+		assert!(decode(&[ParamType::FixedArray(Box::new(ParamType::Bool), 0)], &[]).is_ok());
 	}
 }
 

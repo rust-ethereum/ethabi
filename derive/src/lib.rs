@@ -17,7 +17,7 @@ use std::{env, fs};
 use std::path::PathBuf;
 use heck::SnakeCase;
 use syn::export::Span;
-use ethabi::{Result, ResultExt, Contract, Param, ParamType};
+use ethabi::{Result, Contract, Param, ParamType};
 
 const ERROR_MSG: &str = "`derive(EthabiContract)` failed";
 
@@ -33,7 +33,7 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<proc_macro2::TokenStream
 	let path = get_option(&options, "path")?;
 	let normalized_path = normalize_path(&path)?;
 	let source_file = fs::File::open(&normalized_path)
-		.chain_err(|| format!("Cannot load contract abi from `{}`", normalized_path.display()))?;
+		.map_err(|_| format!("Cannot load contract abi from `{}`", normalized_path.display()))?;
 	let contract = Contract::load(source_file)?;
 	let c = contract::Contract::from(&contract);
 	Ok(c.generate())
@@ -58,7 +58,8 @@ fn get_option(options: &[syn::NestedMeta], name: &str) -> Result<String> {
 			_ => None,
 		})
 		.find(|meta| meta.name() == name)
-		.chain_err(|| format!("Expected to find option {}", name))?;
+		.ok_or_else(|| format!("Expected to find option {}", name))?;
+
 	str_value_of_meta_item(item, name)
 }
 
@@ -74,7 +75,7 @@ fn str_value_of_meta_item(item: &syn::Meta, name: &str) -> Result<String> {
 
 fn normalize_path(relative_path: &str) -> Result<PathBuf> {
 	// workaround for https://github.com/rust-lang/rust/issues/43860
-	let cargo_toml_directory = env::var("CARGO_MANIFEST_DIR").chain_err(|| "Cannot find manifest file")?;
+	let cargo_toml_directory = env::var("CARGO_MANIFEST_DIR").map_err(|_| "Cannot find manifest file")?;
 	let mut path: PathBuf = cargo_toml_directory.into();
 	path.push(relative_path);
 	Ok(path)

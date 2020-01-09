@@ -1,6 +1,6 @@
 use hex::FromHex;
 use token::Tokenizer;
-use errors::{Error, ErrorKind};
+use errors::Error;
 
 /// Tries to parse string as a token. Require string to clearly represent the value.
 pub struct StrictTokenizer;
@@ -9,7 +9,7 @@ impl Tokenizer for StrictTokenizer {
 	fn tokenize_address(value: &str) -> Result<[u8; 20], Error> {
 		let hex: Vec<u8> = value.from_hex()?;
 		match hex.len() == 20 {
-			false => Err(ErrorKind::InvalidData.into()),
+			false => Err(Error::InvalidData),
 			true => {
 				let mut address = [0u8; 20];
 				address.copy_from_slice(&hex);
@@ -26,7 +26,7 @@ impl Tokenizer for StrictTokenizer {
 		match value {
 			"true" | "1" => Ok(true),
 			"false" | "0" => Ok(false),
-			_ => Err(ErrorKind::InvalidData.into()),
+			_ => Err(Error::InvalidData),
 		}
 	}
 
@@ -38,7 +38,7 @@ impl Tokenizer for StrictTokenizer {
 		let hex: Vec<u8> = value.from_hex()?;
 		match hex.len() == len {
 			true => Ok(hex),
-			false => Err(ErrorKind::InvalidData.into()),
+			false => Err(Error::InvalidData),
 		}
 	}
 
@@ -50,7 +50,7 @@ impl Tokenizer for StrictTokenizer {
 				uint.copy_from_slice(&hex);
 				Ok(uint)
 			},
-			false => Err(ErrorKind::InvalidData.into())
+			false => Err(Error::InvalidData)
 		}
 	}
 
@@ -62,7 +62,7 @@ impl Tokenizer for StrictTokenizer {
 				int.copy_from_slice(&hex);
 				Ok(int)
 			},
-			false => Err(ErrorKind::InvalidData.into())
+			false => Err(Error::InvalidData)
 		}
 	}
 }

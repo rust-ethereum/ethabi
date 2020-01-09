@@ -1,26 +1,83 @@
-#![allow(unknown_lints)]
-#![allow(missing_docs)]
+use std::{fmt, num, result::Result as StdResult, string};
+use {hex, serde_json};
 
-use std::{num, string};
-use {serde_json, hex};
+/// Ethabi result type
+pub type Result<T> = std::result::Result<T, Error>;
 
-error_chain! {
-	foreign_links {
-		SerdeJson(serde_json::Error);
-		ParseInt(num::ParseIntError);
-		Utf8(string::FromUtf8Error);
-		Hex(hex::FromHexError);
+/// Ethabi errors
+#[derive(Debug)]
+pub enum Error {
+	/// Invalid entity such as a bad function name.
+	InvalidName(String),
+	/// Invalid data.
+	InvalidData,
+	/// Serialization error.
+	SerdeJson(serde_json::Error),
+	/// Integer parsing error.
+	ParseInt(num::ParseIntError),
+	/// UTF-8 parsing error.
+	Utf8(string::FromUtf8Error),
+	/// Hex string parsing error.
+	Hex(hex::FromHexError),
+	/// Other errors.
+	Other(String)
+}
+
+impl std::error::Error for Error {
+	fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+		use self::Error::*;
+		match self {
+			SerdeJson(e) => Some(e),
+			ParseInt(e) => Some(e),
+			Utf8(e) => Some(e),
+			Hex(e) => Some(e),
+			_ => None,
+		}
 	}
+}
 
-	errors {
-		InvalidName(name: String) {
-			description("Invalid name"),
-			display("Invalid name `{}`", name),
+impl fmt::Display for Error {
+	fn fmt(&self, f: &mut fmt::Formatter) -> StdResult<(), fmt::Error> {
+		use self::Error::*;
+		match *self {
+			InvalidName(ref name) => write!(f, "Invalid name `{}`", name),
+			InvalidData => write!(f, "Invalid data"),
+			SerdeJson(ref err) => write!(f, "Serialization error: {}", err),
+			ParseInt(ref err) => write!(f, "Integer parsing error: {}", err),
+			Utf8(ref err) => write!(f, "UTF-8 parsing error: {}", err),
+			Hex(ref err) => write!(f, "Hex parsing error: {}", err),
+			Other(ref error_string) => write!(f, "{}", error_string),
 		}
+	}
+}
 
-		InvalidData {
-			description("Invalid data"),
-			display("Invalid data"),
-		}
+impl From<&str> for Error {
+	fn from(err: &str) -> Self {
+		Error::Other(err.to_owned())
+	}
+}
+impl From<String> for Error {
+	fn from(err: String) -> Self {
+		Error::Other(err)
+	}
+}
+impl From<serde_json::Error> for Error {
+	fn from(err: serde_json::Error) -> Self {
+		Error::SerdeJson(err)
+	}
+}
+impl From<num::ParseIntError> for Error {
+	fn from(err: num::ParseIntError) -> Self {
+		Error::ParseInt(err)
+	}
+}
+impl From<string::FromUtf8Error> for Error {
+	fn from(err: string::FromUtf8Error) -> Self {
+		Error::Utf8(err)
+	}
+}
+impl From<hex::FromHexError> for Error {
+	fn from(err: hex::FromHexError) -> Self {
+		Error::Hex(err)
 	}
 }

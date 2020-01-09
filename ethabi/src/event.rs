@@ -6,7 +6,7 @@ use signature::long_signature;
 use {
 	Log, Hash, RawLog, LogParam, RawTopicFilter, TopicFilter,
 	Topic, ParamType, EventParam, encode, decode, Token,
-	Result, ErrorKind
+	Result, Error,
 };
 
 /// Contract event.
@@ -52,7 +52,7 @@ impl Event {
 	pub fn filter(&self, raw: RawTopicFilter) -> Result<TopicFilter> {
 		fn convert_token(token: Token, kind: &ParamType) -> Result<Hash> {
 			if !token.type_check(kind) {
-				return Err(ErrorKind::InvalidData.into());
+				return Err(Error::InvalidData);
 			}
 			let encoded = encode(&[token]);
 			if encoded.len() == 32 {
@@ -68,7 +68,7 @@ impl Event {
 			match topic {
 				Topic::Any => Ok(Topic::Any),
 				Topic::OneOf(tokens) => match kind {
-					None => Err(ErrorKind::InvalidData.into()),
+					None => Err(Error::InvalidData),
 					Some(kind) => {
 						let topics = tokens.into_iter()
 							.map(|token| convert_token(token, kind))
@@ -77,7 +77,7 @@ impl Event {
 					}
 				},
 				Topic::This(token) => match kind {
-					None => Err(ErrorKind::InvalidData.into()),
+					None => Err(Error::InvalidData),
 					Some(kind) => Ok(Topic::This(convert_token(token, kind)?)),
 				}
 			}
@@ -130,9 +130,9 @@ impl Event {
 			0
 		} else {
 			// verify
-			let event_signature = topics.get(0).ok_or(ErrorKind::InvalidData)?;
+			let event_signature = topics.get(0).ok_or(Error::InvalidData)?;
 			if event_signature != &self.signature() {
-				return Err(ErrorKind::InvalidData.into());
+				return Err(Error::InvalidData.into());
 			}
 			1
 		};
@@ -150,7 +150,7 @@ impl Event {
 
 		// topic may be only a 32 bytes encoded token
 		if topic_tokens.len() != topics_len - to_skip {
-			return Err(ErrorKind::InvalidData.into());
+			return Err(Error::InvalidData);
 		}
 
 		let topics_named_tokens = topic_params.into_iter()
