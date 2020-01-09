@@ -38,7 +38,7 @@ enum Encode {
 		/// Pairs of types directly followed by params in the form:
 		///
 		/// -v <type1> <param1> -v <type2> <param2> ...
-		#[structopt(short = "v", name = "type-or-param", number_of_values = 2)]
+		#[structopt(short = "v", name = "type-or-param", number_of_values = 2, allow_hyphen_values = true)]
 		params: Vec<String>,
 		/// Allow short representation of input params.
 		#[structopt(short, long)]
@@ -263,13 +263,17 @@ mod tests {
 		assert_eq!(execute(command).unwrap(), expected);
 	}
 
-	// TODO: parsing negative values is not working
 	#[test]
-	#[ignore]
 	fn int_encode() {
 		let command = "ethabi encode params -v int256 -2 --lenient".split(" ");
 		let expected = "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe";
 		assert_eq!(execute(command).unwrap(), expected);
+	}
+
+	#[test]
+	fn uint_encode_must_be_positive() {
+		let command = "ethabi encode params -v uint256 -2 --lenient".split(" ");
+		assert!(execute(command).is_err());
 	}
 
 	#[test]
