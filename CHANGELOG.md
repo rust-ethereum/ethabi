@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog].
 [Keep a Changelog]: http://keepachangelog.com/en/1.0.0/
 
 ## [Unreleased]
+### Changed
+- Add support for overloaded contract functions (PR #166)
 
 ## [10.0.0] - 2020-01-08
 ### Changed

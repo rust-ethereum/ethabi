@@ -29,7 +29,7 @@ enum Encode {
 	/// Load function from JSON ABI file.
 	Function {
 		abi_path: String,
-		function_name: String,
+		function_name_or_signature: String,
 		#[structopt(short, number_of_values = 1)]
 		params: Vec<String>,
 		/// Allow short representation of input params.
@@ -54,7 +54,7 @@ enum Decode {
 	/// Load function from JSON ABI file.
 	Function {
 		abi_path: String,
-		function_name: String,
+		function_name_or_signature: String,
 		data: String,
 	},
 	/// Specify types of input params inline.
@@ -87,12 +87,12 @@ where
 	let opt = Opt::from_iter(args);
 
 	match opt {
-		Opt::Encode(Encode::Function { abi_path, function_name, params, lenient }) =>
-			encode_input(&abi_path, &function_name, &params, lenient),
+		Opt::Encode(Encode::Function { abi_path, function_name_or_signature, params, lenient }) =>
+			encode_input(&abi_path, &function_name_or_signature, &params, lenient),
 		Opt::Encode(Encode::Params { params, lenient }) =>
 			encode_params(&params, lenient),
-		Opt::Decode(Decode::Function { abi_path, function_name, data }) =>
-			decode_call_output(&abi_path, &function_name, &data),
+		Opt::Decode(Decode::Function { abi_path, function_name_or_signature, data }) =>
+			decode_call_output(&abi_path, &function_name_or_signature, &data),
 		Opt::Decode(Decode::Params { types, data }) =>
 			decode_params(&types, &data),
 		Opt::Decode(Decode::Log { abi_path, event_name_or_signature, topics, data }) =>
@@ -100,12 +100,31 @@ where
 	}
 }
 
-fn load_function(path: &str, function: &str) -> Result<Function, Error> {
+fn load_function(path: &str, name_or_signature: &str) -> Result<Function, Error> {
 	let file = File::open(path)?;
 	let contract = Contract::load(file)?;
-	let function = contract.function(function)?.clone();
+	let params_start = name_or_signature.find('(');
 
-	Ok(function)
+	match params_start {
+		// It's a signature
+		Some(params_start) => {
+			let name = &name_or_signature[..params_start];
+
+			contract.functions_by_name(name)?.iter().find(|f| {
+				f.signature() == name_or_signature
+			}).cloned().ok_or(ErrorKind::InvalidFunctionSignature(name_or_signature.to_owned()).into())
+		},
+
+		// It's a name
+		None => {
+			let functions = contract.functions_by_name(name_or_signature)?;
+			match functions.len() {
+				0 => unreachable!(),
+				1 => Ok(functions[0].clone()),
+				_ => Err(ErrorKind::AmbiguousFunctionName(name_or_signature.to_owned()).into())
+			}
+		},
+	}
 }
 
 fn load_event(path: &str, name_or_signature: &str) -> Result<Event, Error> {
@@ -145,8 +164,8 @@ fn parse_tokens(params: &[(ParamType, &str)], lenient: bool) -> Result<Vec<Token
 		.map_err(From::from)
 }
 
-fn encode_input(path: &str, function: &str, values: &[String], lenient: bool) -> Result<String, Error> {
-	let function = load_function(path, function)?;
+fn encode_input(path: &str, name_or_signature: &str, values: &[String], lenient: bool) -> Result<String, Error> {
+	let function = load_function(path, name_or_signature)?;
 
 	let params: Vec<_> = function.inputs.iter()
 		.map(|param| param.kind.clone())
@@ -174,8 +193,8 @@ fn encode_params(params: &[String], lenient: bool) -> Result<String, Error> {
 	Ok(result.to_hex())
 }
 
-fn decode_call_output(path: &str, function: &str, data: &str) -> Result<String, Error> {
-	let function = load_function(path, function)?;
+fn decode_call_output(path: &str, name_or_signature: &str, data: &str) -> Result<String, Error> {
+	let function = load_function(path, name_or_signature)?;
 	let data : Vec<u8> = data.from_hex().chain_err(|| "Expected <data> to be hex")?;
 	let tokens = function.decode_output(&data)?;
 	let types = function.outputs;
@@ -271,9 +290,46 @@ mod tests {
 	}
 
 	#[test]
-	fn abi_encode() {
+	fn function_encode_by_name() {
 		let command = "ethabi encode function ../res/test.abi foo -p 1".split(" ");
 		let expected = "455575780000000000000000000000000000000000000000000000000000000000000001";
+		assert_eq!(execute(command).unwrap(), expected);
+	}
+
+	#[test]
+	fn function_encode_by_signature() {
+		let command = "ethabi encode function ../res/test.abi foo(bool) -p 1".split(" ");
+		let expected = "455575780000000000000000000000000000000000000000000000000000000000000001";
+		assert_eq!(execute(command).unwrap(), expected);
+	}
+
+	#[test]
+	fn nonexistent_function() {
+		// This should fail because there is no function called 'nope' in the ABI
+		let command = "ethabi encode function ../res/test.abi nope -p 1".split(" ");
+		assert!(execute(command).is_err());
+	}
+
+	#[test]
+	fn overloaded_function_encode_by_name() {
+		// This should fail because there are two definitions of `bar in the ABI
+		let command = "ethabi encode function ../res/test.abi bar -p 1".split(" ");
+		assert!(execute(command).is_err());
+	}
+
+	#[test]
+	fn overloaded_function_encode_by_first_signature() {
+		let command = "ethabi encode function ../res/test.abi bar(bool) -p 1".split(" ");
+		let expected = "6fae94120000000000000000000000000000000000000000000000000000000000000001";
+		assert_eq!(execute(command).unwrap(), expected);
+	}
+
+	#[test]
+	fn overloaded_function_encode_by_second_signature() {
+		let command = "ethabi encode function ../res/test.abi bar(string):(uint256) -p 1".split(" ");
+		let expected = "d473a8ed0000000000000000000000000000000000000000000000000000000000000020\
+						000000000000000000000000000000000000000000000000000000000000000131000000\
+						00000000000000000000000000000000000000000000000000000000";
 		assert_eq!(execute(command).unwrap(), expected);
 	}
 
@@ -331,5 +387,12 @@ b 4444444444444444444444444444444444444444";
 "a true
 b 4444444444444444444444444444444444444444";
 		assert_eq!(execute(command).unwrap(), expected);
+	}
+
+	#[test]
+	fn nonexistent_event() {
+		// This should return an error because no event 'Nope(bool,address)' exists
+		let command = "ethabi decode log ../res/event.abi Nope(bool,address) -l 0000000000000000000000000000000000000000000000000000000000000000 0000000000000000000000004444444444444444444444444444444444444444".split(" ");
+		assert!(execute(command).is_err());
 	}
 }

@@ -44,11 +44,11 @@ Ethereum ABI coder.
   Copyright 2016-2017 Parity Technologies (UK) Limited
 
 Usage:
-    ethabi encode function <abi-path> <function-name> [-p <param>]... [-l | --lenient]
+    ethabi encode function <abi-path> <function-name-or-signature> [-p <param>]... [-l | --lenient]
     ethabi encode params [-v <type> <param>]... [-l | --lenient]
-    ethabi decode function <abi-path> <function-name> <data>
+    ethabi decode function <abi-path> <function-name-or-signature> <data>
     ethabi decode params [-t <type>]... <data>
-    ethabi decode log <abi-path> <event-name> [-l <topic>]... <data>
+    ethabi decode log <abi-path> <event-name-or-signature> [-l <topic>]... <data>
     ethabi -h | --help
 
 Options:
@@ -106,6 +106,67 @@ ethabi encode function examples/test.json foo -p 1
 ```
 
 > 455575780000000000000000000000000000000000000000000000000000000000000001
+
+--
+
+```
+ethabi encode function examples/test.json foo(bool) -p 1
+```
+
+```json
+[{
+	"type":"function",
+	"inputs": [{
+		"name":"a",
+		"type":"bool"
+	}],
+	"name":"foo",
+	"outputs": []
+}]
+```
+
+> 455575780000000000000000000000000000000000000000000000000000000000000001
+
+--
+
+```
+ethabi encode function examples/test.json bar(bool) -p 1
+```
+
+```json
+[{
+	"type":"function",
+	"inputs": [{
+		"name":"a",
+		"type":"bool"
+	}],
+	"name":"foo",
+	"outputs": []
+}]
+```
+
+> 6fae94120000000000000000000000000000000000000000000000000000000000000001
+
+--
+
+```
+ethabi encode function examples/test.json bar(string):(uint256) -p 1
+```
+
+```json
+[{
+	"type":"function",
+	"inputs": [{
+		"type":"string"
+	}],
+	"name":"foo",
+	"outputs": [{
+		"type": "uint256"
+	}]
+}]
+```
+
+> d473a8ed000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000013100000000000000000000000000000000000000000000000000000000000000
 
 --
 
