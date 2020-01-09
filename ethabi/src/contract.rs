@@ -14,7 +14,7 @@ pub struct Contract {
 	/// Contract constructor.
 	pub constructor: Option<Constructor>,
 	/// Contract functions.
-	pub functions: HashMap<String, Function>,
+	pub functions: HashMap<String, Vec<Function>>,
 	/// Contract events, maps signature to event.
 	pub events: HashMap<String, Vec<Event>>,
 	/// Contract has fallback function.
@@ -50,7 +50,7 @@ impl<'a> Visitor<'a> for ContractVisitor {
 					result.constructor = Some(constructor);
 				},
 				Operation::Function(func) => {
-					result.functions.insert(func.name.clone(), func);
+					result.functions.entry(func.name.clone()).or_default().push(func);
 				},
 				Operation::Event(event) => {
 					result.events.entry(event.name.clone()).or_default().push(event);
@@ -76,9 +76,15 @@ impl Contract {
 		self.constructor.as_ref()
 	}
 
-	/// Creates function call builder.
+	/// Get the function named `name`, the first if there are overloaded
+	/// versions of the same function.
 	pub fn function(&self, name: &str) -> errors::Result<&Function> {
-		self.functions.get(name).ok_or_else(|| Error::InvalidName(name.to_owned()).into())
+		self.functions
+			.get(name)
+			.into_iter()
+			.flatten()
+			.next()
+			.ok_or_else(|| Error::InvalidName(name.to_owned()))
 	}
 
 	/// Get the contract event named `name`, the first if there are multiple.
@@ -95,9 +101,16 @@ impl Contract {
 					.ok_or_else(|| Error::InvalidName(name.to_owned()))
 	}
 
+	/// Get all functions named `name`.
+	pub fn functions_by_name(&self, name: &str) -> errors::Result<&Vec<Function>> {
+		self.functions
+			.get(name)
+			.ok_or_else(|| Error::InvalidName(name.to_owned()))
+	}
+
 	/// Iterate over all functions of the contract in arbitrary order.
 	pub fn functions(&self) -> Functions {
-		Functions(self.functions.values())
+		Functions(self.functions.values().flatten())
 	}
 
 	/// Iterate over all events of the contract in arbitrary order.
@@ -111,8 +124,8 @@ impl Contract {
 	}
 }
 
-/// Contract functions interator.
-pub struct Functions<'a>(Values<'a, String, Function>);
+/// Contract functions iterator.
+pub struct Functions<'a>(Flatten<Values<'a, String, Vec<Function>>>);
 
 impl<'a> Iterator for Functions<'a> {
 	type Item = &'a Function;
@@ -122,7 +135,7 @@ impl<'a> Iterator for Functions<'a> {
 	}
 }
 
-/// Contract events interator.
+/// Contract events iterator.
 pub struct Events<'a>(Flatten<Values<'a, String, Vec<Event>>>);
 
 impl<'a> Iterator for Events<'a> {

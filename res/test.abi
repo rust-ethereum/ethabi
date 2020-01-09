@@ -9,5 +9,33 @@
         "name": "foo",
         "outputs": [],
         "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "a",
+                "type": "bool"
+            }
+        ],
+        "name": "bar",
+        "outputs": [
+        ],
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "a",
+                "type": "string"
+            }
+        ],
+        "name": "bar",
+        "outputs": [
+            {
+                "name": "b",
+                "type": "uint256"
+            }
+        ],
+        "type": "function"
     }
 ]
