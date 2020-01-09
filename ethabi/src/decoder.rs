@@ -52,7 +52,6 @@ pub fn decode(types: &[ParamType], data: &[u8]) -> Result<Vec<Token>, Error> {
 }
 
 fn peek(slices: &[Word], position: usize) -> Result<&Word, Error> {
-	// todo[dvdplm]: augment InvalidData to include word and pos?
 	slices.get(position).ok_or_else(|| Error::InvalidData)
 }
 
