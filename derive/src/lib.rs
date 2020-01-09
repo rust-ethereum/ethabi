@@ -41,8 +41,8 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<proc_macro2::TokenStream
 
 fn get_options(attrs: &[syn::Attribute], name: &str) -> Result<Vec<syn::NestedMeta>> {
 	let options = attrs.iter()
-		.flat_map(syn::Attribute::interpret_meta)
-		.find(|meta| meta.name() == name);
+		.flat_map(syn::Attribute::parse_meta)
+		.find(|meta| meta.path().is_ident(name));
 
 
 	match options {
@@ -57,7 +57,7 @@ fn get_option(options: &[syn::NestedMeta], name: &str) -> Result<String> {
 			syn::NestedMeta::Meta(ref meta) => Some(meta),
 			_ => None,
 		})
-		.find(|meta| meta.name() == name)
+		.find(|meta| meta.path().is_ident(name))
 		.ok_or_else(|| format!("Expected to find option {}", name))?;
 
 	str_value_of_meta_item(item, name)

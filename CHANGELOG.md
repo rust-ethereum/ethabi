@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog].
 ### Changed
 - Add support for overloaded contract functions (PR #166)
 - Removed `error_chain` and reworked errors manually. Also removes the `backtrace` feature. (#167)
+### Dependencies
+- Upgrade syn, proc-macro2, quote and heck crates (PR #169)
 
 ## [10.0.0] - 2020-01-08
 ### Changed
