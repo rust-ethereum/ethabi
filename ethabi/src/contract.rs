@@ -124,7 +124,7 @@ impl Contract {
 	}
 }
 
-/// Contract functions interator.
+/// Contract functions iterator.
 pub struct Functions<'a>(Flatten<Values<'a, String, Vec<Function>>>);
 
 impl<'a> Iterator for Functions<'a> {
@@ -135,7 +135,7 @@ impl<'a> Iterator for Functions<'a> {
 	}
 }
 
-/// Contract events interator.
+/// Contract events iterator.
 pub struct Events<'a>(Flatten<Values<'a, String, Vec<Event>>>);
 
 impl<'a> Iterator for Events<'a> {
