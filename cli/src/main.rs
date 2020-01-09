@@ -388,4 +388,11 @@ b 4444444444444444444444444444444444444444";
 b 4444444444444444444444444444444444444444";
 		assert_eq!(execute(command).unwrap(), expected);
 	}
+
+	#[test]
+	fn nonexistent_event() {
+		// This should return an error because no event 'Nope(bool,address)' exists
+		let command = "ethabi decode log ../res/event.abi Nope(bool,address) -l 0000000000000000000000000000000000000000000000000000000000000000 0000000000000000000000004444444444444444444444444444444444444444".split(" ");
+		assert!(execute(command).is_err());
+	}
 }
