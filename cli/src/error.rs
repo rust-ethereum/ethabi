@@ -1,5 +1,4 @@
 use std::{fmt, io};
-use {ethabi, rustc_hex};
 
 /// Ethabi CLI errors
 #[derive(Debug)]
