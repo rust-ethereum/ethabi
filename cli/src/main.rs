@@ -193,7 +193,7 @@ fn decode_params(types: &[String], data: &str) -> Result<String, Error> {
 		.map(|s| Reader::read(s))
 		.collect::<Result<_, _>>()?;
 
-	let data  : Vec<u8> = data.from_hex()?;
+	let data: Vec<u8> = data.from_hex()?;
 
 	let tokens = decode(&types, &data)?;
 
