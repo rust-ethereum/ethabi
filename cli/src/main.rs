@@ -304,6 +304,13 @@ mod tests {
 	}
 
 	#[test]
+	fn nonexistent_function() {
+		// This should fail because there is no function called 'nope' in the ABI
+		let command = "ethabi encode function ../res/test.abi nope -p 1".split(" ");
+		assert!(execute(command).is_err());
+	}
+
+	#[test]
 	fn overloaded_function_encode_by_name() {
 		// This should fail because there are two definitions of `bar in the ABI
 		let command = "ethabi encode function ../res/test.abi bar -p 1".split(" ");
