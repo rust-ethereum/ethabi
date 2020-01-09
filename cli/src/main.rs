@@ -267,7 +267,7 @@ mod tests {
 	#[test]
 	#[ignore]
 	fn int_encode() {
-		let command = "ethabi encode paramas -v int256 -2 --lenient".split(" ");
+		let command = "ethabi encode params -v int256 -2 --lenient".split(" ");
 		let expected = "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe";
 		assert_eq!(execute(command).unwrap(), expected);
 	}
