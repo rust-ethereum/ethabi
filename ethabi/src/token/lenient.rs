@@ -46,6 +46,8 @@ impl Tokenizer for LenientTokenizer {
 			let int = i128::from_str_radix(value, 10)?;
 			pad_i128(int)
 		} else {
+			// todo[dvdplm] this is wrong: a Solidity int256 should not be allowed to be as large as a U256.
+			//  What should the max allowed be? U256::MAX / 2?
 			Int::from_dec_str(value)?.into()
 		};
 		Ok(int)

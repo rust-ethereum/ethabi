@@ -293,6 +293,21 @@ mod tests {
 	}
 
 	#[test]
+	fn int_encode_large_negative_numbers() {
+		// Underflow
+		let command = "ethabi encode params -v int256 -100000000000000000000000000000000022222222222222221111111111111 --lenient".split(" ");
+		assert_eq!(execute(command).unwrap_err().to_string(), "Ethabi error: Integer parsing error: number too small to fit in target type");
+		// i128::min_value() is ok
+		let command = "ethabi encode params -v int256 -170141183460469231731687303715884105728 --lenient".split(" ");
+		let expected = "ffffffffffffffffffffffffffffffff80000000000000000000000000000000";
+		assert_eq!(execute(command).unwrap(), expected);
+
+		// i128::min_value() -1 is too much
+		let command = "ethabi encode params -v int256 -170141183460469231731687303715884105729 --lenient".split(" ");
+		assert_eq!(execute(command).unwrap_err().to_string(), "Ethabi error: Integer parsing error: number too small to fit in target type");
+	}
+
+	#[test]
 	fn multi_encode() {
 		let command = "ethabi encode params -v bool 1 -v string gavofyork -v bool 0".split(" ");
 		let expected = "00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000096761766f66796f726b0000000000000000000000000000000000000000000000";
