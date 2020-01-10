@@ -1,9 +1,19 @@
+// Copyright 2015-2020 Parity Technologies
+//
+// Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
+// http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
+// <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
+// option. This file may not be copied, modified, or distributed
+// except according to those terms.
+
 //! Contract event.
 
 use std::collections::HashMap;
 use tiny_keccak::keccak256;
-use signature::long_signature;
-use {
+use serde::Deserialize;
+
+use crate::{
+	signature::long_signature,
 	Log, Hash, RawLog, LogParam, RawTopicFilter, TopicFilter,
 	Topic, ParamType, EventParam, encode, decode, Token,
 	Result, Error,
@@ -190,10 +200,12 @@ impl Event {
 #[cfg(test)]
 mod tests {
 	use hex::FromHex;
-	use token::Token;
-	use signature::long_signature;
-	use log::{RawLog, Log};
-	use {EventParam, ParamType, Event, LogParam};
+	use crate::{
+		token::Token,
+		signature::long_signature,
+		log::{RawLog, Log},
+		EventParam, ParamType, Event, LogParam,
+	};
 
 	#[test]
 	fn test_decoding_event() {

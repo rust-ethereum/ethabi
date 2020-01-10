@@ -1,6 +1,14 @@
+// Copyright 2015-2020 Parity Technologies
+//
+// Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
+// http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
+// <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
+// option. This file may not be copied, modified, or distributed
+// except according to those terms.
+
 use hex::FromHex;
-use token::Tokenizer;
-use errors::Error;
+use crate::token::Tokenizer;
+use crate::errors::Error;
 
 /// Tries to parse string as a token. Require string to clearly represent the value.
 pub struct StrictTokenizer;
@@ -61,8 +69,8 @@ impl Tokenizer for StrictTokenizer {
 
 #[cfg(test)]
 mod tests {
-	use ParamType;
-	use token::{Token, Tokenizer, StrictTokenizer};
+	use crate::ParamType;
+	use crate::token::{Token, Tokenizer, StrictTokenizer};
 
 	#[test]
 	fn tokenize_address() {

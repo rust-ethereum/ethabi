@@ -1,3 +1,11 @@
+// Copyright 2015-2020 Parity Technologies
+//
+// Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
+// http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
+// <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
+// option. This file may not be copied, modified, or distributed
+// except according to those terms.
+
 use std::{io, fmt};
 use std::collections::HashMap;
 use std::collections::hash_map::Values;
@@ -5,8 +13,8 @@ use std::iter::Flatten;
 use serde::{Deserialize, Deserializer};
 use serde::de::{Visitor, SeqAccess};
 use serde_json;
-use operation::Operation;
-use {errors, Error, Event, Constructor, Function};
+use crate::operation::Operation;
+use crate::{errors, Error, Event, Constructor, Function};
 
 /// API building calls to contracts ABI.
 #[derive(Clone, Debug, PartialEq)]

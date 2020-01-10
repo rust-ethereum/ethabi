@@ -1,10 +1,18 @@
+// Copyright 2015-2020 Parity Technologies
+//
+// Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
+// http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
+// <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
+// option. This file may not be copied, modified, or distributed
+// except according to those terms.
+
 //! Operation type.
 
 use serde::{Deserialize, Deserializer};
 use serde::de::{Error as SerdeError};
 use serde_json::Value;
 use serde_json::value::from_value;
-use {Function, Constructor, Event};
+use crate::{Function, Constructor, Event};
 
 /// Operation type.
 #[derive(Clone, Debug, PartialEq)]
@@ -54,7 +62,7 @@ impl<'a> Deserialize<'a> for Operation {
 mod tests {
 	use serde_json;
 	use super::Operation;
-	use {Function, Param, ParamType};
+	use crate::{Function, Param, ParamType};
 
 	#[test]
 	fn deserialize_operation() {

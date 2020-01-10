@@ -1,6 +1,14 @@
+// Copyright 2015-2020 Parity Technologies
+//
+// Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
+// http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
+// <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
+// option. This file may not be copied, modified, or distributed
+// except according to those terms.
+
 //! Utils used by different modules.
 
-use {Error, Word};
+use crate::{Word, Error};
 
 /// Converts a vector of bytes with len equal n * 32, to a vector of slices.
 pub fn slice_data(data: &[u8]) -> Result<Vec<Word>, Error> {
@@ -46,6 +54,7 @@ pub fn pad_i128(value: i128) -> Word {
 
 #[cfg(test)]
 mod tests {
+	use hex_literal::hex;
 	use super::{pad_i128, pad_u32};
 
 	#[test]

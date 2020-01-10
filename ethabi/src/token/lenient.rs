@@ -1,7 +1,15 @@
-use errors::Error;
-use token::{StrictTokenizer, Tokenizer};
-use util::pad_i128;
-use Uint;
+// Copyright 2015-2020 Parity Technologies
+//
+// Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
+// http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
+// <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
+// option. This file may not be copied, modified, or distributed
+// except according to those terms.
+
+use crate::token::{Tokenizer, StrictTokenizer};
+use crate::util::pad_i128;
+use crate::errors::Error;
+use crate::Uint;
 
 /// Tries to parse string as a token. Does not require string to clearly represent the value.
 pub struct LenientTokenizer;

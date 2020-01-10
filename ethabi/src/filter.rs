@@ -1,7 +1,15 @@
+// Copyright 2015-2020 Parity Technologies
+//
+// Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
+// http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
+// <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
+// option. This file may not be copied, modified, or distributed
+// except according to those terms.
+
 use std::ops;
 use serde::{Serialize, Serializer};
 use serde_json::Value;
-use {Hash, Token};
+use crate::{Hash, Token};
 
 /// Raw topic filter.
 #[derive(Debug, PartialEq, Default)]
@@ -140,7 +148,7 @@ impl<T> ops::Index<usize> for Topic<T> {
 mod tests {
 	use serde_json;
 	use super::{Topic, TopicFilter};
-	use Hash;
+	use crate::Hash;
 
 	fn hash(s: &'static str) -> Hash {
 		s.parse().unwrap()
