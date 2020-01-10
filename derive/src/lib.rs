@@ -8,6 +8,8 @@
 
 #![recursion_limit="256"]
 
+extern crate proc_macro;
+
 mod constructor;
 mod contract;
 mod event;
