@@ -1,7 +1,7 @@
-use token::{Tokenizer, StrictTokenizer};
-use util::pad_i128;
 use errors::Error;
-use {Uint, Int};
+use token::{StrictTokenizer, Tokenizer};
+use util::pad_i128;
+use {Int, Uint};
 
 /// Tries to parse string as a token. Does not require string to clearly represent the value.
 pub struct LenientTokenizer;
