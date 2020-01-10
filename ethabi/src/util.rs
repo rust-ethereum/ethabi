@@ -43,13 +43,35 @@ pub fn pad_i32(value: i32) -> Word {
 	padded
 }
 
+/// Converts i128 to right aligned array of 32 bytes.
+pub fn pad_i128(value: i128) -> Word {
+	let mut padded = [0xffu8; 32];
+	padded[16] = (value >> 120) as u8;
+	padded[17] = (value >> 112) as u8;
+	padded[18] = (value >> 104) as u8;
+	padded[19] = (value >> 96) as u8;
+	padded[20] = (value >> 88) as u8;
+	padded[21] = (value >> 80) as u8;
+	padded[22] = (value >> 72) as u8;
+	padded[23] = (value >> 64) as u8;
+	padded[24] = (value >> 56) as u8;
+	padded[25] = (value >> 48) as u8;
+	padded[26] = (value >> 40) as u8;
+	padded[27] = (value >> 32) as u8;
+	padded[28] = (value >> 24) as u8;
+	padded[29] = (value >> 16) as u8;
+	padded[30] = (value >> 8) as u8;
+	padded[31] = value as u8;
+	padded
+}
+
 #[cfg(test)]
 mod tests {
 	use super::{pad_u32, pad_i32};
 
 	#[test]
 	fn test_pad_u32() {
-		// this will fail if endianess is not supported
+		// this will fail if endianness is not supported
         assert_eq!(pad_u32(0).to_vec(), hex!("0000000000000000000000000000000000000000000000000000000000000000").to_vec());
         assert_eq!(pad_u32(1).to_vec(), hex!("0000000000000000000000000000000000000000000000000000000000000001").to_vec());
         assert_eq!(pad_u32(0x100).to_vec(), hex!("0000000000000000000000000000000000000000000000000000000000000100").to_vec());

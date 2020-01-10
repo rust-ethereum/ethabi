@@ -16,6 +16,7 @@ extern crate hex_literal;
 extern crate paste;
 
 extern crate ethereum_types;
+extern crate uint;
 
 pub mod param_type;
 pub mod token;

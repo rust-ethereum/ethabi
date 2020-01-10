@@ -1,6 +1,6 @@
 use std::{fmt, num, result::Result as StdResult, string};
 use {hex, serde_json};
-
+//use uint::FromDecStrErr;
 /// Ethabi result type
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -69,6 +69,15 @@ impl From<serde_json::Error> for Error {
 impl From<num::ParseIntError> for Error {
 	fn from(err: num::ParseIntError) -> Self {
 		Error::ParseInt(err)
+	}
+}
+impl From<uint::FromDecStrErr> for Error {
+	fn from(err: uint::FromDecStrErr) -> Self {
+		use uint::FromDecStrErr::*;
+		match err {
+			InvalidCharacter => Error::Other("Uint parse error: InvalidCharacter".into()),
+			InvalidLength => Error::Other("Uint parse error: InvalidLength".into()),
+		}
 	}
 }
 impl From<string::FromUtf8Error> for Error {

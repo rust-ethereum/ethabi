@@ -55,15 +55,7 @@ impl Tokenizer for StrictTokenizer {
 	}
 
 	fn tokenize_int(value: &str) -> Result<[u8; 32], Error> {
-		let hex: Vec<u8> = value.from_hex()?;
-		match hex.len() == 32 {
-			true => {
-				let mut int = [0u8; 32];
-				int.copy_from_slice(&hex);
-				Ok(int)
-			},
-			false => Err(Error::InvalidData)
-		}
+		Self::tokenize_uint(value)
 	}
 }
 

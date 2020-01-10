@@ -277,6 +277,22 @@ mod tests {
 	}
 
 	#[test]
+	fn uint_encode_requires_decimal_inputs() {
+		let command = "ethabi encode params -v uint256 123abc --lenient".split(" ");
+		let result = execute(command);
+		assert!(result.is_err());
+		let err = result.unwrap_err();
+		assert_eq!(err.to_string(), "Ethabi error: Uint parse error: InvalidCharacter");
+	}
+
+	#[test]
+	fn uint_encode_big_numbers() {
+		let command = "ethabi encode params -v uint256 100000000000000000000000000000000022222222222222221111111111111 --lenient".split(" ");
+		let expected = "0000000000003e3aeb4ae1383562f4b82261d96a3f7a5f62ca19599c1ad6d1c7";
+		assert_eq!(execute(command).unwrap(), expected);
+	}
+
+	#[test]
 	fn multi_encode() {
 		let command = "ethabi encode params -v bool 1 -v string gavofyork -v bool 0".split(" ");
 		let expected = "00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000096761766f66796f726b0000000000000000000000000000000000000000000000";
