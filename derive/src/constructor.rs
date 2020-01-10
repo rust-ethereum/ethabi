@@ -1,5 +1,14 @@
+// Copyright 2015-2019 Parity Technologies
+//
+// Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
+// http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
+// <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
+// option. This file may not be copied, modified, or distributed
+// except according to those terms.
+
 use ethabi;
 use proc_macro2::TokenStream;
+use quote::quote;
 
 use super::{
 	input_names, template_param_type, rust_type, get_template_names, to_token, from_template_param,
@@ -79,6 +88,7 @@ impl Constructor {
 #[cfg(test)]
 mod tests {
 	use ethabi;
+	use quote::quote;
 	use super::Constructor;
 
 	#[test]
