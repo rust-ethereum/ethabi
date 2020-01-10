@@ -1,7 +1,15 @@
+// Copyright 2015-2020 Parity Technologies
+//
+// Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
+// http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
+// <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
+// option. This file may not be copied, modified, or distributed
+// except according to those terms.
+
 //! ABI decoder.
 
-use util::slice_data;
-use {Word, Token, Error, ParamType};
+use crate::util::slice_data;
+use crate::{Word, Token, Error, ParamType};
 
 struct DecodeResult {
 	token: Token,
@@ -225,7 +233,7 @@ fn decode_param(param: &ParamType, slices: &[Word], offset: usize) -> Result<Dec
 
 #[cfg(test)]
 mod tests {
-	use {decode, ParamType};
+	use crate::{decode, ParamType};
 
 	#[test]
 	fn decode_from_empty_byte_slice() {

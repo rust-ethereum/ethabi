@@ -1,12 +1,22 @@
-use {encode, decode, Token, ParamType};
+// Copyright 2015-2020 Parity Technologies
+//
+// Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
+// http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
+// <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
+// option. This file may not be copied, modified, or distributed
+// except according to those terms.
+
+use hex_literal::hex;
+use paste;
+use crate::{encode, decode, Token, ParamType};
 
 macro_rules! test_encode_decode {
 	(name: $name:tt, types: $types:expr, tokens: $tokens:expr, data: $data:tt) => {
-		$crate::paste::item! {
+		paste::item! {
 			#[test]
 			fn [<encode_ $name>]() {
 				let encoded = encode(&$tokens);
-				let expected = $crate::hex_literal::hex!($data).to_vec();
+				let expected = hex!($data).to_vec();
 				assert_eq!(encoded, expected);
 			}
 
