@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog].
 ### Changed
 - Add support for overloaded contract functions (PR #166)
 - Removed `error_chain` and reworked errors manually. Also removes the `backtrace` feature. (#167)
-- Update to 2018 edition (PR #172)
+- Update to 2018 edition (PR #171, #172)
 ### Dependencies
 - Upgrade syn, proc-macro2, quote and heck crates (PR #169)
 

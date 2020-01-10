@@ -1,8 +1,20 @@
+// Copyright 2015-2019 Parity Technologies
+//
+// Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
+// http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
+// <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
+// option. This file may not be copied, modified, or distributed
+// except according to those terms.
+
 use ethabi;
 use proc_macro2::TokenStream;
-use constructor::Constructor;
-use function::Function;
-use event::Event;
+use quote::quote;
+
+use crate::{
+	constructor::Constructor,
+	function::Function,
+	event::Event,
+};
 
 /// Structure used to generate rust interface for solidity contract.
 pub struct Contract {
@@ -59,6 +71,8 @@ impl Contract {
 #[cfg(test)]
 mod test {
 	use ethabi;
+	use quote::quote;
+
 	use super::Contract;
 
 	#[test]
