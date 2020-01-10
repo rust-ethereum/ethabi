@@ -1,12 +1,14 @@
+// Copyright 2015-2019 Parity Technologies
+//
+// Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
+// http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
+// <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
+// option. This file may not be copied, modified, or distributed
+// except according to those terms.
+
 #![recursion_limit="256"]
 
 extern crate proc_macro;
-extern crate proc_macro2;
-extern crate syn;
-#[macro_use]
-extern crate quote;
-extern crate heck;
-extern crate ethabi;
 
 mod constructor;
 mod contract;
@@ -18,6 +20,7 @@ use std::path::PathBuf;
 use heck::SnakeCase;
 use syn::export::Span;
 use ethabi::{Result, Contract, Param, ParamType};
+use quote::quote;
 
 const ERROR_MSG: &str = "`derive(EthabiContract)` failed";
 
