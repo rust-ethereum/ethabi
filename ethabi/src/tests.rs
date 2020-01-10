@@ -16,7 +16,7 @@ macro_rules! test_encode_decode {
 			#[test]
 			fn [<encode_ $name>]() {
 				let encoded = encode(&$tokens);
-				let expected = hex_literal::hex!($data).to_vec();
+				let expected = hex!($data).to_vec();
 				assert_eq!(encoded, expected);
 			}
 
