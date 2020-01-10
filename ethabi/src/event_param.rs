@@ -9,7 +9,7 @@
 //! Event param specification.
 
 use serde::Deserialize;
-use crate::{ParamType};
+use crate::ParamType;
 
 /// Event param specification.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
