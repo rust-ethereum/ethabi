@@ -1,4 +1,4 @@
-use {ParamType, Error};
+use crate::{ParamType, Error};
 
 /// Used to convert param type represented as a string to rust structure.
 pub struct Reader;
@@ -61,7 +61,7 @@ impl Reader {
 
 #[cfg(test)]
 mod tests {
-	use ParamType;
+	use crate::ParamType;
 	use super::Reader;
 
 	#[test]

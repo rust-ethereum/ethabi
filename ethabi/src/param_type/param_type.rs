@@ -55,7 +55,7 @@ impl ParamType {
 
 #[cfg(test)]
 mod tests {
-	use ParamType;
+	use crate::ParamType;
 
 	#[test]
 	fn test_param_type_display() {

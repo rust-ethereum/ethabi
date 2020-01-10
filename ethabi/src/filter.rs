@@ -1,7 +1,7 @@
 use std::ops;
 use serde::{Serialize, Serializer};
 use serde_json::Value;
-use {Hash, Token};
+use crate::{Hash, Token};
 
 /// Raw topic filter.
 #[derive(Debug, PartialEq, Default)]
@@ -140,7 +140,7 @@ impl<T> ops::Index<usize> for Topic<T> {
 mod tests {
 	use serde_json;
 	use super::{Topic, TopicFilter};
-	use Hash;
+	use crate::Hash;
 
 	fn hash(s: &'static str) -> Hash {
 		s.parse().unwrap()

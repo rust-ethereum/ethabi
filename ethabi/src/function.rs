@@ -2,8 +2,9 @@
 
 use std::string::ToString;
 
-use signature::short_signature;
-use {Param, Token, Error, Result, Bytes, decode, ParamType, encode};
+use serde::Deserialize;
+use crate::signature::short_signature;
+use crate::{Param, Token, Error, Result, Bytes, decode, ParamType, encode};
 
 /// Contract function specification.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -86,7 +87,8 @@ impl Function {
 
 #[cfg(test)]
 mod tests {
-	use {Token, Param, Function, ParamType};
+	use hex_literal::hex;
+	use crate::{Token, Param, Function, ParamType};
 
 	#[test]
 	fn test_function_encode_call() {

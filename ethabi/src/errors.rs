@@ -1,5 +1,6 @@
 use std::{fmt, num, result::Result as StdResult, string};
-use {hex, serde_json};
+use hex;
+use serde_json;
 
 /// Ethabi result type
 pub type Result<T> = std::result::Result<T, Error>;

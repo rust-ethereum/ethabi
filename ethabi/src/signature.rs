@@ -1,6 +1,6 @@
 use tiny_keccak::Keccak;
-use param_type::{Writer, ParamType};
-use Hash;
+use crate::param_type::{Writer, ParamType};
+use crate::Hash;
 
 pub fn short_signature(name: &str, params: &[ParamType]) -> [u8; 4] {
 	let mut result = [0u8; 4];
@@ -29,8 +29,9 @@ fn fill_signature(name: &str, params: &[ParamType], result: &mut [u8]) {
 
 #[cfg(test)]
 mod tests {
+	use hex_literal::hex;
 	use super::short_signature;
-	use {ParamType};
+	use crate::{ParamType};
 
 	#[test]
 	fn test_signature() {

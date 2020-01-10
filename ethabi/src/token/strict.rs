@@ -1,6 +1,6 @@
 use hex::FromHex;
-use token::Tokenizer;
-use errors::Error;
+use crate::token::Tokenizer;
+use crate::errors::Error;
 
 /// Tries to parse string as a token. Require string to clearly represent the value.
 pub struct StrictTokenizer;
@@ -69,8 +69,8 @@ impl Tokenizer for StrictTokenizer {
 
 #[cfg(test)]
 mod tests {
-	use ParamType;
-	use token::{Token, Tokenizer, StrictTokenizer};
+	use crate::ParamType;
+	use crate::token::{Token, Tokenizer, StrictTokenizer};
 
 	#[test]
 	fn tokenize_address() {

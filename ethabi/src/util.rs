@@ -1,8 +1,8 @@
 //! Utils used by different modules.
 
-use {Word, Error};
+use crate::{Word, Error};
 
-/// Convers vector of bytes with len equal n * 32, to a vector of slices.
+/// Converts vector of bytes with len equal n * 32, to a vector of slices.
 pub fn slice_data(data: &[u8]) -> Result<Vec<Word>, Error> {
 	if data.len() % 32 != 0 {
 		return Err(Error::InvalidData);
@@ -45,6 +45,7 @@ pub fn pad_i32(value: i32) -> Word {
 
 #[cfg(test)]
 mod tests {
+	use hex_literal::hex;
 	use super::{pad_u32, pad_i32};
 
 	#[test]

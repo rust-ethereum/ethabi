@@ -2,8 +2,10 @@
 
 use std::collections::HashMap;
 use tiny_keccak::keccak256;
-use signature::long_signature;
-use {
+use serde::Deserialize;
+
+use crate::{
+	signature::long_signature,
 	Log, Hash, RawLog, LogParam, RawTopicFilter, TopicFilter,
 	Topic, ParamType, EventParam, encode, decode, Token,
 	Result, Error,
@@ -190,10 +192,12 @@ impl Event {
 #[cfg(test)]
 mod tests {
 	use hex::FromHex;
-	use token::Token;
-	use signature::long_signature;
-	use log::{RawLog, Log};
-	use {EventParam, ParamType, Event, LogParam};
+	use crate::{
+		token::Token,
+		signature::long_signature,
+		log::{RawLog, Log},
+		EventParam, ParamType, Event, LogParam,
+	};
 
 	#[test]
 	fn test_decoding_event() {

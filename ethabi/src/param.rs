@@ -1,5 +1,7 @@
 //! Function param.
-use ParamType;
+
+use serde::Deserialize;
+use crate::ParamType;
 
 /// Function param.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -14,7 +16,7 @@ pub struct Param {
 #[cfg(test)]
 mod tests {
 	use serde_json;
-	use {Param, ParamType};
+	use crate::{Param, ParamType};
 
 	#[test]
 	fn param_deserialization() {

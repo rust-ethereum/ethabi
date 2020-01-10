@@ -2,21 +2,6 @@
 
 #![warn(missing_docs)]
 
-extern crate rustc_hex as hex;
-extern crate serde_json;
-extern crate tiny_keccak;
-#[macro_use]
-extern crate serde;
-
-#[cfg(test)]
-#[macro_use]
-extern crate hex_literal;
-
-#[cfg(test)]
-extern crate paste;
-
-extern crate ethereum_types;
-
 pub mod param_type;
 pub mod token;
 mod constructor;
@@ -37,19 +22,21 @@ mod util;
 #[cfg(test)]
 mod tests;
 
-pub use param_type::ParamType;
-pub use constructor::Constructor;
-pub use contract::{Contract, Functions, Events};
-pub use token::Token;
-pub use errors::{Error, Result};
-pub use encoder::encode;
-pub use decoder::decode;
-pub use filter::{Topic, TopicFilter, RawTopicFilter};
-pub use function::Function;
-pub use param::Param;
-pub use log::{Log, RawLog, LogParam, ParseLog, LogFilter};
-pub use event::Event;
-pub use event_param::EventParam;
+pub use crate::{
+	constructor::Constructor,
+	contract::{Contract, Functions, Events},
+	decoder::decode,
+	encoder::encode,
+	errors::{Error, Result},
+	event::Event,
+	event_param::EventParam,
+	filter::{Topic, TopicFilter, RawTopicFilter},
+	function::Function,
+	log::{Log, RawLog, LogParam, ParseLog, LogFilter},
+	param::Param,
+	param_type::ParamType,
+	token::Token,
+};
 
 /// ABI word.
 pub type Word = [u8; 32];
@@ -78,5 +65,5 @@ pub trait FunctionOutputDecoder {
 	type Output;
 
 	/// Decodes the given bytes output for the contract function
-	fn decode(&self, &[u8]) -> Result<Self::Output>;
+	fn decode(&self, _: &[u8]) -> Result<Self::Output>;
 }

@@ -1,6 +1,7 @@
 //! Event param specification.
 
-use {ParamType};
+use serde::Deserialize;
+use crate::{ParamType};
 
 /// Event param specification.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -17,7 +18,7 @@ pub struct EventParam {
 #[cfg(test)]
 mod tests {
 	use serde_json;
-	use {EventParam, ParamType};
+	use crate::{EventParam, ParamType};
 
 	#[test]
 	fn event_param_deserialization() {

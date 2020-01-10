@@ -1,5 +1,6 @@
 //! Contract constructor call builder.
-use {Param, Error, Result, Token, ParamType, encode, Bytes};
+use serde::Deserialize;
+use crate::{Param, Error, Result, Token, ParamType, encode, Bytes};
 
 /// Contract constructor specification.
 #[derive(Debug, Clone, PartialEq, Deserialize)]

@@ -5,8 +5,8 @@ use std::iter::Flatten;
 use serde::{Deserialize, Deserializer};
 use serde::de::{Visitor, SeqAccess};
 use serde_json;
-use operation::Operation;
-use {errors, Error, Event, Constructor, Function};
+use crate::operation::Operation;
+use crate::{errors, Error, Event, Constructor, Function};
 
 /// API building calls to contracts ABI.
 #[derive(Clone, Debug, PartialEq)]

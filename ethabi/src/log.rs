@@ -1,4 +1,4 @@
-use {Hash, Token, Bytes, Result, TopicFilter};
+use crate::{Hash, Token, Bytes, Result, TopicFilter};
 
 /// Common filtering functions that are available for any event.
 pub trait LogFilter {

@@ -1,7 +1,7 @@
 //! ABI decoder.
 
-use util::slice_data;
-use {Word, Token, Error, ParamType};
+use crate::util::slice_data;
+use crate::{Word, Token, Error, ParamType};
 
 struct DecodeResult {
 	token: Token,
@@ -225,7 +225,7 @@ fn decode_param(param: &ParamType, slices: &[Word], offset: usize) -> Result<Dec
 
 #[cfg(test)]
 mod tests {
-	use {decode, ParamType};
+	use crate::{decode, ParamType};
 
 	#[test]
 	fn decode_from_empty_byte_slice() {

@@ -1,7 +1,7 @@
 //! Ethereum ABI params.
 use std::fmt;
 use hex::ToHex;
-use {ParamType, Address, FixedBytes, Bytes, Uint};
+use crate::{ParamType, Address, FixedBytes, Bytes, Uint};
 
 /// Ethereum ABI params.
 #[derive(Debug, PartialEq, Clone)]
@@ -210,7 +210,7 @@ impl Token {
 
 #[cfg(test)]
 mod tests {
-	use {Token, ParamType};
+	use crate::{Token, ParamType};
 
 	#[test]
 	fn test_type_check() {

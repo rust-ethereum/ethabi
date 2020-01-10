@@ -1,7 +1,7 @@
 //! ABI encoder.
 
-use util::pad_u32;
-use {Word, Token, Bytes};
+use crate::util::pad_u32;
+use crate::{Word, Token, Bytes};
 
 fn pad_bytes(bytes: &[u8]) -> Vec<Word> {
 	let mut result = vec![pad_u32(bytes.len() as u32)];
