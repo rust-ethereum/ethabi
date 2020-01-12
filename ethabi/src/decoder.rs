@@ -34,6 +34,19 @@ fn as_u32(slice: &Word) -> Result<u32, Error> {
 	Ok(result)
 }
 
+fn as_usize(slice: &Word) -> Result<usize, Error> {
+	if !slice[..28].iter().all(|x| *x == 0) {
+		return Err(Error::InvalidData);
+	}
+
+	let result = ((slice[28] as usize) << 24) +
+		((slice[29] as usize) << 16) +
+		((slice[30] as usize) << 8) +
+		(slice[31] as usize);
+
+	Ok(result)
+}
+
 fn as_bool(slice: &Word) -> Result<bool, Error> {
 	if !slice[..31].iter().all(|x| *x == 0) {
 		return Err(Error::InvalidData);
@@ -46,7 +59,12 @@ fn as_bool(slice: &Word) -> Result<bool, Error> {
 pub fn decode(types: &[ParamType], data: &[u8]) -> Result<Vec<Token>, Error> {
 	let is_empty_bytes_valid_encoding = types.iter().all(|t| t.is_empty_bytes_valid_encoding());
 	if !is_empty_bytes_valid_encoding && data.is_empty() {
-		return Err(Error::InvalidName("please ensure the contract and method you're calling exist! failed to decode empty bytes. if you're using jsonrpc this is likely due to jsonrpc returning `0x` in case contract or method don't exist".into()));
+		return Err(Error::InvalidName(
+			"please ensure the contract and method you're calling exist! \
+			failed to decode empty bytes. if you're using jsonrpc this is \
+			likely due to jsonrpc returning `0x` in case contract or method \
+			don't exist".into())
+		);
 	}
 	let slices = slice_data(data)?;
 	let mut tokens = Vec::with_capacity(types.len());
@@ -98,7 +116,7 @@ fn decode_param(param: &ParamType, slices: &[Word], offset: usize) -> Result<Dec
 			};
 
 			Ok(result)
-		},
+		}
 		ParamType::Int(_) => {
 			let slice = peek(slices, offset)?;
 
@@ -108,7 +126,7 @@ fn decode_param(param: &ParamType, slices: &[Word], offset: usize) -> Result<Dec
 			};
 
 			Ok(result)
-		},
+		}
 		ParamType::Uint(_) => {
 			let slice = peek(slices, offset)?;
 
@@ -118,7 +136,7 @@ fn decode_param(param: &ParamType, slices: &[Word], offset: usize) -> Result<Dec
 			};
 
 			Ok(result)
-		},
+		}
 		ParamType::Bool => {
 			let slice = peek(slices, offset)?;
 
@@ -128,19 +146,18 @@ fn decode_param(param: &ParamType, slices: &[Word], offset: usize) -> Result<Dec
 				token: Token::Bool(b),
 				new_offset: offset + 1,
 			};
-
 			Ok(result)
-		},
+		}
 		ParamType::FixedBytes(len) => {
+			// FixedBytes is anything from bytes1 to bytes32. These values
+			// are padded with trailing zeros to fill 32 bytes.
 			let taken = take_bytes(slices, offset, len)?;
-
 			let result = DecodeResult {
 				token: Token::FixedBytes(taken.bytes),
 				new_offset: taken.new_offset,
 			};
-
 			Ok(result)
-		},
+		}
 		ParamType::Bytes => {
 			let offset_slice = peek(slices, offset)?;
 			let len_offset = (as_u32(offset_slice)? / 32) as usize;
@@ -154,9 +171,8 @@ fn decode_param(param: &ParamType, slices: &[Word], offset: usize) -> Result<Dec
 				token: Token::Bytes(taken.bytes),
 				new_offset: offset + 1,
 			};
-
 			Ok(result)
-		},
+		}
 		ParamType::String => {
 			let offset_slice = peek(slices, offset)?;
 			let len_offset = (as_u32(offset_slice)? / 32) as usize;
@@ -170,21 +186,20 @@ fn decode_param(param: &ParamType, slices: &[Word], offset: usize) -> Result<Dec
 				token: Token::String(String::from_utf8(taken.bytes)?),
 				new_offset: offset + 1,
 			};
-
 			Ok(result)
-		},
+		}
 		ParamType::Array(ref t) => {
 			let offset_slice = peek(slices, offset)?;
 			let len_offset = (as_u32(offset_slice)? / 32) as usize;
-
 			let len_slice = peek(slices, len_offset)?;
 			let len = as_u32(len_slice)? as usize;
 
-			let sub_slices = &slices[len_offset + 1..];
+			let tail = &slices[len_offset + 1..];
 			let mut tokens = Vec::with_capacity(len);
 			let mut new_offset = 0;
+
 			for _ in 0..len {
-				let res = decode_param(t, &sub_slices, new_offset)?;
+				let res = decode_param(t, &tail, new_offset)?;
 				new_offset = res.new_offset;
 				tokens.push(res.token);
 			}
@@ -195,35 +210,26 @@ fn decode_param(param: &ParamType, slices: &[Word], offset: usize) -> Result<Dec
 			};
 
 			Ok(result)
-		},
+		}
 		ParamType::FixedArray(ref t, len) => {
 			let mut tokens = Vec::with_capacity(len);
-			let new_offset = if param.is_dynamic() {
-				let offset_slice = peek(slices, offset)?;
-				let tail_offset = (as_u32(offset_slice)? / 32) as usize;
-				let slices = &slices[tail_offset..];
-				let mut new_offset = 0;
+			let is_dynamic = param.is_dynamic();
 
-				for _ in 0..len {
-					let res = decode_param(t, &slices, new_offset)?;
-					new_offset = res.new_offset;
-					tokens.push(res.token);
-				}
-				offset + 1
+			let (tail, mut new_offset) = if is_dynamic {
+				(&slices[(as_usize(peek(slices, offset)?)? / 32)..], 0)
 			} else {
-				let mut new_offset = offset;
-
-				for _ in 0..len {
-					let res = decode_param(t, &slices, new_offset)?;
-					new_offset = res.new_offset;
-					tokens.push(res.token);
-				}
-				new_offset
+				(slices, offset)
 			};
+
+			for _ in 0..len {
+				let res = decode_param(t, &tail, new_offset)?;
+				new_offset = res.new_offset;
+				tokens.push(res.token);
+			}
 
 			let result = DecodeResult {
 				token: Token::FixedArray(tokens),
-				new_offset,
+				new_offset: if is_dynamic { offset + 1 } else { new_offset },
 			};
 
 			Ok(result)
@@ -233,10 +239,8 @@ fn decode_param(param: &ParamType, slices: &[Word], offset: usize) -> Result<Dec
 
 			// The first element in a dynamic Tuple is an offset to the Tuple's data
 			// For a static Tuple the data begins right away
-			let (slices, mut new_offset) = if is_dynamic {
-				let offset_slice = peek(slices, offset)?;
-				let tail_offset = (as_u32(offset_slice)? / 32) as usize;
-				(&slices[tail_offset..], 0)
+			let (tail, mut new_offset) = if is_dynamic {
+				(&slices[(as_usize(peek(slices, offset)?)? / 32)..], 0)
 			} else {
 				(slices, offset)
 			};
@@ -244,7 +248,7 @@ fn decode_param(param: &ParamType, slices: &[Word], offset: usize) -> Result<Dec
 			let len = t.len();
 			let mut tokens = Vec::with_capacity(len);
 			for i in 0..len {
-				let res = decode_param(&t[i], &slices, new_offset)?;
+				let res = decode_param(&t[i], &tail, new_offset)?;
 				new_offset = res.new_offset;
 				tokens.push(res.token);
 			}
@@ -254,7 +258,7 @@ fn decode_param(param: &ParamType, slices: &[Word], offset: usize) -> Result<Dec
 			// static Tuple  -> follows the last data element
 			let result = DecodeResult {
 				token: Token::Tuple(tokens),
-				new_offset: if is_dynamic { offset + 32 } else { new_offset },
+				new_offset: if is_dynamic { offset + 1 } else { new_offset },
 			};
 
 			Ok(result)
@@ -416,47 +420,6 @@ mod tests {
 	}
 
 	#[test]
-	fn decode_data_with_size_that_is_not_a_multiple_of_32() {
-		let encoded = hex!(
-			"
-			0000000000000000000000000000000000000000000000000000000000000000
-			00000000000000000000000000000000000000000000000000000000000000a0
-			0000000000000000000000000000000000000000000000000000000000000152
-			0000000000000000000000000000000000000000000000000000000000000001
-			000000000000000000000000000000000000000000000000000000000054840d
-			0000000000000000000000000000000000000000000000000000000000000092
-			3132323033393637623533326130633134633938306235616566666231373034
-			3862646661656632633239336139353039663038656233633662306635663866
-			3039343265376239636337366361353163636132366365353436393230343438
-			6533303866646136383730623565326165313261323430396439343264653432
-			3831313350373230703330667073313678390000000000000000000000000000
-			0000000000000000000000000000000000103933633731376537633061363531
-			3761
-		"
-		);
-
-		assert_eq!(
-			decode(
-				&[
-					ParamType::Uint(256),
-					ParamType::String,
-					ParamType::String,
-					ParamType::Uint(256),
-					ParamType::Uint(256),
-				],
-				&encoded,
-			).unwrap(),
-			&[
-				Token::Uint(Uint::from(0)),
-				Token::String(String::from("12203967b532a0c14c980b5aeffb17048bdfaef2c293a9509f08eb3c6b0f5f8f0942e7b9cc76ca51cca26ce546920448e308fda6870b5e2ae12a2409d942de428113P720p30fps16x9")),
-				Token::String(String::from("93c717e7c0a6517a")),
-				Token::Uint(Uint::from(1)),
-				Token::Uint(Uint::from(5538829))
-			]
-		);
-	}
-
-	#[test]
 	fn decode_params_containing_dynamic_tuple() {
 		let encoded = hex!(
 			"
@@ -532,6 +495,37 @@ mod tests {
 	}
 
 	#[test]
+	fn decode_fixed_array_of_strings() {
+		// line 1 at 0x00 =   0: tail offset for the array
+		// line 2 at 0x20 =  32: offset of string 1
+		// line 3 at 0x40 =  64: offset of string 2
+		// line 4 at 0x60 =  96: length of string 1
+		// line 5 at 0x80 = 128: value  of string 1
+		// line 6 at 0xa0 = 160: length of string 2
+		// line 7 at 0xc0 = 192: value  of string 2
+		let encoded = hex!("
+			0000000000000000000000000000000000000000000000000000000000000020
+			0000000000000000000000000000000000000000000000000000000000000040
+			0000000000000000000000000000000000000000000000000000000000000080
+			0000000000000000000000000000000000000000000000000000000000000003
+			666f6f0000000000000000000000000000000000000000000000000000000000
+			0000000000000000000000000000000000000000000000000000000000000003
+			6261720000000000000000000000000000000000000000000000000000000000
+		");
+
+		let s1 = Token::String("foo".into());
+		let s2 = Token::String("bar".into());
+		let array = Token::FixedArray(vec![s1, s2]);
+		
+		let expected = vec![array];
+		let decoded = decode(&[
+			ParamType::FixedArray(Box::new(ParamType::String), 2)
+		], &encoded).unwrap();
+
+		assert_eq!(decoded, expected);
+	}
+
+	#[test]
 	fn decode_after_fixed_bytes_with_less_than_32_bytes() {
 		let encoded = hex!("
 			0000000000000000000000008497afefdc5ac170a664a231f6efb25526ef813f
@@ -562,4 +556,3 @@ mod tests {
 		);
 	}
 }
-
