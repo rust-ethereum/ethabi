@@ -58,7 +58,7 @@ pub enum Token {
 	///
 	/// solidity name eg. int[], bool[], address[5][]
 	Array(Vec<Token>),
-	/// Tuple of params with variable type
+	/// Tuple of params of variable types.
 	///
 	/// solidity name: tuple
 	Tuple(Vec<Token>),
