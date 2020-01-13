@@ -34,19 +34,6 @@ fn as_u32(slice: &Word) -> Result<u32, Error> {
 	Ok(result)
 }
 
-fn as_usize(slice: &Word) -> Result<usize, Error> {
-	if !slice[..28].iter().all(|x| *x == 0) {
-		return Err(Error::InvalidData);
-	}
-
-	let result = ((slice[28] as usize) << 24) +
-		((slice[29] as usize) << 16) +
-		((slice[30] as usize) << 8) +
-		(slice[31] as usize);
-
-	Ok(result)
-}
-
 fn as_bool(slice: &Word) -> Result<bool, Error> {
 	if !slice[..31].iter().all(|x| *x == 0) {
 		return Err(Error::InvalidData);
@@ -216,7 +203,7 @@ fn decode_param(param: &ParamType, slices: &[Word], offset: usize) -> Result<Dec
 			let is_dynamic = param.is_dynamic();
 
 			let (tail, mut new_offset) = if is_dynamic {
-				(&slices[(as_usize(peek(slices, offset)?)? / 32)..], 0)
+				(&slices[(as_u32(peek(slices, offset)?)? as usize / 32)..], 0)
 			} else {
 				(slices, offset)
 			};
@@ -240,7 +227,7 @@ fn decode_param(param: &ParamType, slices: &[Word], offset: usize) -> Result<Dec
 			// The first element in a dynamic Tuple is an offset to the Tuple's data
 			// For a static Tuple the data begins right away
 			let (tail, mut new_offset) = if is_dynamic {
-				(&slices[(as_usize(peek(slices, offset)?)? / 32)..], 0)
+				(&slices[(as_u32(peek(slices, offset)?)? as usize / 32)..], 0)
 			} else {
 				(slices, offset)
 			};
@@ -269,7 +256,7 @@ fn decode_param(param: &ParamType, slices: &[Word], offset: usize) -> Result<Dec
 #[cfg(test)]
 mod tests {
 	use hex_literal::hex;
-	use crate::{decode, ParamType, Token, Uint};
+	use crate::{decode, ParamType, Token};
 
 	#[test]
 	fn decode_from_empty_byte_slice() {
