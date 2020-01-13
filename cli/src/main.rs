@@ -40,7 +40,7 @@ enum Encode {
 		/// -v <type1> <param1> -v <type2> <param2> ...
 		#[structopt(short = "v", name = "type-or-param", number_of_values = 2, allow_hyphen_values = true)]
 		params: Vec<String>,
-		/// Allow short representation of input params.
+		/// Allow short representation of input params (numbers are in decimal form).
 		#[structopt(short, long)]
 		lenient: bool,
 	},
@@ -294,17 +294,14 @@ mod tests {
 
 	#[test]
 	fn int_encode_large_negative_numbers() {
-		// Underflow
-		let command = "ethabi encode params -v int256 -100000000000000000000000000000000022222222222222221111111111111 --lenient".split(" ");
-		assert_eq!(execute(command).unwrap_err().to_string(), "Ethabi error: Integer parsing error: number too small to fit in target type");
-		// i128::min_value() is ok
-		let command = "ethabi encode params -v int256 -170141183460469231731687303715884105728 --lenient".split(" ");
-		let expected = "ffffffffffffffffffffffffffffffff80000000000000000000000000000000";
+		// i256::min_value() is ok
+		let command = "ethabi encode params -v int256 -57896044618658097711785492504343953926634992332820282019728792003956564819967 --lenient".split(" ");
+		let expected = "8000000000000000000000000000000000000000000000000000000000000001";
 		assert_eq!(execute(command).unwrap(), expected);
 
-		// i128::min_value() -1 is too much
-		let command = "ethabi encode params -v int256 -170141183460469231731687303715884105729 --lenient".split(" ");
-		assert_eq!(execute(command).unwrap_err().to_string(), "Ethabi error: Integer parsing error: number too small to fit in target type");
+		// i256::min_value() -1 is too much
+		let command = "ethabi encode params -v int256 -57896044618658097711785492504343953926634992332820282019728792003956564819968 --lenient".split(" ");
+		assert_eq!(execute(command).unwrap_err().to_string(), "Ethabi error: int256 parse error: Underflow");
 	}
 
 	#[test]

@@ -30,32 +30,14 @@ pub fn slice_data(data: &[u8]) -> Result<Vec<Word>, Error> {
 /// Converts a u32 to a right aligned array of 32 bytes.
 pub fn pad_u32(value: u32) -> Word {
 	let mut padded = [0u8; 32];
-	padded[28] = (value >> 24) as u8;
-	padded[29] = (value >> 16) as u8;
-	padded[30] = (value >> 8) as u8;
-	padded[31] = value as u8;
-	padded
-}
-
-/// Converts an i128 to a right aligned array of 32 bytes.
-pub fn pad_i128(value: i128) -> Word {
-	if value >= 0 {
-		let mut padded = [0u8; 32];
-		padded[16..].copy_from_slice(&value.to_be_bytes());
-		return padded;
-	}
-
-	let mut padded = [0xffu8; 32];
-	for (idx, byte) in padded.iter_mut().enumerate().skip(16) {
-		*byte = (value >> 8 * (31 - idx)) as u8;
-	}
+	padded[28..32].copy_from_slice(&value.to_be_bytes());
 	padded
 }
 
 #[cfg(test)]
 mod tests {
 	use hex_literal::hex;
-	use super::{pad_i128, pad_u32};
+	use super::pad_u32;
 
 	#[test]
 	fn test_pad_u32() {
@@ -75,43 +57,6 @@ mod tests {
 		assert_eq!(
 			pad_u32(0xffffffff).to_vec(),
 			hex!("00000000000000000000000000000000000000000000000000000000ffffffff").to_vec()
-		);
-	}
-
-	#[test]
-	fn test_pad_i128() {
-		assert_eq!(
-			pad_i128(0).to_vec(),
-			hex!("0000000000000000000000000000000000000000000000000000000000000000").to_vec()
-		);
-		assert_eq!(
-			pad_i128(1).to_vec(),
-			hex!("0000000000000000000000000000000000000000000000000000000000000001").to_vec()
-		);
-		assert_eq!(
-			pad_i128(0x01000000000000000000000000000000).to_vec(),
-			hex!("0000000000000000000000000000000001000000000000000000000000000000").to_vec()
-		);
-		assert_eq!(
-			pad_i128(0xffffffff).to_vec(),
-			hex!("00000000000000000000000000000000000000000000000000000000ffffffff").to_vec()
-		);
-
-		assert_eq!(
-			pad_i128(-1).to_vec(),
-			hex!("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").to_vec()
-		);
-		assert_eq!(
-			pad_i128(-2).to_vec(),
-			hex!("fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe").to_vec()
-		);
-		assert_eq!(
-			pad_i128(-256).to_vec(),
-			hex!("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00").to_vec()
-		);
-		assert_eq!(
-			pad_i128(-512).to_vec(),
-			hex!("fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe00").to_vec()
 		);
 	}
 }

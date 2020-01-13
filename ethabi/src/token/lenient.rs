@@ -7,7 +7,6 @@
 // except according to those terms.
 
 use crate::token::{Tokenizer, StrictTokenizer};
-use crate::util::pad_i128;
 use crate::errors::Error;
 use crate::Uint;
 
@@ -45,28 +44,28 @@ impl Tokenizer for LenientTokenizer {
 		Ok(uint.into())
 	}
 
-	// We don't have a proper signed int 256-bit long type, so here we're cheating: when the
-	// input is negative and fits in an i128 we return the parsed number in the 32 byte array
-	// (aka `Word`) padded to the full 32 bytes. When the input is positive we build a U256 out
-	// of it and check that it's within the upper bound of a hypothetical I256 type: half the
-	// `U256::max_value().
-	// In other words: the `int256` is parsed ok for positive values and for half the negative
-	// values (`i128::min_value()`).
+	// We don't have a proper signed int 256-bit long type, so here we're cheating. We build a U256
+	// out of it and check that it's within the lower/upper bound of a hypothetical I256 type: half
+	// the `U256::max_value().
 	fn tokenize_int(value: &str) -> Result<[u8; 32], Error> {
 		let result = StrictTokenizer::tokenize_int(value);
 		if result.is_ok() {
 			return result;
 		}
-		let int = if value.starts_with("-") {
-			let int = i128::from_str_radix(value, 10)?;
-			pad_i128(int)
+
+		let abs = Uint::from_dec_str(value.trim_start_matches('-'))?;
+		let max = Uint::max_value() / 2;
+		let int = if value.starts_with('-') {
+			if abs > max {
+				return Err(Error::Other("int256 parse error: Underflow".into()));
+			}
+			!abs + 1
 		} else {
-			let pos_int = Uint::from_dec_str(value)?;
-			if pos_int > Uint::max_value() / 2 {
+			if abs > max {
 				return Err(Error::Other("int256 parse error: Overflow".into()));
 			}
-			pos_int.into()
+			abs
 		};
-		Ok(int)
+		Ok(int.into())
 	}
 }
