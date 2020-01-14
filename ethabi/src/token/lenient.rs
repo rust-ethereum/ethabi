@@ -61,7 +61,7 @@ impl Tokenizer for LenientTokenizer {
 			} else if abs > max + 1 {
 				return Err(Error::Other("int256 parse error: Underflow".into()));
 			}
-			!abs + 1
+			!abs + 1 // two's complement
 		} else {
 			if abs > max {
 				return Err(Error::Other("int256 parse error: Overflow".into()));
