@@ -296,7 +296,7 @@ mod tests {
 	fn int_encode_large_negative_numbers() {
 		// i256::min_value() is ok
 		let command = "ethabi encode params -v int256 -57896044618658097711785492504343953926634992332820282019728792003956564819968 --lenient".split(" ");
-		let expected = "8000000000000000000000000000000000000000000000000000000000000001";
+		let expected = "8000000000000000000000000000000000000000000000000000000000000000";
 		assert_eq!(execute(command).unwrap(), expected);
 
 		// i256::min_value() -1 is too much
