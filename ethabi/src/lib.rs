@@ -25,6 +25,7 @@ mod log;
 mod operation;
 mod param;
 mod signature;
+mod tuple_param;
 mod util;
 
 #[cfg(test)]
@@ -43,6 +44,7 @@ pub use crate::{
 	log::{Log, RawLog, LogParam, ParseLog, LogFilter},
 	param::Param,
 	param_type::ParamType,
+	tuple_param::TupleParam,
 	token::Token,
 };
 

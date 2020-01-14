@@ -26,21 +26,82 @@ pub trait Tokenizer {
 			ParamType::String => Self::tokenize_string(value).map(Token::String),
 			ParamType::Bool => Self::tokenize_bool(value).map(Token::Bool),
 			ParamType::Bytes => Self::tokenize_bytes(value).map(Token::Bytes),
-			ParamType::FixedBytes(len) => Self::tokenize_fixed_bytes(value, len).map(Token::FixedBytes),
+			ParamType::FixedBytes(len) => {
+				Self::tokenize_fixed_bytes(value, len).map(Token::FixedBytes)
+			}
 			ParamType::Uint(_) => Self::tokenize_uint(value).map(Into::into).map(Token::Uint),
 			ParamType::Int(_) => Self::tokenize_int(value).map(Into::into).map(Token::Int),
 			ParamType::Array(ref p) => Self::tokenize_array(value, p).map(Token::Array),
-			ParamType::FixedArray(ref p, len) => Self::tokenize_fixed_array(value, p, len).map(Token::FixedArray),
+			ParamType::FixedArray(ref p, len) => {
+				Self::tokenize_fixed_array(value, p, len).map(Token::FixedArray)
+			}
+			ParamType::Tuple(ref p) => Self::tokenize_struct(value, p).map(Token::Tuple),
 		}
 	}
 
 	/// Tries to parse a value as a vector of tokens of fixed size.
-	fn tokenize_fixed_array(value: &str, param: &ParamType, len: usize) -> Result<Vec<Token>, Error> {
+	fn tokenize_fixed_array(
+		value: &str,
+		param: &ParamType,
+		len: usize,
+	) -> Result<Vec<Token>, Error> {
 		let result = Self::tokenize_array(value, param)?;
 		match result.len() == len {
 			true => Ok(result),
 			false => Err(Error::InvalidData),
 		}
+	}
+
+	/// Tried to parse a struct as a vector of tokens
+	fn tokenize_struct(value: &str, param: &Vec<Box<ParamType>>) -> Result<Vec<Token>, Error> {
+		if !value.starts_with('(') || !value.ends_with(')') {
+			return Err(Error::InvalidData);
+		}
+
+		if value.chars().count() == 2 {
+			return Ok(vec![]);
+		}
+
+		let mut result = vec![];
+		let mut nested = 0isize;
+		let mut ignore = false;
+		let mut last_item = 1;
+		let mut params = param.iter();
+		for (pos, ch) in value.chars().enumerate() {
+			match ch {
+				'(' if ignore == false => {
+					nested += 1;
+				}
+				')' if ignore == false => {
+					nested -= 1;
+					if nested < 0 {
+						return Err(Error::InvalidData);
+					} else if nested == 0 {
+						let sub = &value[last_item..pos];
+						let token =
+							Self::tokenize(params.next().ok_or(Error::InvalidData)?, sub)?;
+						result.push(token);
+						last_item = pos + 1;
+					}
+				}
+				'"' => {
+					ignore = !ignore;
+				}
+				',' if nested == 1 && ignore == false => {
+					let sub = &value[last_item..pos];
+					let token = Self::tokenize(params.next().ok_or(Error::InvalidData)?, sub)?;
+					result.push(token);
+					last_item = pos + 1;
+				}
+				_ => (),
+			}
+		}
+
+		if ignore {
+			return Err(Error::InvalidData);
+		}
+
+		Ok(result)
 	}
 
 	/// Tries to parse a value as a vector of tokens.
@@ -61,7 +122,7 @@ pub trait Tokenizer {
 			match ch {
 				'[' if ignore == false => {
 					nested += 1;
-				},
+				}
 				']' if ignore == false => {
 					nested -= 1;
 					if nested < 0 {
@@ -72,17 +133,17 @@ pub trait Tokenizer {
 						result.push(token);
 						last_item = i + 1;
 					}
-				},
+				}
 				'"' => {
 					ignore = !ignore;
-				},
+				}
 				',' if nested == 1 && ignore == false => {
 					let sub = &value[last_item..i];
 					let token = Self::tokenize(param, sub)?;
 					result.push(token);
 					last_item = i + 1;
-				},
-				_ => ()
+				}
+				_ => (),
 			}
 		}
 
@@ -117,7 +178,7 @@ pub trait Tokenizer {
 
 #[cfg(test)]
 mod test {
-	use super::{LenientTokenizer, Tokenizer, ParamType};
+	use super::{LenientTokenizer, ParamType, Tokenizer};
 	#[test]
 	fn single_quoted_in_array_must_error() {
 		assert!(LenientTokenizer::tokenize_array("[1,\"0,false]", &ParamType::Bool).is_err());

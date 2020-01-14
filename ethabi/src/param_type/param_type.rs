@@ -8,8 +8,8 @@
 
 //! Function and event param types.
 
-use std::fmt;
 use super::Writer;
+use std::fmt;
 
 /// Function and event param types.
 #[derive(Debug, Clone, PartialEq)]
@@ -32,6 +32,8 @@ pub enum ParamType {
 	FixedBytes(usize),
 	/// Array with fixed size.
 	FixedArray(Box<ParamType>, usize),
+	/// Tuple containing different types
+	Tuple(Vec<Box<ParamType>>),
 }
 
 impl fmt::Display for ParamType {
@@ -41,22 +43,24 @@ impl fmt::Display for ParamType {
 }
 
 impl ParamType {
-    /// returns whether a zero length byte slice (`0x`) is
-    /// a valid encoded form of this param type
-    pub fn is_empty_bytes_valid_encoding(&self) -> bool {
-        match self {
-            ParamType::FixedBytes(len) => *len == 0,
-            ParamType::FixedArray(_, len) => *len == 0,
-            _ => false,
-        }
-    }
+	/// returns whether a zero length byte slice (`0x`) is
+	/// a valid encoded form of this param type
+	pub fn is_empty_bytes_valid_encoding(&self) -> bool {
+		match self {
+			ParamType::FixedBytes(len) => *len == 0,
+			ParamType::FixedArray(_, len) => *len == 0,
+			_ => false,
+		}
+	}
 
-	/// returns whether this param type is dynamic
+	/// returns whether a ParamType is dynamic
+	/// used to decide how the ParamType should be encoded
 	pub fn is_dynamic(&self) -> bool {
 		match self {
 			ParamType::Bytes | ParamType::String | ParamType::Array(_) => true,
 			ParamType::FixedArray(elem_type, _) => elem_type.is_dynamic(),
-			_ => false
+			ParamType::Tuple(params) => params.iter().any(|param| param.is_dynamic()),
+			_ => false,
 		}
 	}
 }

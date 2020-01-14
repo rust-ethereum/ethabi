@@ -114,7 +114,7 @@ impl Event {
 	}
 
 	// Converts param types for indexed parameters to bytes32 where appropriate
-	// This applies to strings, arrays and bytes to follow the encoding of
+	// This applies to strings, arrays, structs and bytes to follow the encoding of
 	// these indexed param types according to
 	// https://solidity.readthedocs.io/en/develop/abi-spec.html#encoding-of-indexed-event-parameters
 	fn convert_topic_param_type(&self, kind: &ParamType) -> ParamType {
@@ -122,7 +122,8 @@ impl Event {
 			ParamType::String
 			| ParamType::Bytes
 			| ParamType::Array(_)
-			| ParamType::FixedArray(_, _) => ParamType::FixedBytes(32),
+			| ParamType::FixedArray(_, _)
+			| ParamType::Tuple(_) => ParamType::FixedBytes(32),
 			_ => kind.clone()
 		}
 	}
