@@ -78,6 +78,15 @@ impl From<num::ParseIntError> for Error {
 		Error::ParseInt(err)
 	}
 }
+impl From<uint::FromDecStrErr> for Error {
+	fn from(err: uint::FromDecStrErr) -> Self {
+		use uint::FromDecStrErr::*;
+		match err {
+			InvalidCharacter => Error::Other("Uint parse error: InvalidCharacter".into()),
+			InvalidLength => Error::Other("Uint parse error: InvalidLength".into()),
+		}
+	}
+}
 impl From<string::FromUtf8Error> for Error {
 	fn from(err: string::FromUtf8Error) -> Self {
 		Error::Utf8(err)

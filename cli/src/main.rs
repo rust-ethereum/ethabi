@@ -40,7 +40,7 @@ enum Encode {
 		/// -v <type1> <param1> -v <type2> <param2> ...
 		#[structopt(short = "v", name = "type-or-param", number_of_values = 2, allow_hyphen_values = true)]
 		params: Vec<String>,
-		/// Allow short representation of input params.
+		/// Allow short representation of input params (numbers are in decimal form).
 		#[structopt(short, long)]
 		lenient: bool,
 	},
@@ -268,12 +268,60 @@ mod tests {
 		let command = "ethabi encode params -v int256 -2 --lenient".split(" ");
 		let expected = "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe";
 		assert_eq!(execute(command).unwrap(), expected);
+
+		let command = "ethabi encode params -v int256 -0 --lenient".split(" ");
+		let expected = "0000000000000000000000000000000000000000000000000000000000000000";
+		assert_eq!(execute(command).unwrap(), expected);
 	}
 
 	#[test]
 	fn uint_encode_must_be_positive() {
 		let command = "ethabi encode params -v uint256 -2 --lenient".split(" ");
 		assert!(execute(command).is_err());
+	}
+
+	#[test]
+	fn uint_encode_requires_decimal_inputs() {
+		let command = "ethabi encode params -v uint256 123abc --lenient".split(" ");
+		let result = execute(command);
+		assert!(result.is_err());
+		let err = result.unwrap_err();
+		assert_eq!(err.to_string(), "Ethabi error: Uint parse error: InvalidCharacter");
+	}
+
+	#[test]
+	fn uint_encode_big_numbers() {
+		let command = "ethabi encode params -v uint256 100000000000000000000000000000000022222222222222221111111111111 --lenient".split(" ");
+		let expected = "0000000000003e3aeb4ae1383562f4b82261d96a3f7a5f62ca19599c1ad6d1c7";
+		assert_eq!(execute(command).unwrap(), expected);
+	}
+
+	#[test]
+	fn int_encode_large_negative_numbers() {
+		// i256::min_value() is ok
+		let command = "ethabi encode params -v int256 -57896044618658097711785492504343953926634992332820282019728792003956564819968 --lenient".split(" ");
+		let expected = "8000000000000000000000000000000000000000000000000000000000000000";
+		assert_eq!(execute(command).unwrap(), expected);
+
+		// i256::min_value() - 1 is too much
+		let command = "ethabi encode params -v int256 -57896044618658097711785492504343953926634992332820282019728792003956564819969 --lenient".split(" ");
+		assert_eq!(execute(command).unwrap_err().to_string(), "Ethabi error: int256 parse error: Underflow");
+	}
+
+	#[test]
+	fn int_encode_large_positive_numbers() {
+		// Overflow
+		let command = "ethabi encode params -v int256 100000000000000000000000000000000022222222222222221111111111111333333333344556 --lenient".split(" ");
+		assert_eq!(execute(command).unwrap_err().to_string(), "Ethabi error: int256 parse error: Overflow");
+
+		// i256::max_value() is ok
+		let command = "ethabi encode params -v int256 57896044618658097711785492504343953926634992332820282019728792003956564819967 --lenient".split(" ");
+		let expected = "7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
+		assert_eq!(execute(command).unwrap(), expected);
+
+		// i256::max_value() + 1 is too much
+		let command = "ethabi encode params -v int256 57896044618658097711785492504343953926634992332820282019728792003956564819968 --lenient".split(" ");
+		assert_eq!(execute(command).unwrap_err().to_string(), "Ethabi error: int256 parse error: Overflow");
 	}
 
 	#[test]

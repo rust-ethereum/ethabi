@@ -7,8 +7,8 @@
 // except according to those terms.
 
 use crate::token::{Tokenizer, StrictTokenizer};
-use crate::util::{pad_u32, pad_i32};
 use crate::errors::Error;
+use crate::Uint;
 
 /// Tries to parse string as a token. Does not require string to clearly represent the value.
 pub struct LenientTokenizer;
@@ -40,17 +40,34 @@ impl Tokenizer for LenientTokenizer {
 			return result;
 		}
 
-		let uint = u32::from_str_radix(value, 10)?;
-		Ok(pad_u32(uint))
+		let uint = Uint::from_dec_str(value)?;
+		Ok(uint.into())
 	}
 
+	// We don't have a proper signed int 256-bit long type, so here we're cheating. We build a U256
+	// out of it and check that it's within the lower/upper bound of a hypothetical I256 type: half
+	// the `U256::max_value().
 	fn tokenize_int(value: &str) -> Result<[u8; 32], Error> {
 		let result = StrictTokenizer::tokenize_int(value);
 		if result.is_ok() {
 			return result;
 		}
 
-		let int = i32::from_str_radix(value, 10)?;
-		Ok(pad_i32(int))
+		let abs = Uint::from_dec_str(value.trim_start_matches('-'))?;
+		let max = Uint::max_value() / 2;
+		let int = if value.starts_with('-') {
+			if abs.is_zero() {
+				return Ok(abs.into())
+			} else if abs > max + 1 {
+				return Err(Error::Other("int256 parse error: Underflow".into()));
+			}
+			!abs + 1 // two's complement
+		} else {
+			if abs > max {
+				return Err(Error::Other("int256 parse error: Overflow".into()));
+			}
+			abs
+		};
+		Ok(int.into())
 	}
 }
