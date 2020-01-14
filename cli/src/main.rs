@@ -314,12 +314,12 @@ mod tests {
 		let command = "ethabi encode params -v int256 100000000000000000000000000000000022222222222222221111111111111333333333344556 --lenient".split(" ");
 		assert_eq!(execute(command).unwrap_err().to_string(), "Ethabi error: int256 parse error: Overflow");
 
-		// Half of i256::max_value() is ok
+		// i256::max_value() is ok
 		let command = "ethabi encode params -v int256 57896044618658097711785492504343953926634992332820282019728792003956564819967 --lenient".split(" ");
 		let expected = "7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
 		assert_eq!(execute(command).unwrap(), expected);
 
-		// Half of i256::max_value() + 1 is too much
+		// i256::max_value() + 1 is too much
 		let command = "ethabi encode params -v int256 57896044618658097711785492504343953926634992332820282019728792003956564819968 --lenient".split(" ");
 		assert_eq!(execute(command).unwrap_err().to_string(), "Ethabi error: int256 parse error: Overflow");
 	}
