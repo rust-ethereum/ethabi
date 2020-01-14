@@ -56,7 +56,9 @@ impl Tokenizer for LenientTokenizer {
 		let abs = Uint::from_dec_str(value.trim_start_matches('-'))?;
 		let max = Uint::max_value() / 2;
 		let int = if value.starts_with('-') {
-			if abs > max {
+			if abs.is_zero() {
+				return Ok(abs.into())
+			} else if abs > max + 1 {
 				return Err(Error::Other("int256 parse error: Underflow".into()));
 			}
 			!abs + 1
