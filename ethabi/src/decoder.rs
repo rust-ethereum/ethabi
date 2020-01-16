@@ -46,9 +46,9 @@ pub fn decode(types: &[ParamType], data: &[u8]) -> Result<Vec<Token>, Error> {
 	if !is_empty_bytes_valid_encoding && data.is_empty() {
 		return Err(Error::InvalidName(
 			"please ensure the contract and method you're calling exist! \
-			failed to decode empty bytes. if you're using jsonrpc this is \
-			likely due to jsonrpc returning `0x` in case contract or method \
-			don't exist"
+			 failed to decode empty bytes. if you're using jsonrpc this is \
+			 likely due to jsonrpc returning `0x` in case contract or method \
+			 don't exist"
 				.into(),
 		));
 	}
