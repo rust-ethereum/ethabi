@@ -10,7 +10,7 @@ edition = "2018"
 
 [dependencies]
 rustc-hex = "2.0"
-ethabi = { version = "10.0.0", path = "../ethabi" }
+ethabi = { version = "11.0.0", path = "../ethabi" }
 tiny-keccak = "1.4"
 structopt = "0.3"
 itertools = "0.8"
