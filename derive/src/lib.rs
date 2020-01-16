@@ -6,7 +6,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-#![recursion_limit="256"]
+#![recursion_limit = "256"]
 
 extern crate proc_macro;
 
@@ -15,12 +15,12 @@ mod contract;
 mod event;
 mod function;
 
-use std::{env, fs};
-use std::path::PathBuf;
+use ethabi::{Contract, Param, ParamType, Result};
 use heck::SnakeCase;
-use syn::export::Span;
-use ethabi::{Result, Contract, Param, ParamType};
 use quote::quote;
+use std::path::PathBuf;
+use std::{env, fs};
+use syn::export::Span;
 
 const ERROR_MSG: &str = "`derive(EthabiContract)` failed";
 
@@ -43,19 +43,17 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<proc_macro2::TokenStream
 }
 
 fn get_options(attrs: &[syn::Attribute], name: &str) -> Result<Vec<syn::NestedMeta>> {
-	let options = attrs.iter()
-		.flat_map(syn::Attribute::parse_meta)
-		.find(|meta| meta.path().is_ident(name));
-
+	let options = attrs.iter().flat_map(syn::Attribute::parse_meta).find(|meta| meta.path().is_ident(name));
 
 	match options {
 		Some(syn::Meta::List(list)) => Ok(list.nested.into_iter().collect()),
-		_ => Err("Unexpected meta item".into())
+		_ => Err("Unexpected meta item".into()),
 	}
 }
 
 fn get_option(options: &[syn::NestedMeta], name: &str) -> Result<String> {
-	let item = options.iter()
+	let item = options
+		.iter()
 		.flat_map(|nested| match *nested {
 			syn::NestedMeta::Meta(ref meta) => Some(meta),
 			_ => None,
@@ -95,31 +93,33 @@ fn to_syntax_string(param_type: &ethabi::ParamType) -> proc_macro2::TokenStream 
 		ParamType::Array(ref param_type) => {
 			let param_type_quote = to_syntax_string(param_type);
 			quote! { ethabi::ParamType::Array(Box::new(#param_type_quote)) }
-		},
+		}
 		ParamType::FixedBytes(x) => quote! { ethabi::ParamType::FixedBytes(#x) },
 		ParamType::FixedArray(ref param_type, ref x) => {
 			let param_type_quote = to_syntax_string(param_type);
 			quote! { ethabi::ParamType::FixedArray(Box::new(#param_type_quote), #x) }
 		}
-		ParamType::Tuple(_) => {
-			unimplemented!()
-		}
+		ParamType::Tuple(_) => unimplemented!(),
 	}
 }
 
 fn to_ethabi_param_vec<'a, P: 'a>(params: P) -> proc_macro2::TokenStream
-	where P: IntoIterator<Item = &'a Param>
+where
+	P: IntoIterator<Item = &'a Param>,
 {
-	let p = params.into_iter().map(|x| {
-		let name = &x.name;
-		let kind = to_syntax_string(&x.kind);
-		quote! {
-			ethabi::Param {
-				name: #name.to_owned(),
-				kind: #kind
+	let p = params
+		.into_iter()
+		.map(|x| {
+			let name = &x.name;
+			let kind = to_syntax_string(&x.kind);
+			quote! {
+				ethabi::Param {
+					name: #name.to_owned(),
+					kind: #kind
+				}
 			}
-		}
-	}).collect::<Vec<_>>();
+		})
+		.collect::<Vec<_>>();
 
 	quote! { vec![ #(#p),* ] }
 }
@@ -137,14 +137,12 @@ fn rust_type(input: &ParamType) -> proc_macro2::TokenStream {
 		ParamType::Array(ref kind) => {
 			let t = rust_type(&*kind);
 			quote! { Vec<#t> }
-		},
+		}
 		ParamType::FixedArray(ref kind, size) => {
 			let t = rust_type(&*kind);
 			quote! { [#t, #size] }
 		}
-		ParamType::Tuple(_) => {
-			unimplemented!()
-		}
+		ParamType::Tuple(_) => unimplemented!(),
 	}
 }
 
@@ -165,23 +163,23 @@ fn template_param_type(input: &ParamType, index: usize) -> proc_macro2::TokenStr
 			quote! {
 				#t_ident: IntoIterator<Item = #u_ident>, #u_ident: Into<#t>
 			}
-		},
+		}
 		ParamType::FixedArray(ref kind, size) => {
 			let t = rust_type(&*kind);
 			quote! {
 				#t_ident: Into<[#u_ident; #size]>, #u_ident: Into<#t>
 			}
-		},
-		ParamType::Tuple(_) => {
-			unimplemented!()
 		}
+		ParamType::Tuple(_) => unimplemented!(),
 	}
 }
 
 fn from_template_param(input: &ParamType, name: &syn::Ident) -> proc_macro2::TokenStream {
 	match *input {
 		ParamType::Array(_) => quote! { #name.into_iter().map(Into::into).collect::<Vec<_>>() },
-		ParamType::FixedArray(_, _) => quote! { (Box::new(#name.into()) as Box<[_]>).into_vec().into_iter().map(Into::into).collect::<Vec<_>>() },
+		ParamType::FixedArray(_, _) => {
+			quote! { (Box::new(#name.into()) as Box<[_]>).into_vec().into_iter().map(Into::into).collect::<Vec<_>>() }
+		}
 		_ => quote! {#name.into() },
 	}
 }
@@ -205,7 +203,7 @@ fn to_token(name: &proc_macro2::TokenStream, kind: &ParamType) -> proc_macro2::T
 					ethabi::Token::Array(v)
 				}
 			}
-		},
+		}
 		ParamType::FixedArray(ref kind, _) => {
 			let inner_name = quote! { inner };
 			let inner_loop = to_token(&inner_name, kind);
@@ -216,10 +214,8 @@ fn to_token(name: &proc_macro2::TokenStream, kind: &ParamType) -> proc_macro2::T
 					ethabi::Token::FixedArray(v)
 				}
 			}
-		},
-		ParamType::Tuple(_) => {
-			unimplemented!()
 		}
+		ParamType::Tuple(_) => unimplemented!(),
 	}
 }
 
@@ -245,7 +241,7 @@ fn from_token(kind: &ParamType, token: &proc_macro2::TokenStream) -> proc_macro2
 					result
 				}
 			}
-		},
+		}
 		ParamType::Int(_) => quote! { #token.to_int().expect(INTERNAL_ERR) },
 		ParamType::Uint(_) => quote! { #token.to_uint().expect(INTERNAL_ERR) },
 		ParamType::Bool => quote! { #token.to_bool().expect(INTERNAL_ERR) },
@@ -258,7 +254,7 @@ fn from_token(kind: &ParamType, token: &proc_macro2::TokenStream) -> proc_macro2
 					.map(|#inner| #inner_loop)
 					.collect()
 			}
-		},
+		}
 		ParamType::FixedArray(ref kind, size) => {
 			let inner = quote! { inner };
 			let inner_loop = from_token(kind, &inner);
@@ -270,10 +266,8 @@ fn from_token(kind: &ParamType, token: &proc_macro2::TokenStream) -> proc_macro2
 					[#(#to_array),*]
 				}
 			}
-		},
-		ParamType::Tuple(_) => {
-			unimplemented!()
 		}
+		ParamType::Tuple(_) => unimplemented!(),
 	}
 }
 
@@ -281,18 +275,18 @@ fn input_names(inputs: &[Param]) -> Vec<syn::Ident> {
 	inputs
 		.iter()
 		.enumerate()
-		.map(|(index, param)| if param.name.is_empty() {
-			syn::Ident::new(&format!("param{}", index), Span::call_site())
-		} else {
-			syn::Ident::new(&rust_variable(&param.name), Span::call_site())
+		.map(|(index, param)| {
+			if param.name.is_empty() {
+				syn::Ident::new(&format!("param{}", index), Span::call_site())
+			} else {
+				syn::Ident::new(&rust_variable(&param.name), Span::call_site())
+			}
 		})
 		.collect()
 }
 
 fn get_template_names(kinds: &[proc_macro2::TokenStream]) -> Vec<syn::Ident> {
-	kinds.iter().enumerate()
-		.map(|(index, _)| syn::Ident::new(&format!("T{}", index), Span::call_site()))
-		.collect()
+	kinds.iter().enumerate().map(|(index, _)| syn::Ident::new(&format!("T{}", index), Span::call_site())).collect()
 }
 
 fn get_output_kinds(outputs: &[Param]) -> proc_macro2::TokenStream {
@@ -301,12 +295,9 @@ fn get_output_kinds(outputs: &[Param]) -> proc_macro2::TokenStream {
 		1 => {
 			let t = rust_type(&outputs[0].kind);
 			quote! { #t }
-		},
+		}
 		_ => {
-			let outs: Vec<_> = outputs
-				.iter()
-				.map(|param| rust_type(&param.kind))
-				.collect();
+			let outs: Vec<_> = outputs.iter().map(|param| rust_type(&param.kind)).collect();
 			quote! { (#(#outs),*) }
 		}
 	}

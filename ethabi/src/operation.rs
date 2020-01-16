@@ -8,11 +8,11 @@
 
 //! Operation type.
 
+use crate::{Constructor, Event, Function};
+use serde::de::Error as SerdeError;
 use serde::{Deserialize, Deserializer};
-use serde::de::{Error as SerdeError};
-use serde_json::Value;
 use serde_json::value::from_value;
-use crate::{Function, Constructor, Event};
+use serde_json::Value;
 
 /// Operation type.
 #[derive(Clone, Debug, PartialEq)]
@@ -28,7 +28,10 @@ pub enum Operation {
 }
 
 impl<'a> Deserialize<'a> for Operation {
-	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'a> {
+	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+	where
+		D: Deserializer<'a>,
+	{
 		let v: Value = Deserialize::deserialize(deserializer)?;
 		let map = v.as_object().ok_or_else(|| SerdeError::custom("Invalid operation"))?;
 		let s = map.get("type").and_then(Value::as_str).ok_or_else(|| SerdeError::custom("Invalid operation type"))?;
@@ -60,9 +63,9 @@ impl<'a> Deserialize<'a> for Operation {
 
 #[cfg(test)]
 mod tests {
-	use serde_json;
 	use super::Operation;
 	use crate::{Function, Param, ParamType};
+	use serde_json;
 
 	#[test]
 	fn deserialize_operation() {
@@ -78,23 +81,22 @@ mod tests {
 
 		let deserialized: Operation = serde_json::from_str(s).unwrap();
 
-		assert_eq!(deserialized, Operation::Function(Function {
-			name: "foo".to_owned(),
-			inputs: vec![
-				Param {
-					name: "a".to_owned(),
-					kind: ParamType::Address,
-				}
-			],
-			outputs: vec![],
-			constant: false,
-		}));
+		assert_eq!(
+			deserialized,
+			Operation::Function(Function {
+				name: "foo".to_owned(),
+				inputs: vec![Param { name: "a".to_owned(), kind: ParamType::Address }],
+				outputs: vec![],
+				constant: false,
+			})
+		);
 	}
 
 	#[test]
 	fn deserialize_sanitize_function_name() {
 		fn test_sanitize_function_name(name: &str, expected: &str) {
-			let s = format!(r#"{{
+			let s = format!(
+				r#"{{
 				"type":"function",
 				"inputs": [{{
 					"name":"a",
@@ -102,7 +104,9 @@ mod tests {
 				}}],
 				"name":"{}",
 				"outputs": []
-			}}"#, name);
+			}}"#,
+				name
+			);
 
 			let deserialized: Operation = serde_json::from_str(&s).unwrap();
 			let function = match deserialized {
@@ -122,7 +126,8 @@ mod tests {
 	#[test]
 	fn deserialize_sanitize_event_name() {
 		fn test_sanitize_event_name(name: &str, expected: &str) {
-			let s = format!(r#"{{
+			let s = format!(
+				r#"{{
 				"type":"event",
 					"inputs": [{{
 						"name":"a",
@@ -132,7 +137,9 @@ mod tests {
 					"name":"{}",
 					"outputs": [],
 					"anonymous": false
-			}}"#, name);
+			}}"#,
+				name
+			);
 
 			let deserialized: Operation = serde_json::from_str(&s).unwrap();
 			let event = match deserialized {

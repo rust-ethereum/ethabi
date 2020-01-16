@@ -6,8 +6,8 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use crate::token::{Tokenizer, StrictTokenizer};
 use crate::errors::Error;
+use crate::token::{StrictTokenizer, Tokenizer};
 use crate::Uint;
 
 /// Tries to parse string as a token. Does not require string to clearly represent the value.
@@ -57,7 +57,7 @@ impl Tokenizer for LenientTokenizer {
 		let max = Uint::max_value() / 2;
 		let int = if value.starts_with('-') {
 			if abs.is_zero() {
-				return Ok(abs.into())
+				return Ok(abs.into());
 			} else if abs > max + 1 {
 				return Err(Error::Other("int256 parse error: Underflow".into()));
 			}

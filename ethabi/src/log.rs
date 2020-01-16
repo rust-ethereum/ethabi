@@ -6,7 +6,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use crate::{Hash, Token, Bytes, Result, TopicFilter};
+use crate::{Bytes, Hash, Result, Token, TopicFilter};
 
 /// Common filtering functions that are available for any event.
 pub trait LogFilter {
@@ -36,10 +36,7 @@ pub struct RawLog {
 
 impl From<(Vec<Hash>, Bytes)> for RawLog {
 	fn from(raw: (Vec<Hash>, Bytes)) -> Self {
-		RawLog {
-			topics: raw.0,
-			data: raw.1,
-		}
+		RawLog { topics: raw.0, data: raw.1 }
 	}
 }
 

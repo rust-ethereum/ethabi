@@ -8,15 +8,13 @@
 
 //! Contract event.
 
+use serde::Deserialize;
 use std::collections::HashMap;
 use tiny_keccak::keccak256;
-use serde::Deserialize;
 
 use crate::{
-	signature::long_signature,
-	Log, Hash, RawLog, LogParam, RawTopicFilter, TopicFilter,
-	Topic, ParamType, EventParam, encode, decode, Token,
-	Result, Error,
+	decode, encode, signature::long_signature, Error, EventParam, Hash, Log, LogParam, ParamType, RawLog,
+	RawTopicFilter, Result, Token, Topic, TopicFilter,
 };
 
 /// Contract event.
@@ -33,24 +31,17 @@ pub struct Event {
 impl Event {
 	/// Returns names of all params.
 	fn params_names(&self) -> Vec<String> {
-		self.inputs.iter()
-			.map(|p| p.name.clone())
-			.collect()
+		self.inputs.iter().map(|p| p.name.clone()).collect()
 	}
 
 	/// Returns types of all params.
 	fn param_types(&self) -> Vec<ParamType> {
-		self.inputs.iter()
-			.map(|p| p.kind.clone())
-			.collect()
+		self.inputs.iter().map(|p| p.kind.clone()).collect()
 	}
 
 	/// Returns all params of the event.
 	fn indexed_params(&self, indexed: bool) -> Vec<EventParam> {
-		self.inputs.iter()
-			.filter(|p| p.indexed == indexed)
-			.cloned()
-			.collect()
+		self.inputs.iter().filter(|p| p.indexed == indexed).cloned().collect()
 	}
 
 	/// Event signature
@@ -80,16 +71,15 @@ impl Event {
 				Topic::OneOf(tokens) => match kind {
 					None => Err(Error::InvalidData),
 					Some(kind) => {
-						let topics = tokens.into_iter()
-							.map(|token| convert_token(token, kind))
-							.collect::<Result<Vec<_>>>()?;
+						let topics =
+							tokens.into_iter().map(|token| convert_token(token, kind)).collect::<Result<Vec<_>>>()?;
 						Ok(Topic::OneOf(topics))
 					}
 				},
 				Topic::This(token) => match kind {
 					None => Err(Error::InvalidData),
 					Some(kind) => Ok(Topic::This(convert_token(token, kind)?)),
-				}
+				},
 			}
 		}
 
@@ -124,7 +114,7 @@ impl Event {
 			| ParamType::Array(_)
 			| ParamType::FixedArray(_, _)
 			| ParamType::Tuple(_) => ParamType::FixedBytes(32),
-			_ => kind.clone()
+			_ => kind.clone(),
 		}
 	}
 
@@ -148,14 +138,10 @@ impl Event {
 			1
 		};
 
-		let topic_types = topic_params.iter()
-			.map(|p| self.convert_topic_param_type(&p.kind))
-			.collect::<Vec<ParamType>>();
+		let topic_types =
+			topic_params.iter().map(|p| self.convert_topic_param_type(&p.kind)).collect::<Vec<ParamType>>();
 
-		let flat_topics = topics.into_iter()
-			.skip(to_skip)
-			.flat_map(|t| t.as_ref().to_vec())
-			.collect::<Vec<u8>>();
+		let flat_topics = topics.into_iter().skip(to_skip).flat_map(|t| t.as_ref().to_vec()).collect::<Vec<u8>>();
 
 		let topic_tokens = decode(&topic_types, &flat_topics)?;
 
@@ -164,35 +150,23 @@ impl Event {
 			return Err(Error::InvalidData);
 		}
 
-		let topics_named_tokens = topic_params.into_iter()
-			.map(|p| p.name)
-			.zip(topic_tokens.into_iter());
+		let topics_named_tokens = topic_params.into_iter().map(|p| p.name).zip(topic_tokens.into_iter());
 
-		let data_types = data_params.iter()
-			.map(|p| p.kind.clone())
-			.collect::<Vec<ParamType>>();
+		let data_types = data_params.iter().map(|p| p.kind.clone()).collect::<Vec<ParamType>>();
 
 		let data_tokens = decode(&data_types, &data)?;
 
-		let data_named_tokens = data_params.into_iter()
-			.map(|p| p.name)
-			.zip(data_tokens.into_iter());
+		let data_named_tokens = data_params.into_iter().map(|p| p.name).zip(data_tokens.into_iter());
 
-		let named_tokens = topics_named_tokens
-			.chain(data_named_tokens)
-			.collect::<HashMap<String, Token>>();
+		let named_tokens = topics_named_tokens.chain(data_named_tokens).collect::<HashMap<String, Token>>();
 
-		let decoded_params = self.params_names()
+		let decoded_params = self
+			.params_names()
 			.into_iter()
-			.map(|name| LogParam {
-				name: name.clone(),
-				value: named_tokens[&name].clone()
-			})
+			.map(|name| LogParam { name: name.clone(), value: named_tokens[&name].clone() })
 			.collect();
 
-		let result = Log {
-			params: decoded_params,
-		};
+		let result = Log { params: decoded_params };
 
 		Ok(result)
 	}
@@ -200,82 +174,103 @@ impl Event {
 
 #[cfg(test)]
 mod tests {
-	use hex::FromHex;
 	use crate::{
-		token::Token,
+		log::{Log, RawLog},
 		signature::long_signature,
-		log::{RawLog, Log},
-		EventParam, ParamType, Event, LogParam,
+		token::Token,
+		Event, EventParam, LogParam, ParamType,
 	};
+	use hex::FromHex;
 
 	#[test]
 	fn test_decoding_event() {
 		let event = Event {
 			name: "foo".to_owned(),
-			inputs: vec![EventParam {
-				name: "a".to_owned(),
-				kind: ParamType::Int(256),
-				indexed: false,
-			}, EventParam {
-				name: "b".to_owned(),
-				kind: ParamType::Int(256),
-				indexed: true,
-			}, EventParam {
-				name: "c".to_owned(),
-				kind: ParamType::Address,
-				indexed: false,
-			}, EventParam {
-				name: "d".to_owned(),
-				kind: ParamType::Address,
-				indexed: true,
-			}, EventParam {
-				name: "e".to_owned(),
-				kind: ParamType::String,
-				indexed: true,
-			}, EventParam {
-				name: "f".to_owned(),
-				kind: ParamType::Array(Box::new(ParamType::Int(256))),
-				indexed: true
-			}, EventParam {
-				name: "g".to_owned(),
-				kind: ParamType::FixedArray(Box::new(ParamType::Address), 5),
-				indexed: true,
-			}],
+			inputs: vec![
+				EventParam { name: "a".to_owned(), kind: ParamType::Int(256), indexed: false },
+				EventParam { name: "b".to_owned(), kind: ParamType::Int(256), indexed: true },
+				EventParam { name: "c".to_owned(), kind: ParamType::Address, indexed: false },
+				EventParam { name: "d".to_owned(), kind: ParamType::Address, indexed: true },
+				EventParam { name: "e".to_owned(), kind: ParamType::String, indexed: true },
+				EventParam {
+					name: "f".to_owned(),
+					kind: ParamType::Array(Box::new(ParamType::Int(256))),
+					indexed: true,
+				},
+				EventParam {
+					name: "g".to_owned(),
+					kind: ParamType::FixedArray(Box::new(ParamType::Address), 5),
+					indexed: true,
+				},
+			],
 			anonymous: false,
 		};
 
 		let log = RawLog {
 			topics: vec![
-				long_signature("foo", &[
-					ParamType::Int(256),
-					ParamType::Int(256),
-					ParamType::Address,
-					ParamType::Address,
-					ParamType::String,
-					ParamType::Array(Box::new(ParamType::Int(256))),
-					ParamType::FixedArray(Box::new(ParamType::Address), 5),
-				]),
+				long_signature(
+					"foo",
+					&[
+						ParamType::Int(256),
+						ParamType::Int(256),
+						ParamType::Address,
+						ParamType::Address,
+						ParamType::String,
+						ParamType::Array(Box::new(ParamType::Int(256))),
+						ParamType::FixedArray(Box::new(ParamType::Address), 5),
+					],
+				),
 				"0000000000000000000000000000000000000000000000000000000000000002".parse().unwrap(),
 				"0000000000000000000000001111111111111111111111111111111111111111".parse().unwrap(),
 				"00000000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".parse().unwrap(),
 				"00000000000000000bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb".parse().unwrap(),
 				"00000000000000000ccccccccccccccccccccccccccccccccccccccccccccccc".parse().unwrap(),
 			],
-			data:
-			("".to_owned() +
-				"0000000000000000000000000000000000000000000000000000000000000003" +
-				"0000000000000000000000002222222222222222222222222222222222222222").from_hex().unwrap()
+			data: ("".to_owned()
+				+ "0000000000000000000000000000000000000000000000000000000000000003"
+				+ "0000000000000000000000002222222222222222222222222222222222222222")
+				.from_hex()
+				.unwrap(),
 		};
 		let result = event.parse_log(log).unwrap();
 
-		assert_eq!(result, Log { params: vec![
-			("a".to_owned(), Token::Int("0000000000000000000000000000000000000000000000000000000000000003".into())),
-			("b".to_owned(), Token::Int("0000000000000000000000000000000000000000000000000000000000000002".into())),
-			("c".to_owned(), Token::Address("2222222222222222222222222222222222222222".parse().unwrap())),
-			("d".to_owned(), Token::Address("1111111111111111111111111111111111111111".parse().unwrap())),
-			("e".to_owned(), Token::FixedBytes("00000000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".from_hex().unwrap())),
-			("f".to_owned(), Token::FixedBytes("00000000000000000bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb".from_hex().unwrap())),
-			("g".to_owned(), Token::FixedBytes("00000000000000000ccccccccccccccccccccccccccccccccccccccccccccccc".from_hex().unwrap())),
-		].into_iter().map(|(name, value)| LogParam { name, value }).collect::<Vec<_>>()});
+		assert_eq!(
+			result,
+			Log {
+				params: vec![
+					(
+						"a".to_owned(),
+						Token::Int("0000000000000000000000000000000000000000000000000000000000000003".into())
+					),
+					(
+						"b".to_owned(),
+						Token::Int("0000000000000000000000000000000000000000000000000000000000000002".into())
+					),
+					("c".to_owned(), Token::Address("2222222222222222222222222222222222222222".parse().unwrap())),
+					("d".to_owned(), Token::Address("1111111111111111111111111111111111111111".parse().unwrap())),
+					(
+						"e".to_owned(),
+						Token::FixedBytes(
+							"00000000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".from_hex().unwrap()
+						)
+					),
+					(
+						"f".to_owned(),
+						Token::FixedBytes(
+							"00000000000000000bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb".from_hex().unwrap()
+						)
+					),
+					(
+						"g".to_owned(),
+						Token::FixedBytes(
+							"00000000000000000ccccccccccccccccccccccccccccccccccccccccccccccc".from_hex().unwrap()
+						)
+					),
+				]
+				.into_iter()
+				.map(|(name, value)| LogParam { name, value })
+				.collect::<Vec<_>>()
+			}
+		);
 	}
 }

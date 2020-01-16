@@ -10,8 +10,6 @@
 
 #![warn(missing_docs)]
 
-pub mod param_type;
-pub mod token;
 mod constructor;
 mod contract;
 mod decoder;
@@ -24,7 +22,9 @@ mod function;
 mod log;
 mod operation;
 mod param;
+pub mod param_type;
 mod signature;
+pub mod token;
 mod tuple_param;
 mod util;
 
@@ -33,19 +33,19 @@ mod tests;
 
 pub use crate::{
 	constructor::Constructor,
-	contract::{Contract, Functions, Events},
+	contract::{Contract, Events, Functions},
 	decoder::decode,
 	encoder::encode,
 	errors::{Error, Result},
 	event::Event,
 	event_param::EventParam,
-	filter::{Topic, TopicFilter, RawTopicFilter},
+	filter::{RawTopicFilter, Topic, TopicFilter},
 	function::Function,
-	log::{Log, RawLog, LogParam, ParseLog, LogFilter},
+	log::{Log, LogFilter, LogParam, ParseLog, RawLog},
 	param::Param,
 	param_type::ParamType,
-	tuple_param::TupleParam,
 	token::Token,
+	tuple_param::TupleParam,
 };
 
 /// ABI word.

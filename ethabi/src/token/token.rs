@@ -7,9 +7,9 @@
 // except according to those terms.
 
 //! Ethereum ABI params.
+use crate::{Address, Bytes, FixedBytes, ParamType, Uint};
 use hex::ToHex;
 use std::fmt;
-use crate::{ParamType, Address, FixedBytes, Bytes, Uint};
 
 /// Ethereum ABI params.
 #[derive(Debug, PartialEq, Clone)]
@@ -70,9 +70,7 @@ impl fmt::Display for Token {
 			Token::Bool(b) => write!(f, "{}", b),
 			Token::String(ref s) => write!(f, "{}", s),
 			Token::Address(ref a) => write!(f, "{:x}", a),
-			Token::Bytes(ref bytes) | Token::FixedBytes(ref bytes) => {
-				write!(f, "{}", bytes.to_hex::<String>())
-			}
+			Token::Bytes(ref bytes) | Token::FixedBytes(ref bytes) => write!(f, "{}", bytes.to_hex::<String>()),
 			Token::Uint(ref i) | Token::Int(ref i) => write!(f, "{:x}", i),
 			Token::Array(ref arr) | Token::FixedArray(ref arr) => {
 				let s = arr.iter().map(|ref t| format!("{}", t)).collect::<Vec<String>>().join(",");
@@ -236,7 +234,7 @@ impl Token {
 
 #[cfg(test)]
 mod tests {
-	use crate::{Token, ParamType};
+	use crate::{ParamType, Token};
 
 	#[test]
 	fn test_type_check() {
@@ -248,37 +246,19 @@ mod tests {
 			assert!(!Token::types_check(&tokens, &param_types))
 		}
 
-		assert_type_check(
-			vec![Token::Uint(0.into()), Token::Bool(false)],
-			vec![ParamType::Uint(256), ParamType::Bool],
-		);
-		assert_type_check(
-			vec![Token::Uint(0.into()), Token::Bool(false)],
-			vec![ParamType::Uint(32), ParamType::Bool],
-		);
+		assert_type_check(vec![Token::Uint(0.into()), Token::Bool(false)], vec![ParamType::Uint(256), ParamType::Bool]);
+		assert_type_check(vec![Token::Uint(0.into()), Token::Bool(false)], vec![ParamType::Uint(32), ParamType::Bool]);
 
-		assert_not_type_check(
-			vec![Token::Uint(0.into())],
-			vec![ParamType::Uint(32), ParamType::Bool],
-		);
-		assert_not_type_check(
-			vec![Token::Uint(0.into()), Token::Bool(false)],
-			vec![ParamType::Uint(32)],
-		);
+		assert_not_type_check(vec![Token::Uint(0.into())], vec![ParamType::Uint(32), ParamType::Bool]);
+		assert_not_type_check(vec![Token::Uint(0.into()), Token::Bool(false)], vec![ParamType::Uint(32)]);
 		assert_not_type_check(
 			vec![Token::Bool(false), Token::Uint(0.into())],
 			vec![ParamType::Uint(32), ParamType::Bool],
 		);
 
-		assert_type_check(
-			vec![Token::FixedBytes(vec![0, 0, 0, 0])],
-			vec![ParamType::FixedBytes(4)],
-		);
+		assert_type_check(vec![Token::FixedBytes(vec![0, 0, 0, 0])], vec![ParamType::FixedBytes(4)]);
 		assert_type_check(vec![Token::FixedBytes(vec![0, 0, 0])], vec![ParamType::FixedBytes(4)]);
-		assert_not_type_check(
-			vec![Token::FixedBytes(vec![0, 0, 0, 0])],
-			vec![ParamType::FixedBytes(3)],
-		);
+		assert_not_type_check(vec![Token::FixedBytes(vec![0, 0, 0, 0])], vec![ParamType::FixedBytes(3)]);
 
 		assert_type_check(
 			vec![Token::Array(vec![Token::Bool(false), Token::Bool(true)])],
