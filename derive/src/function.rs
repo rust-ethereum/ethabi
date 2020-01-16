@@ -6,15 +6,15 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use {syn, ethabi};
 use heck::SnakeCase;
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::export::Span;
+use {ethabi, syn};
 
 use super::{
-	input_names, template_param_type, rust_type, get_template_names, from_template_param, to_token,
-	to_ethabi_param_vec, get_output_kinds, from_token
+	from_template_param, from_token, get_output_kinds, get_template_names, input_names, rust_type, template_param_type,
+	to_ethabi_param_vec, to_token,
 };
 
 struct TemplateParam {
@@ -72,28 +72,29 @@ impl<'a> From<&'a ethabi::Function> for Function {
 		let input_names = input_names(&f.inputs);
 
 		// [T0: Into<Uint>, T1: Into<Bytes>, T2: IntoIterator<Item = U2>, U2 = Into<Uint>]
-		let declarations = f.inputs.iter().enumerate()
-			.map(|(index, param)| template_param_type(&param.kind, index));
+		let declarations = f.inputs.iter().enumerate().map(|(index, param)| template_param_type(&param.kind, index));
 
 		// [Uint, Bytes, Vec<Uint>]
-		let kinds: Vec<_> = f.inputs
-			.iter()
-			.map(|param| rust_type(&param.kind))
-			.collect();
+		let kinds: Vec<_> = f.inputs.iter().map(|param| rust_type(&param.kind)).collect();
 
 		// [T0, T1, T2]
 		let template_names: Vec<_> = get_template_names(&kinds);
 
 		// [param0: T0, hello_world: T1, param2: T2]
-		let definitions = input_names.iter().zip(template_names.iter())
+		let definitions = input_names
+			.iter()
+			.zip(template_names.iter())
 			.map(|(param_name, template_name)| quote! { #param_name: #template_name });
 
-		let template_params = declarations.zip(definitions)
+		let template_params = declarations
+			.zip(definitions)
 			.map(|(declaration, definition)| TemplateParam { declaration, definition })
 			.collect();
 
 		// [Token::Uint(param0.into()), Token::Bytes(hello_world.into()), Token::Array(param2.into_iter().map(Into::into).collect())]
-		let tokenize: Vec<_> = input_names.iter().zip(f.inputs.iter())
+		let tokenize: Vec<_> = input_names
+			.iter()
+			.zip(f.inputs.iter())
 			.map(|(param_name, param)| to_token(&from_template_param(&param.kind, &param_name), &param.kind))
 			.collect();
 
@@ -111,28 +112,21 @@ impl<'a> From<&'a ethabi::Function> for Function {
 					let out = self.0.decode_output(output)?.into_iter().next().expect(INTERNAL_ERR);
 					Ok(#from_first)
 				}
-			},
+			}
 			_ => {
 				let o = quote! { out.next().expect(INTERNAL_ERR) };
-				let outs: Vec<_> = f.outputs
-					.iter()
-					.map(|param| from_token(&param.kind, &o))
-					.collect();
+				let outs: Vec<_> = f.outputs.iter().map(|param| from_token(&param.kind, &o)).collect();
 
 				quote! {
 					let mut out = self.0.decode_output(output)?.into_iter();
 					Ok(( #(#outs),* ))
 				}
-			},
+			}
 		};
 
 		Function {
 			name: f.name.clone(),
-			inputs: Inputs {
-				tokenize,
-				template_params,
-				recreate_quote: to_ethabi_param_vec(&f.inputs),
-			},
+			inputs: Inputs { tokenize, template_params, recreate_quote: to_ethabi_param_vec(&f.inputs) },
 			outputs: Outputs {
 				implementation: output_implementation,
 				result: output_result,
@@ -207,18 +201,14 @@ impl Function {
 
 #[cfg(test)]
 mod tests {
+	use super::Function;
 	use ethabi;
 	use quote::quote;
-	use super::Function;
 
 	#[test]
 	fn test_no_params() {
-		let ethabi_function = ethabi::Function {
-			name: "empty".into(),
-			inputs: vec![],
-			outputs: vec![],
-			constant: false,
-		};
+		let ethabi_function =
+			ethabi::Function { name: "empty".into(), inputs: vec![], outputs: vec![], constant: false };
 
 		let f = Function::from(&ethabi_function);
 
@@ -276,18 +266,8 @@ mod tests {
 	fn test_one_param() {
 		let ethabi_function = ethabi::Function {
 			name: "hello".into(),
-			inputs: vec![
-				ethabi::Param {
-					name: "foo".into(),
-					kind: ethabi::ParamType::Address,
-				}
-			],
-			outputs: vec![
-				ethabi::Param {
-					name: "bar".into(),
-					kind: ethabi::ParamType::Uint(256),
-				}
-			],
+			inputs: vec![ethabi::Param { name: "foo".into(), kind: ethabi::ParamType::Address }],
+			outputs: vec![ethabi::Param { name: "bar".into(), kind: ethabi::ParamType::Uint(256) }],
 			constant: false,
 		};
 
@@ -361,17 +341,11 @@ mod tests {
 				ethabi::Param {
 					name: "bar".into(),
 					kind: ethabi::ParamType::Array(Box::new(ethabi::ParamType::Uint(256))),
-				}
+				},
 			],
 			outputs: vec![
-				ethabi::Param {
-					name: "".into(),
-					kind: ethabi::ParamType::Uint(256),
-				},
-				ethabi::Param {
-					name: "".into(),
-					kind: ethabi::ParamType::String,
-				}
+				ethabi::Param { name: "".into(), kind: ethabi::ParamType::Uint(256) },
+				ethabi::Param { name: "".into(), kind: ethabi::ParamType::String },
 			],
 			constant: false,
 		};

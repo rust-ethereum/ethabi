@@ -29,8 +29,10 @@ matrix:
 before_script:
   - export PATH=$HOME/.cargo/bin:$PATH
   - cargo install cargo-travis || echo "cargo-travis already installed"
+  - rustup component add rustfmt
 
 script:
+  - cargo fmt --all -- --check
   - cargo test
 
 after_success:

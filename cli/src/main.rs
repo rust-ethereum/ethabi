@@ -1,13 +1,13 @@
 mod error;
 
-use structopt::StructOpt;
-use std::fs::File;
-use rustc_hex::{ToHex, FromHex};
-use ethabi::param_type::{ParamType, Reader};
-use ethabi::token::{Token, Tokenizer, StrictTokenizer, LenientTokenizer};
-use ethabi::{encode, decode, Contract, Function, Event, Hash};
-use itertools::Itertools;
 use crate::error::Error;
+use ethabi::param_type::{ParamType, Reader};
+use ethabi::token::{LenientTokenizer, StrictTokenizer, Token, Tokenizer};
+use ethabi::{decode, encode, Contract, Event, Function, Hash};
+use itertools::Itertools;
+use rustc_hex::{FromHex, ToHex};
+use std::fs::File;
+use structopt::StructOpt;
 use tiny_keccak::Keccak;
 
 #[derive(StructOpt, Debug)]
@@ -49,11 +49,7 @@ enum Encode {
 #[derive(StructOpt, Debug)]
 enum Decode {
 	/// Load function from JSON ABI file.
-	Function {
-		abi_path: String,
-		function_name_or_signature: String,
-		data: String,
-	},
+	Function { abi_path: String, function_name_or_signature: String, data: String },
 	/// Specify types of input params inline.
 	Params {
 		#[structopt(short, name = "type", number_of_values = 1)]
@@ -79,21 +75,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 fn execute<I>(args: I) -> Result<String, Error>
 where
 	I: IntoIterator,
-	I::Item: Into<std::ffi::OsString> + Clone
+	I::Item: Into<std::ffi::OsString> + Clone,
 {
 	let opt = Opt::from_iter(args);
 
 	match opt {
-		Opt::Encode(Encode::Function { abi_path, function_name_or_signature, params, lenient }) =>
-			encode_input(&abi_path, &function_name_or_signature, &params, lenient),
-		Opt::Encode(Encode::Params { params, lenient }) =>
-			encode_params(&params, lenient),
-		Opt::Decode(Decode::Function { abi_path, function_name_or_signature, data }) =>
-			decode_call_output(&abi_path, &function_name_or_signature, &data),
-		Opt::Decode(Decode::Params { types, data }) =>
-			decode_params(&types, &data),
-		Opt::Decode(Decode::Log { abi_path, event_name_or_signature, topics, data }) =>
-			decode_log(&abi_path, &event_name_or_signature, &topics, &data),
+		Opt::Encode(Encode::Function { abi_path, function_name_or_signature, params, lenient }) => {
+			encode_input(&abi_path, &function_name_or_signature, &params, lenient)
+		}
+		Opt::Encode(Encode::Params { params, lenient }) => encode_params(&params, lenient),
+		Opt::Decode(Decode::Function { abi_path, function_name_or_signature, data }) => {
+			decode_call_output(&abi_path, &function_name_or_signature, &data)
+		}
+		Opt::Decode(Decode::Params { types, data }) => decode_params(&types, &data),
+		Opt::Decode(Decode::Log { abi_path, event_name_or_signature, topics, data }) => {
+			decode_log(&abi_path, &event_name_or_signature, &topics, &data)
+		}
 	}
 }
 
@@ -107,10 +104,13 @@ fn load_function(path: &str, name_or_signature: &str) -> Result<Function, Error>
 		Some(params_start) => {
 			let name = &name_or_signature[..params_start];
 
-			contract.functions_by_name(name)?.iter().find(|f| {
-				f.signature() == name_or_signature
-			}).cloned().ok_or(Error::InvalidFunctionSignature(name_or_signature.to_owned()))
-		},
+			contract
+				.functions_by_name(name)?
+				.iter()
+				.find(|f| f.signature() == name_or_signature)
+				.cloned()
+				.ok_or(Error::InvalidFunctionSignature(name_or_signature.to_owned()))
+		}
 
 		// It's a name
 		None => {
@@ -118,9 +118,9 @@ fn load_function(path: &str, name_or_signature: &str) -> Result<Function, Error>
 			match functions.len() {
 				0 => unreachable!(),
 				1 => Ok(functions[0].clone()),
-				_ => Err(Error::AmbiguousFunctionName(name_or_signature.to_owned()))
+				_ => Err(Error::AmbiguousFunctionName(name_or_signature.to_owned())),
 			}
-		},
+		}
 	}
 }
 
@@ -134,9 +134,12 @@ fn load_event(path: &str, name_or_signature: &str) -> Result<Event, Error> {
 		Some(params_start) => {
 			let name = &name_or_signature[..params_start];
 			let signature = hash_signature(name_or_signature);
-			contract.events_by_name(name)?.iter().find(|event|
-				event.signature() == signature
-			).cloned().ok_or(Error::InvalidSignature(signature))
+			contract
+				.events_by_name(name)?
+				.iter()
+				.find(|event| event.signature() == signature)
+				.cloned()
+				.ok_or(Error::InvalidSignature(signature))
 		}
 
 		// It's a name.
@@ -145,17 +148,18 @@ fn load_event(path: &str, name_or_signature: &str) -> Result<Event, Error> {
 			match events.len() {
 				0 => unreachable!(),
 				1 => Ok(events[0].clone()),
-				_ => Err(Error::AmbiguousEventName(name_or_signature.to_string()))
+				_ => Err(Error::AmbiguousEventName(name_or_signature.to_string())),
 			}
 		}
 	}
 }
 
 fn parse_tokens(params: &[(ParamType, &str)], lenient: bool) -> Result<Vec<Token>, Error> {
-	params.iter()
+	params
+		.iter()
 		.map(|&(ref param, value)| match lenient {
 			true => LenientTokenizer::tokenize(param, value),
-			false => StrictTokenizer::tokenize(param, value)
+			false => StrictTokenizer::tokenize(param, value),
 		})
 		.collect::<Result<_, _>>()
 		.map_err(From::from)
@@ -164,10 +168,8 @@ fn parse_tokens(params: &[(ParamType, &str)], lenient: bool) -> Result<Vec<Token
 fn encode_input(path: &str, name_or_signature: &str, values: &[String], lenient: bool) -> Result<String, Error> {
 	let function = load_function(path, name_or_signature)?;
 
-	let params: Vec<_> = function.inputs.iter()
-		.map(|param| param.kind.clone())
-		.zip(values.iter().map(|v| v as &str))
-		.collect();
+	let params: Vec<_> =
+		function.inputs.iter().map(|param| param.kind.clone()).zip(values.iter().map(|v| v as &str)).collect();
 
 	let tokens = parse_tokens(&params, lenient)?;
 	let result = function.encode_input(&tokens)?;
@@ -198,7 +200,8 @@ fn decode_call_output(path: &str, name_or_signature: &str, data: &str) -> Result
 
 	assert_eq!(types.len(), tokens.len());
 
-	let result = types.iter()
+	let result = types
+		.iter()
 		.zip(tokens.iter())
 		.map(|(ty, to)| format!("{} {}", ty.kind, to))
 		.collect::<Vec<String>>()
@@ -208,9 +211,7 @@ fn decode_call_output(path: &str, name_or_signature: &str, data: &str) -> Result
 }
 
 fn decode_params(types: &[String], data: &str) -> Result<String, Error> {
-	let types: Vec<ParamType> = types.iter()
-		.map(|s| Reader::read(s))
-		.collect::<Result<_, _>>()?;
+	let types: Vec<ParamType> = types.iter().map(|s| Reader::read(s)).collect::<Result<_, _>>()?;
 
 	let data: Vec<u8> = data.from_hex()?;
 
@@ -218,24 +219,21 @@ fn decode_params(types: &[String], data: &str) -> Result<String, Error> {
 
 	assert_eq!(types.len(), tokens.len());
 
-	let result = types.iter()
-		.zip(tokens.iter())
-		.map(|(ty, to)| format!("{} {}", ty, to))
-		.collect::<Vec<String>>()
-		.join("\n");
+	let result =
+		types.iter().zip(tokens.iter()).map(|(ty, to)| format!("{} {}", ty, to)).collect::<Vec<String>>().join("\n");
 
 	Ok(result)
 }
 
 fn decode_log(path: &str, name_or_signature: &str, topics: &[String], data: &str) -> Result<String, Error> {
 	let event = load_event(path, name_or_signature)?;
-	let topics: Vec<Hash> = topics.into_iter()
-		.map(|t| t.parse() )
-		.collect::<Result<_, _>>()?;
+	let topics: Vec<Hash> = topics.into_iter().map(|t| t.parse()).collect::<Result<_, _>>()?;
 	let data = data.from_hex()?;
 	let decoded = event.parse_log((topics, data).into())?;
 
-	let result = decoded.params.into_iter()
+	let result = decoded
+		.params
+		.into_iter()
 		.map(|log_param| format!("{} {}", log_param.name, log_param.value))
 		.collect::<Vec<String>>()
 		.join("\n");
@@ -244,12 +242,12 @@ fn decode_log(path: &str, name_or_signature: &str, topics: &[String], data: &str
 }
 
 fn hash_signature(sig: &str) -> Hash {
-    let mut result = [0u8; 32];
-    let data = sig.replace(" ", "").into_bytes();
-    let mut sponge = Keccak::new_keccak256();
-    sponge.update(&data);
-    sponge.finalize(&mut result);
-    Hash::from_slice(&result)
+	let mut result = [0u8; 32];
+	let data = sig.replace(" ", "").into_bytes();
+	let mut sponge = Keccak::new_keccak256();
+	sponge.update(&data);
+	sponge.finalize(&mut result);
+	Hash::from_slice(&result)
 }
 
 #[cfg(test)]
@@ -291,7 +289,9 @@ mod tests {
 
 	#[test]
 	fn uint_encode_big_numbers() {
-		let command = "ethabi encode params -v uint256 100000000000000000000000000000000022222222222222221111111111111 --lenient".split(" ");
+		let command =
+			"ethabi encode params -v uint256 100000000000000000000000000000000022222222222222221111111111111 --lenient"
+				.split(" ");
 		let expected = "0000000000003e3aeb4ae1383562f4b82261d96a3f7a5f62ca19599c1ad6d1c7";
 		assert_eq!(execute(command).unwrap(), expected);
 	}
@@ -377,21 +377,23 @@ mod tests {
 	fn overloaded_function_encode_by_second_signature() {
 		let command = "ethabi encode function ../res/test.abi bar(string):(uint256) -p 1".split(" ");
 		let expected = "d473a8ed0000000000000000000000000000000000000000000000000000000000000020\
-						000000000000000000000000000000000000000000000000000000000000000131000000\
-						00000000000000000000000000000000000000000000000000000000";
+		                000000000000000000000000000000000000000000000000000000000000000131000000\
+		                00000000000000000000000000000000000000000000000000000000";
 		assert_eq!(execute(command).unwrap(), expected);
 	}
 
 	#[test]
 	fn simple_decode() {
-		let command = "ethabi decode params -t bool 0000000000000000000000000000000000000000000000000000000000000001".split(" ");
+		let command =
+			"ethabi decode params -t bool 0000000000000000000000000000000000000000000000000000000000000001".split(" ");
 		let expected = "bool true";
 		assert_eq!(execute(command).unwrap(), expected);
 	}
 
 	#[test]
 	fn int_decode() {
-		let command = "ethabi decode params -t int256 fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe".split(" ");
+		let command = "ethabi decode params -t int256 fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe"
+			.split(" ");
 		let expected = "int256 fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe";
 		assert_eq!(execute(command).unwrap(), expected);
 	}
@@ -399,8 +401,7 @@ mod tests {
 	#[test]
 	fn multi_decode() {
 		let command = "ethabi decode params -t bool -t string -t bool 00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000096761766f66796f726b0000000000000000000000000000000000000000000000".split(" ");
-		let expected =
-"bool true
+		let expected = "bool true
 string gavofyork
 bool false";
 		assert_eq!(execute(command).unwrap(), expected);
@@ -423,8 +424,7 @@ bool false";
 	#[test]
 	fn log_decode() {
 		let command = "ethabi decode log ../res/event.abi Event -l 0000000000000000000000000000000000000000000000000000000000000001 0000000000000000000000004444444444444444444444444444444444444444".split(" ");
-		let expected =
-"a true
+		let expected = "a true
 b 4444444444444444444444444444444444444444";
 		assert_eq!(execute(command).unwrap(), expected);
 	}
@@ -432,8 +432,7 @@ b 4444444444444444444444444444444444444444";
 	#[test]
 	fn log_decode_signature() {
 		let command = "ethabi decode log ../res/event.abi Event(bool,address) -l 0000000000000000000000000000000000000000000000000000000000000001 0000000000000000000000004444444444444444444444444444444444444444".split(" ");
-		let expected =
-"a true
+		let expected = "a true
 b 4444444444444444444444444444444444444444";
 		assert_eq!(execute(command).unwrap(), expected);
 	}

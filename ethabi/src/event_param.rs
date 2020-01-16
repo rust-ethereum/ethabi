@@ -8,10 +8,10 @@
 
 //! Event param specification.
 
-use std::fmt;
-use serde::{Deserialize, Deserializer};
-use serde::de::{MapAccess, Visitor, Error};
 use crate::{ParamType, TupleParam};
+use serde::de::{Error, MapAccess, Visitor};
+use serde::{Deserialize, Deserializer};
+use std::fmt;
 
 /// Event param specification.
 #[derive(Debug, Clone, PartialEq)]
@@ -85,26 +85,20 @@ impl<'a> Visitor<'a> for EventParamVisitor {
 		let kind = kind.ok_or_else(|| Error::missing_field("kind")).and_then(|param_type| {
 			if let ParamType::Tuple(_) = param_type {
 				let tuple_params = components.ok_or_else(|| Error::missing_field("components"))?;
-				Ok(ParamType::Tuple(
-					tuple_params.into_iter().map(|param| param.kind).map(Box::new).collect(),
-				))
+				Ok(ParamType::Tuple(tuple_params.into_iter().map(|param| param.kind).map(Box::new).collect()))
 			} else {
 				Ok(param_type)
 			}
 		})?;
 		let indexed = indexed.unwrap_or(false);
-		Ok(EventParam {
-			name,
-			kind,
-			indexed,
-		})
+		Ok(EventParam { name, kind, indexed })
 	}
 }
 
 #[cfg(test)]
 mod tests {
-	use serde_json;
 	use crate::{EventParam, ParamType};
+	use serde_json;
 
 	#[test]
 	fn event_param_deserialization() {
@@ -116,14 +110,7 @@ mod tests {
 
 		let deserialized: EventParam = serde_json::from_str(s).unwrap();
 
-		assert_eq!(
-			deserialized,
-			EventParam {
-				name: "foo".to_owned(),
-				kind: ParamType::Address,
-				indexed: true,
-			}
-		);
+		assert_eq!(deserialized, EventParam { name: "foo".to_owned(), kind: ParamType::Address, indexed: true });
 	}
 	#[test]
 	fn event_param_tuple_deserialization() {
@@ -157,9 +144,7 @@ mod tests {
 				name: "foo".to_owned(),
 				kind: ParamType::Tuple(vec![
 					Box::new(ParamType::Uint(48)),
-					Box::new(ParamType::Tuple(vec![
-						Box::new(ParamType::Address)
-					]))
+					Box::new(ParamType::Tuple(vec![Box::new(ParamType::Address)]))
 				]),
 				indexed: true,
 			}

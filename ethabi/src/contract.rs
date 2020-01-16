@@ -6,15 +6,15 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use std::{io, fmt};
-use std::collections::HashMap;
-use std::collections::hash_map::Values;
-use std::iter::Flatten;
-use serde::{Deserialize, Deserializer};
-use serde::de::{Visitor, SeqAccess};
-use serde_json;
 use crate::operation::Operation;
-use crate::{errors, Error, Event, Constructor, Function};
+use crate::{errors, Constructor, Error, Event, Function};
+use serde::de::{SeqAccess, Visitor};
+use serde::{Deserialize, Deserializer};
+use serde_json;
+use std::collections::hash_map::Values;
+use std::collections::HashMap;
+use std::iter::Flatten;
+use std::{fmt, io};
 
 /// API building calls to contracts ABI.
 #[derive(Clone, Debug, PartialEq)]
@@ -30,7 +30,10 @@ pub struct Contract {
 }
 
 impl<'a> Deserialize<'a> for Contract {
-	fn deserialize<D>(deserializer: D) -> Result<Contract, D::Error> where D: Deserializer<'a> {
+	fn deserialize<D>(deserializer: D) -> Result<Contract, D::Error>
+	where
+		D: Deserializer<'a>,
+	{
 		deserializer.deserialize_any(ContractVisitor)
 	}
 }
@@ -44,28 +47,27 @@ impl<'a> Visitor<'a> for ContractVisitor {
 		formatter.write_str("valid abi spec file")
 	}
 
-	fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error> where A: SeqAccess<'a> {
-		let mut result = Contract {
-			constructor: None,
-			functions: HashMap::default(),
-			events: HashMap::default(),
-			fallback: false,
-		};
+	fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+	where
+		A: SeqAccess<'a>,
+	{
+		let mut result =
+			Contract { constructor: None, functions: HashMap::default(), events: HashMap::default(), fallback: false };
 
 		while let Some(operation) = seq.next_element()? {
 			match operation {
 				Operation::Constructor(constructor) => {
 					result.constructor = Some(constructor);
-				},
+				}
 				Operation::Function(func) => {
 					result.functions.entry(func.name.clone()).or_default().push(func);
-				},
+				}
 				Operation::Event(event) => {
 					result.events.entry(event.name.clone()).or_default().push(event);
-				},
+				}
 				Operation::Fallback => {
 					result.fallback = true;
-				},
+				}
 			}
 		}
 
@@ -87,33 +89,22 @@ impl Contract {
 	/// Get the function named `name`, the first if there are overloaded
 	/// versions of the same function.
 	pub fn function(&self, name: &str) -> errors::Result<&Function> {
-		self.functions
-			.get(name)
-			.into_iter()
-			.flatten()
-			.next()
-			.ok_or_else(|| Error::InvalidName(name.to_owned()))
+		self.functions.get(name).into_iter().flatten().next().ok_or_else(|| Error::InvalidName(name.to_owned()))
 	}
 
 	/// Get the contract event named `name`, the first if there are multiple.
 	pub fn event(&self, name: &str) -> errors::Result<&Event> {
-		self.events.get(name).into_iter()
-							.flatten()
-							.next()
-							.ok_or_else(|| Error::InvalidName(name.to_owned()))
+		self.events.get(name).into_iter().flatten().next().ok_or_else(|| Error::InvalidName(name.to_owned()))
 	}
 
 	/// Get all contract events named `name`.
 	pub fn events_by_name(&self, name: &str) -> errors::Result<&Vec<Event>> {
-		self.events.get(name)
-					.ok_or_else(|| Error::InvalidName(name.to_owned()))
+		self.events.get(name).ok_or_else(|| Error::InvalidName(name.to_owned()))
 	}
 
 	/// Get all functions named `name`.
 	pub fn functions_by_name(&self, name: &str) -> errors::Result<&Vec<Function>> {
-		self.functions
-			.get(name)
-			.ok_or_else(|| Error::InvalidName(name.to_owned()))
+		self.functions.get(name).ok_or_else(|| Error::InvalidName(name.to_owned()))
 	}
 
 	/// Iterate over all functions of the contract in arbitrary order.

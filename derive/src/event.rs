@@ -6,13 +6,13 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use {syn, ethabi};
-use heck::{SnakeCase, CamelCase};
+use heck::{CamelCase, SnakeCase};
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::export::Span;
+use {ethabi, syn};
 
-use super::{rust_type, to_syntax_string, from_token, get_template_names, to_token};
+use super::{from_token, get_template_names, rust_type, to_syntax_string, to_token};
 
 /// Structure used to generate contract's event interface.
 pub struct Event {
@@ -29,69 +29,70 @@ pub struct Event {
 
 impl<'a> From<&'a ethabi::Event> for Event {
 	fn from(e: &'a ethabi::Event) -> Self {
-		let names: Vec<_> = e.inputs
+		let names: Vec<_> = e
+			.inputs
 			.iter()
 			.enumerate()
-			.map(|(index, param)| if param.name.is_empty() {
-				if param.indexed {
-					syn::Ident::new(&format!("topic{}", index), Span::call_site())
+			.map(|(index, param)| {
+				if param.name.is_empty() {
+					if param.indexed {
+						syn::Ident::new(&format!("topic{}", index), Span::call_site())
+					} else {
+						syn::Ident::new(&format!("param{}", index), Span::call_site())
+					}
 				} else {
-					syn::Ident::new(&format!("param{}", index), Span::call_site())
+					syn::Ident::new(&param.name.to_snake_case(), Span::call_site())
 				}
-			} else {
-				syn::Ident::new(&param.name.to_snake_case(), Span::call_site())
-			}).collect();
-		let kinds: Vec<_> = e.inputs
-			.iter()
-			.map(|param| rust_type(&param.kind))
+			})
 			.collect();
-		let log_fields= names.iter().zip(kinds.iter())
-			.map(|(param_name, kind)| quote! { pub #param_name: #kind })
-			.collect();
+		let kinds: Vec<_> = e.inputs.iter().map(|param| rust_type(&param.kind)).collect();
+		let log_fields =
+			names.iter().zip(kinds.iter()).map(|(param_name, kind)| quote! { pub #param_name: #kind }).collect();
 
 		let log_iter = quote! { log.next().expect(INTERNAL_ERR).value };
 
-		let to_log: Vec<_> = e.inputs
-			.iter()
-			.map(|param| from_token(&param.kind, &log_iter))
-			.collect();
+		let to_log: Vec<_> = e.inputs.iter().map(|param| from_token(&param.kind, &log_iter)).collect();
 
-		let log_init = names.iter().zip(to_log.iter())
-			.map(|(param_name, convert)| quote! { #param_name: #convert })
-			.collect();
+		let log_init =
+			names.iter().zip(to_log.iter()).map(|(param_name, convert)| quote! { #param_name: #convert }).collect();
 
-		let topic_kinds: Vec<_> = e.inputs
-			.iter()
-			.filter(|param| param.indexed)
-			.map(|param| rust_type(&param.kind))
-			.collect();
-		let topic_names: Vec<_> = e.inputs
+		let topic_kinds: Vec<_> =
+			e.inputs.iter().filter(|param| param.indexed).map(|param| rust_type(&param.kind)).collect();
+		let topic_names: Vec<_> = e
+			.inputs
 			.iter()
 			.enumerate()
 			.filter(|&(_, param)| param.indexed)
-			.map(|(index, param)| if param.name.is_empty() {
-				syn::Ident::new(&format!("topic{}", index), Span::call_site())
-			} else {
-				syn::Ident::new(&param.name.to_snake_case(), Span::call_site())
+			.map(|(index, param)| {
+				if param.name.is_empty() {
+					syn::Ident::new(&format!("topic{}", index), Span::call_site())
+				} else {
+					syn::Ident::new(&param.name.to_snake_case(), Span::call_site())
+				}
 			})
 			.collect();
 
 		// [T0, T1, T2]
 		let template_names: Vec<_> = get_template_names(&topic_kinds);
 
-		let filter_declarations: Vec<_> = topic_kinds.iter().zip(template_names.iter())
+		let filter_declarations: Vec<_> = topic_kinds
+			.iter()
+			.zip(template_names.iter())
 			.map(|(kind, template_name)| quote! { #template_name: Into<ethabi::Topic<#kind>> })
 			.collect();
 
-		let filter_definitions: Vec<_> = topic_names.iter().zip(template_names.iter())
+		let filter_definitions: Vec<_> = topic_names
+			.iter()
+			.zip(template_names.iter())
 			.map(|(param_name, template_name)| quote! { #param_name: #template_name })
 			.collect();
 
 		// The number of parameters that creates a filter which matches anything.
-		let wildcard_filter_params: Vec<_> = filter_definitions.iter().map(|_| quote! { ethabi::Topic::Any })
-			.collect();
+		let wildcard_filter_params: Vec<_> = filter_definitions.iter().map(|_| quote! { ethabi::Topic::Any }).collect();
 
-		let filter_init: Vec<_> = topic_names.iter().zip(e.inputs.iter().filter(|p| p.indexed))
+		let filter_init: Vec<_> = topic_names
+			.iter()
+			.zip(e.inputs.iter().filter(|p| p.indexed))
 			.enumerate()
 			.take(3)
 			.map(|(index, (param_name, param))| {
@@ -102,19 +103,23 @@ impl<'a> From<&'a ethabi::Event> for Event {
 			})
 			.collect();
 
-		let event_inputs = &e.inputs.iter().map(|x| {
-			let name = &x.name;
-			let kind = to_syntax_string(&x.kind);
-			let indexed = x.indexed;
+		let event_inputs = &e
+			.inputs
+			.iter()
+			.map(|x| {
+				let name = &x.name;
+				let kind = to_syntax_string(&x.kind);
+				let indexed = x.indexed;
 
-			quote! {
-				ethabi::EventParam {
-					name: #name.to_owned(),
-					kind: #kind,
-					indexed: #indexed
+				quote! {
+					ethabi::EventParam {
+						name: #name.to_owned(),
+						kind: #kind,
+						indexed: #indexed
+					}
 				}
-			}
-		}).collect::<Vec<_>>();
+			})
+			.collect::<Vec<_>>();
 		let recreate_inputs_quote = quote! { vec![ #(#event_inputs),* ] };
 
 		Event {
@@ -200,17 +205,13 @@ impl Event {
 
 #[cfg(test)]
 mod tests {
+	use super::Event;
 	use ethabi;
 	use quote::quote;
-	use super::Event;
 
 	#[test]
 	fn test_empty_log() {
-		let ethabi_event = ethabi::Event {
-			name: "hello".into(),
-			inputs: vec![],
-			anonymous: false,
-		};
+		let ethabi_event = ethabi::Event { name: "hello".into(), inputs: vec![], anonymous: false };
 
 		let e = Event::from(&ethabi_event);
 
@@ -224,11 +225,7 @@ mod tests {
 
 	#[test]
 	fn test_empty_event() {
-		let ethabi_event = ethabi::Event {
-			name: "hello".into(),
-			inputs: vec![],
-			anonymous: false,
-		};
+		let ethabi_event = ethabi::Event { name: "hello".into(), inputs: vec![], anonymous: false };
 
 		let e = Event::from(&ethabi_event);
 
@@ -274,11 +271,7 @@ mod tests {
 	fn test_event_with_one_input() {
 		let ethabi_event = ethabi::Event {
 			name: "one".into(),
-			inputs: vec![ethabi::EventParam {
-				name: "foo".into(),
-				kind: ethabi::ParamType::Address,
-				indexed: true
-			}],
+			inputs: vec![ethabi::EventParam { name: "foo".into(), kind: ethabi::ParamType::Address, indexed: true }],
 			anonymous: false,
 		};
 
@@ -333,11 +326,7 @@ mod tests {
 	fn test_log_with_one_field() {
 		let ethabi_event = ethabi::Event {
 			name: "one".into(),
-			inputs: vec![ethabi::EventParam {
-				name: "foo".into(),
-				kind: ethabi::ParamType::Address,
-				indexed: false
-			}],
+			inputs: vec![ethabi::EventParam { name: "foo".into(), kind: ethabi::ParamType::Address, indexed: false }],
 			anonymous: false,
 		};
 
@@ -357,19 +346,15 @@ mod tests {
 	fn test_log_with_multiple_field() {
 		let ethabi_event = ethabi::Event {
 			name: "many".into(),
-			inputs: vec![ethabi::EventParam {
-				name: "foo".into(),
-				kind: ethabi::ParamType::Address,
-				indexed: false
-			}, ethabi::EventParam {
-				name: "bar".into(),
-				kind: ethabi::ParamType::Array(Box::new(ethabi::ParamType::String)),
-				indexed: false
-			}, ethabi::EventParam {
-				name: "xyz".into(),
-				kind: ethabi::ParamType::Uint(256),
-				indexed: false
-			}],
+			inputs: vec![
+				ethabi::EventParam { name: "foo".into(), kind: ethabi::ParamType::Address, indexed: false },
+				ethabi::EventParam {
+					name: "bar".into(),
+					kind: ethabi::ParamType::Array(Box::new(ethabi::ParamType::String)),
+					indexed: false,
+				},
+				ethabi::EventParam { name: "xyz".into(), kind: ethabi::ParamType::Uint(256), indexed: false },
+			],
 			anonymous: false,
 		};
 

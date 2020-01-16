@@ -6,10 +6,10 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use std::ops;
+use crate::{Hash, Token};
 use serde::{Serialize, Serializer};
 use serde_json::Value;
-use crate::{Hash, Token};
+use std::ops;
 
 /// Raw topic filter.
 #[derive(Debug, PartialEq, Default)]
@@ -37,7 +37,9 @@ pub struct TopicFilter {
 
 impl Serialize for TopicFilter {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-	where S: Serializer {
+	where
+		S: Serializer,
+	{
 		vec![&self.topic0, &self.topic1, &self.topic2, &self.topic3].serialize(serializer)
 	}
 }
@@ -55,7 +57,10 @@ pub enum Topic<T> {
 
 impl<T> Topic<T> {
 	/// Map
-	pub fn map<F, O>(self, f: F) -> Topic<O> where F: Fn(T) -> O {
+	pub fn map<F, O>(self, f: F) -> Topic<O>
+	where
+		F: Fn(T) -> O,
+	{
 		match self {
 			Topic::Any => Topic::Any,
 			Topic::OneOf(topics) => Topic::OneOf(topics.into_iter().map(f).collect()),
@@ -111,16 +116,15 @@ impl<T> Into<Vec<T>> for Topic<T> {
 
 impl Serialize for Topic<Hash> {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-	where S: Serializer {
+	where
+		S: Serializer,
+	{
 		let value = match *self {
 			Topic::Any => Value::Null,
 			Topic::OneOf(ref vec) => {
-				let v = vec.iter()
-					.map(|h| format!("0x{:x}", h))
-					.map(Value::String)
-					.collect();
+				let v = vec.iter().map(|h| format!("0x{:x}", h)).map(Value::String).collect();
 				Value::Array(v)
-			},
+			}
 			Topic::This(ref hash) => Value::String(format!("0x{:x}", hash)),
 		};
 		value.serialize(serializer)
@@ -138,7 +142,7 @@ impl<T> ops::Index<usize> for Topic<T> {
 					panic!("Topic unavailable");
 				}
 				topic
-			},
+			}
 			Topic::OneOf(ref topics) => topics.index(index),
 		}
 	}
@@ -146,9 +150,9 @@ impl<T> ops::Index<usize> for Topic<T> {
 
 #[cfg(test)]
 mod tests {
-	use serde_json;
 	use super::{Topic, TopicFilter};
 	use crate::Hash;
+	use serde_json;
 
 	fn hash(s: &'static str) -> Hash {
 		s.parse().unwrap()
@@ -156,13 +160,15 @@ mod tests {
 
 	#[test]
 	fn test_topic_filter_serialization() {
-		let expected =
-r#"["0x000000000000000000000000a94f5374fce5edbc8e2a8697c15331677e6ebf0b",null,["0x000000000000000000000000a94f5374fce5edbc8e2a8697c15331677e6ebf0b","0x0000000000000000000000000aff3454fce5edbc8cca8697c15331677e6ebccc"],null]"#;
+		let expected = r#"["0x000000000000000000000000a94f5374fce5edbc8e2a8697c15331677e6ebf0b",null,["0x000000000000000000000000a94f5374fce5edbc8e2a8697c15331677e6ebf0b","0x0000000000000000000000000aff3454fce5edbc8cca8697c15331677e6ebccc"],null]"#;
 
 		let topic = TopicFilter {
 			topic0: Topic::This(hash("000000000000000000000000a94f5374fce5edbc8e2a8697c15331677e6ebf0b")),
 			topic1: Topic::Any,
-			topic2: Topic::OneOf(vec![hash("000000000000000000000000a94f5374fce5edbc8e2a8697c15331677e6ebf0b"), hash("0000000000000000000000000aff3454fce5edbc8cca8697c15331677e6ebccc")]),
+			topic2: Topic::OneOf(vec![
+				hash("000000000000000000000000a94f5374fce5edbc8e2a8697c15331677e6ebf0b"),
+				hash("0000000000000000000000000aff3454fce5edbc8cca8697c15331677e6ebccc"),
+			]),
 			topic3: Topic::Any,
 		};
 

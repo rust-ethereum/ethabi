@@ -15,10 +15,10 @@ use_contract!(test_rust_keywords, "../res/test_rust_keywords.abi");
 
 #[cfg(test)]
 mod tests {
-	use rustc_hex::ToHex;
+	use crate::{eip20, validators};
 	use ethabi::{Address, Uint};
 	use hex_literal::hex;
-	use crate::{validators, eip20};
+	use rustc_hex::ToHex;
 
 	struct Wrapper([u8; 20]);
 
@@ -36,7 +36,8 @@ mod tests {
 		let second = [0x22u8; 20];
 
 		let encoded_from_vec = functions::set_validators::encode_input(vec![first.clone(), second.clone()]);
-		let encoded_from_vec_iter = functions::set_validators::encode_input(vec![first.clone(), second.clone()].into_iter());
+		let encoded_from_vec_iter =
+			functions::set_validators::encode_input(vec![first.clone(), second.clone()].into_iter());
 		let encoded_from_vec_wrapped = functions::set_validators::encode_input(vec![Wrapper(first), Wrapper(second)]);
 
 		let expected = "9300c9260000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000200000000000000000000000011111111111111111111111111111111111111110000000000000000000000002222222222222222222222222222222222222222".to_owned();
