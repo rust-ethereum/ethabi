@@ -4,7 +4,7 @@ The format is based on [Keep a Changelog].
 
 [Keep a Changelog]: http://keepachangelog.com/en/1.0.0/
 
-## [11.0.0] - 2020-01-08
+## [11.0.0] - 2020-01-16
 ### Changed
 - Support overloaded contract functions (PR #166)
 - Removed `error_chain` and the `backtrace` feature. (#167)
