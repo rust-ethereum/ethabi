@@ -12,10 +12,10 @@ mod lenient;
 mod strict;
 mod token;
 
-use crate::{ParamType, Error};
 pub use self::lenient::LenientTokenizer;
 pub use self::strict::StrictTokenizer;
 pub use self::token::Token;
+use crate::{Error, ParamType};
 
 /// This trait should be used to parse string values as tokens.
 pub trait Tokenizer {
@@ -26,25 +26,17 @@ pub trait Tokenizer {
 			ParamType::String => Self::tokenize_string(value).map(Token::String),
 			ParamType::Bool => Self::tokenize_bool(value).map(Token::Bool),
 			ParamType::Bytes => Self::tokenize_bytes(value).map(Token::Bytes),
-			ParamType::FixedBytes(len) => {
-				Self::tokenize_fixed_bytes(value, len).map(Token::FixedBytes)
-			}
+			ParamType::FixedBytes(len) => Self::tokenize_fixed_bytes(value, len).map(Token::FixedBytes),
 			ParamType::Uint(_) => Self::tokenize_uint(value).map(Into::into).map(Token::Uint),
 			ParamType::Int(_) => Self::tokenize_int(value).map(Into::into).map(Token::Int),
 			ParamType::Array(ref p) => Self::tokenize_array(value, p).map(Token::Array),
-			ParamType::FixedArray(ref p, len) => {
-				Self::tokenize_fixed_array(value, p, len).map(Token::FixedArray)
-			}
+			ParamType::FixedArray(ref p, len) => Self::tokenize_fixed_array(value, p, len).map(Token::FixedArray),
 			ParamType::Tuple(ref p) => Self::tokenize_struct(value, p).map(Token::Tuple),
 		}
 	}
 
 	/// Tries to parse a value as a vector of tokens of fixed size.
-	fn tokenize_fixed_array(
-		value: &str,
-		param: &ParamType,
-		len: usize,
-	) -> Result<Vec<Token>, Error> {
+	fn tokenize_fixed_array(value: &str, param: &ParamType, len: usize) -> Result<Vec<Token>, Error> {
 		let result = Self::tokenize_array(value, param)?;
 		match result.len() == len {
 			true => Ok(result),
@@ -78,8 +70,7 @@ pub trait Tokenizer {
 						return Err(Error::InvalidData);
 					} else if nested == 0 {
 						let sub = &value[last_item..pos];
-						let token =
-							Self::tokenize(params.next().ok_or(Error::InvalidData)?, sub)?;
+						let token = Self::tokenize(params.next().ok_or(Error::InvalidData)?, sub)?;
 						result.push(token);
 						last_item = pos + 1;
 					}

@@ -27,7 +27,7 @@ pub enum Error {
 	/// Hex string parsing error.
 	Hex(hex::FromHexError),
 	/// Other errors.
-	Other(String)
+	Other(String),
 }
 
 impl std::error::Error for Error {

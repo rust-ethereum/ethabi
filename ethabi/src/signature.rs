@@ -6,9 +6,9 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use tiny_keccak::Keccak;
-use crate::param_type::{Writer, ParamType};
+use crate::param_type::{ParamType, Writer};
 use crate::Hash;
+use tiny_keccak::Keccak;
 
 pub fn short_signature(name: &str, params: &[ParamType]) -> [u8; 4] {
 	let mut result = [0u8; 4];
@@ -23,10 +23,7 @@ pub fn long_signature(name: &str, params: &[ParamType]) -> Hash {
 }
 
 fn fill_signature(name: &str, params: &[ParamType], result: &mut [u8]) {
-	let types = params.iter()
-		.map(Writer::write)
-		.collect::<Vec<String>>()
-		.join(",");
+	let types = params.iter().map(Writer::write).collect::<Vec<String>>().join(",");
 
 	let data: Vec<u8> = From::from(format!("{}({})", name, types).as_str());
 
@@ -37,9 +34,9 @@ fn fill_signature(name: &str, params: &[ParamType], result: &mut [u8]) {
 
 #[cfg(test)]
 mod tests {
-	use hex_literal::hex;
 	use super::short_signature;
-	use crate::{ParamType};
+	use crate::ParamType;
+	use hex_literal::hex;
 
 	#[test]
 	fn test_signature() {

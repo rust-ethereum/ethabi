@@ -19,5 +19,5 @@ macro_rules! use_contract {
 			#[ethabi_contract_options(path = $path)]
 			struct _Dummy;
 		}
-	}
+	};
 }

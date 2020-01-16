@@ -11,8 +11,7 @@ use proc_macro2::TokenStream;
 use quote::quote;
 
 use super::{
-	input_names, template_param_type, rust_type, get_template_names, to_token, from_template_param,
-	to_ethabi_param_vec,
+	from_template_param, get_template_names, input_names, rust_type, template_param_type, to_ethabi_param_vec, to_token,
 };
 
 /// Structure used to generate contract's constructor interface.
@@ -29,29 +28,27 @@ impl<'a> From<&'a ethabi::Constructor> for Constructor {
 		let input_names = input_names(&c.inputs);
 
 		// [T0: Into<Uint>, T1: Into<Bytes>, T2: IntoIterator<Item = U2>, U2 = Into<Uint>]
-		let inputs_declarations = c.inputs.iter().enumerate()
-			.map(|(index, param)| template_param_type(&param.kind, index))
-			.collect();
+		let inputs_declarations =
+			c.inputs.iter().enumerate().map(|(index, param)| template_param_type(&param.kind, index)).collect();
 
 		// [Uint, Bytes, Vec<Uint>]
-		let kinds: Vec<_> = c.inputs
-			.iter()
-			.map(|param| rust_type(&param.kind))
-			.collect();
+		let kinds: Vec<_> = c.inputs.iter().map(|param| rust_type(&param.kind)).collect();
 
 		// [T0, T1, T2]
 		let template_names: Vec<_> = get_template_names(&kinds);
 
 		// [param0: T0, hello_world: T1, param2: T2]
-		let inputs_definitions = input_names.iter().zip(template_names.iter())
+		let inputs_definitions = input_names
+			.iter()
+			.zip(template_names.iter())
 			.map(|(param_name, template_name)| quote! { #param_name: #template_name });
 
-		let inputs_definitions = Some(quote! { code: ethabi::Bytes }).into_iter()
-			.chain(inputs_definitions)
-			.collect();
+		let inputs_definitions = Some(quote! { code: ethabi::Bytes }).into_iter().chain(inputs_definitions).collect();
 
 		// [Token::Uint(param0.into()), Token::Bytes(hello_world.into()), Token::Array(param2.into_iter().map(Into::into).collect())]
-		let tokenize: Vec<_> = input_names.iter().zip(c.inputs.iter())
+		let tokenize: Vec<_> = input_names
+			.iter()
+			.zip(c.inputs.iter())
 			.map(|(param_name, param)| to_token(&from_template_param(&param.kind, &param_name), &param.kind))
 			.collect();
 
@@ -87,15 +84,13 @@ impl Constructor {
 
 #[cfg(test)]
 mod tests {
+	use super::Constructor;
 	use ethabi;
 	use quote::quote;
-	use super::Constructor;
 
 	#[test]
 	fn test_no_params() {
-		let ethabi_constructor = ethabi::Constructor {
-			inputs: vec![],
-		};
+		let ethabi_constructor = ethabi::Constructor { inputs: vec![] };
 
 		let c = Constructor::from(&ethabi_constructor);
 
@@ -116,12 +111,7 @@ mod tests {
 	#[test]
 	fn test_one_param() {
 		let ethabi_constructor = ethabi::Constructor {
-			inputs: vec![
-				ethabi::Param {
-					name: "foo".into(),
-					kind: ethabi::ParamType::Uint(256),
-				}
-			],
+			inputs: vec![ethabi::Param { name: "foo".into(), kind: ethabi::ParamType::Uint(256) }],
 		};
 
 		let c = Constructor::from(&ethabi_constructor);

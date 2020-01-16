@@ -10,11 +10,7 @@ use ethabi;
 use proc_macro2::TokenStream;
 use quote::quote;
 
-use crate::{
-	constructor::Constructor,
-	function::Function,
-	event::Event,
-};
+use crate::{constructor::Constructor, event::Event, function::Function};
 
 /// Structure used to generate rust interface for solidity contract.
 pub struct Contract {

@@ -24,22 +24,17 @@ impl Writer {
 			ParamType::String => "string".to_owned(),
 			ParamType::FixedArray(ref param, len) => format!("{}[{}]", Writer::write(param), len),
 			ParamType::Array(ref param) => format!("{}[]", Writer::write(param)),
-			ParamType::Tuple(ref params) => format!(
-				"({})",
-				params
-					.iter()
-					.map(|ref t| format!("{}", t))
-					.collect::<Vec<String>>()
-					.join(",")
-			),
+			ParamType::Tuple(ref params) => {
+				format!("({})", params.iter().map(|ref t| format!("{}", t)).collect::<Vec<String>>().join(","))
+			}
 		}
 	}
 }
 
 #[cfg(test)]
 mod tests {
-	use crate::ParamType;
 	use super::Writer;
+	use crate::ParamType;
 
 	#[test]
 	fn test_write_param() {
@@ -52,6 +47,9 @@ mod tests {
 		assert_eq!(Writer::write(&ParamType::String), "string".to_owned());
 		assert_eq!(Writer::write(&ParamType::Array(Box::new(ParamType::Bool))), "bool[]".to_owned());
 		assert_eq!(Writer::write(&ParamType::FixedArray(Box::new(ParamType::String), 2)), "string[2]".to_owned());
-		assert_eq!(Writer::write(&ParamType::FixedArray(Box::new(ParamType::Array(Box::new(ParamType::Bool))), 2)), "bool[][2]".to_owned());
+		assert_eq!(
+			Writer::write(&ParamType::FixedArray(Box::new(ParamType::Array(Box::new(ParamType::Bool))), 2)),
+			"bool[][2]".to_owned()
+		);
 	}
 }

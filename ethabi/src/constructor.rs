@@ -7,8 +7,8 @@
 // except according to those terms.
 
 //! Contract constructor call builder.
+use crate::{encode, Bytes, Error, Param, ParamType, Result, Token};
 use serde::Deserialize;
-use crate::{Param, Error, Result, Token, ParamType, encode, Bytes};
 
 /// Contract constructor specification.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -20,9 +20,7 @@ pub struct Constructor {
 impl Constructor {
 	/// Returns all input params of given constructor.
 	fn param_types(&self) -> Vec<ParamType> {
-		self.inputs.iter()
-			.map(|p| p.kind.clone())
-			.collect()
+		self.inputs.iter().map(|p| p.kind.clone()).collect()
 	}
 
 	/// Prepares ABI constructor call with given input params.

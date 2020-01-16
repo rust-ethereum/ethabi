@@ -10,9 +10,9 @@
 
 use std::string::ToString;
 
-use serde::Deserialize;
 use crate::signature::short_signature;
-use crate::{Param, Token, Error, Result, Bytes, decode, ParamType, encode};
+use crate::{decode, encode, Bytes, Error, Param, ParamType, Result, Token};
+use serde::Deserialize;
 
 /// Contract function specification.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -31,16 +31,12 @@ pub struct Function {
 impl Function {
 	/// Returns all input params of given function.
 	fn input_param_types(&self) -> Vec<ParamType> {
-		self.inputs.iter()
-			.map(|p| p.kind.clone())
-			.collect()
+		self.inputs.iter().map(|p| p.kind.clone()).collect()
 	}
 
 	/// Returns all output params of given function.
 	fn output_param_types(&self) -> Vec<ParamType> {
-		self.outputs.iter()
-			.map(|p| p.kind.clone())
-			.collect()
+		self.outputs.iter().map(|p| p.kind.clone()).collect()
 	}
 
 	/// Prepares ABI function call with given input params.
@@ -74,41 +70,30 @@ impl Function {
 	/// - `functionName(bool):(uint256,string)`
 	/// - `functionName(uint256,bytes32):(string,uint256)`
 	pub fn signature(&self) -> String {
-		let inputs = self.inputs
-			.iter()
-			.map(|p| p.kind.to_string())
-			.collect::<Vec<_>>()
-			.join(",");
+		let inputs = self.inputs.iter().map(|p| p.kind.to_string()).collect::<Vec<_>>().join(",");
 
-		let outputs = self.outputs
-			.iter()
-			.map(|p| p.kind.to_string())
-			.collect::<Vec<_>>()
-			.join(",");
+		let outputs = self.outputs.iter().map(|p| p.kind.to_string()).collect::<Vec<_>>().join(",");
 
 		match (inputs.len(), outputs.len()) {
 			(_, 0) => format!("{}({})", self.name, inputs),
-			(_, _) => format!("{}({}):({})", self.name, inputs, outputs)
+			(_, _) => format!("{}({}):({})", self.name, inputs, outputs),
 		}
 	}
 }
 
 #[cfg(test)]
 mod tests {
+	use crate::{Function, Param, ParamType, Token};
 	use hex_literal::hex;
-	use crate::{Token, Param, Function, ParamType};
 
 	#[test]
 	fn test_function_encode_call() {
 		let interface = Function {
 			name: "baz".to_owned(),
-			inputs: vec![Param {
-				name: "a".to_owned(),
-				kind: ParamType::Uint(32),
-			}, Param {
-				name: "b".to_owned(),
-				kind: ParamType::Bool,
-			}],
+			inputs: vec![
+				Param { name: "a".to_owned(), kind: ParamType::Uint(32) },
+				Param { name: "b".to_owned(), kind: ParamType::Bool },
+			],
 			outputs: vec![],
 			constant: false,
 		};

@@ -6,7 +6,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use crate::{ParamType, Error};
+use crate::{Error, ParamType};
 
 /// Used to convert param type represented as a string to rust structure.
 pub struct Reader;
@@ -68,8 +68,7 @@ impl Reader {
 								let tuple_params = subtuples.into_iter().fold(
 									initial_tuple_params,
 									|mut tuple_params, nested_param_set| {
-										tuple_params
-											.push(Box::new(ParamType::Tuple(nested_param_set)));
+										tuple_params.push(Box::new(ParamType::Tuple(nested_param_set)));
 										tuple_params
 									},
 								);
@@ -108,15 +107,8 @@ impl Reader {
 			// check if it is a fixed or dynamic array.
 			Some(']') => {
 				// take number part
-				let num: String = name
-					.chars()
-					.rev()
-					.skip(1)
-					.take_while(|c| *c != '[')
-					.collect::<String>()
-					.chars()
-					.rev()
-					.collect();
+				let num: String =
+					name.chars().rev().skip(1).take_while(|c| *c != '[').collect::<String>().chars().rev().collect();
 
 				let count = name.chars().count();
 				if num.is_empty() {
@@ -164,8 +156,8 @@ impl Reader {
 
 #[cfg(test)]
 mod tests {
-	use crate::ParamType;
 	use super::Reader;
+	use crate::ParamType;
 
 	#[test]
 	fn test_read_param() {
@@ -185,20 +177,32 @@ mod tests {
 		assert_eq!(Reader::read("address[]").unwrap(), ParamType::Array(Box::new(ParamType::Address)));
 		assert_eq!(Reader::read("uint[]").unwrap(), ParamType::Array(Box::new(ParamType::Uint(256))));
 		assert_eq!(Reader::read("bytes[]").unwrap(), ParamType::Array(Box::new(ParamType::Bytes)));
-		assert_eq!(Reader::read("bool[][]").unwrap(), ParamType::Array(Box::new(ParamType::Array(Box::new(ParamType::Bool)))));
+		assert_eq!(
+			Reader::read("bool[][]").unwrap(),
+			ParamType::Array(Box::new(ParamType::Array(Box::new(ParamType::Bool))))
+		);
 	}
 
 	#[test]
 	fn test_read_fixed_array_param() {
 		assert_eq!(Reader::read("address[2]").unwrap(), ParamType::FixedArray(Box::new(ParamType::Address), 2));
 		assert_eq!(Reader::read("bool[17]").unwrap(), ParamType::FixedArray(Box::new(ParamType::Bool), 17));
-		assert_eq!(Reader::read("bytes[45][3]").unwrap(), ParamType::FixedArray(Box::new(ParamType::FixedArray(Box::new(ParamType::Bytes), 45)), 3));
+		assert_eq!(
+			Reader::read("bytes[45][3]").unwrap(),
+			ParamType::FixedArray(Box::new(ParamType::FixedArray(Box::new(ParamType::Bytes), 45)), 3)
+		);
 	}
 
 	#[test]
 	fn test_read_mixed_arrays() {
-		assert_eq!(Reader::read("bool[][3]").unwrap(), ParamType::FixedArray(Box::new(ParamType::Array(Box::new(ParamType::Bool))), 3));
-		assert_eq!(Reader::read("bool[3][]").unwrap(), ParamType::Array(Box::new(ParamType::FixedArray(Box::new(ParamType::Bool), 3))));
+		assert_eq!(
+			Reader::read("bool[][3]").unwrap(),
+			ParamType::FixedArray(Box::new(ParamType::Array(Box::new(ParamType::Bool))), 3)
+		);
+		assert_eq!(
+			Reader::read("bool[3][]").unwrap(),
+			ParamType::Array(Box::new(ParamType::FixedArray(Box::new(ParamType::Bool), 3)))
+		);
 	}
 
 	#[test]
@@ -223,10 +227,7 @@ mod tests {
 			ParamType::Tuple(vec![
 				Box::new(ParamType::Address),
 				Box::new(ParamType::Bool),
-				Box::new(ParamType::Tuple(vec![
-					Box::new(ParamType::Bool),
-					Box::new(ParamType::Uint(256))
-				]))
+				Box::new(ParamType::Tuple(vec![Box::new(ParamType::Bool), Box::new(ParamType::Uint(256))]))
 			])
 		);
 	}
@@ -241,15 +242,9 @@ mod tests {
 				Box::new(ParamType::Tuple(vec![
 					Box::new(ParamType::Bool),
 					Box::new(ParamType::Uint(256)),
-					Box::new(ParamType::Tuple(vec![
-						Box::new(ParamType::Bool),
-						Box::new(ParamType::Uint(256))
-					]))
+					Box::new(ParamType::Tuple(vec![Box::new(ParamType::Bool), Box::new(ParamType::Uint(256))]))
 				])),
-				Box::new(ParamType::Tuple(vec![
-					Box::new(ParamType::Bool),
-					Box::new(ParamType::Uint(256))
-				]))
+				Box::new(ParamType::Tuple(vec![Box::new(ParamType::Bool), Box::new(ParamType::Uint(256))]))
 			])
 		);
 	}

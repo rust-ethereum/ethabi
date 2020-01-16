@@ -8,10 +8,10 @@
 
 //! Tuple param type.
 
+use crate::ParamType;
 use serde::de::{Error, MapAccess, Visitor};
 use serde::{Deserialize, Deserializer};
 use std::fmt;
-use crate::ParamType;
 
 /// Tuple params specification
 #[derive(Debug, Clone, PartialEq)]
@@ -77,25 +77,20 @@ impl<'a> Visitor<'a> for TupleParamVisitor {
 		let kind = kind.ok_or_else(|| Error::missing_field("kind")).and_then(|param_type| {
 			if let ParamType::Tuple(_) = param_type {
 				let tuple_params = components.ok_or_else(|| Error::missing_field("components"))?;
-				Ok(ParamType::Tuple(
-					tuple_params.into_iter().map(|param| param.kind).map(Box::new).collect(),
-				))
+				Ok(ParamType::Tuple(tuple_params.into_iter().map(|param| param.kind).map(Box::new).collect()))
 			} else {
 				Ok(param_type)
 			}
 		})?;
 
-		Ok(TupleParam {
-			name,
-			kind,
-		})
+		Ok(TupleParam { name, kind })
 	}
 }
 
 #[cfg(test)]
 mod tests {
-	use serde_json;
 	use crate::{ParamType, TupleParam};
+	use serde_json;
 
 	#[test]
 	fn tuple_param_deserialization() {
@@ -118,22 +113,10 @@ mod tests {
 		assert_eq!(
 			deserialized,
 			vec![
-				TupleParam {
-					name: Some(String::from("foo")),
-					kind: ParamType::Address
-				},
-				TupleParam {
-					name: Some(String::from("bar")),
-					kind: ParamType::Address
-				},
-				TupleParam {
-					name: Some(String::from("baz")),
-					kind: ParamType::Address
-				},
-				TupleParam {
-					name: None,
-					kind: ParamType::Bool
-				},
+				TupleParam { name: Some(String::from("foo")), kind: ParamType::Address },
+				TupleParam { name: Some(String::from("bar")), kind: ParamType::Address },
+				TupleParam { name: Some(String::from("baz")), kind: ParamType::Address },
+				TupleParam { name: None, kind: ParamType::Bool },
 			]
 		);
 	}

@@ -6,9 +6,9 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+use crate::{decode, encode, ParamType, Token};
 use hex_literal::hex;
 use paste;
-use crate::{encode, decode, Token, ParamType};
 
 macro_rules! test_encode_decode {
 	(name: $name:tt, types: $types:expr, tokens: $tokens:expr, data: $data:tt) => {
@@ -28,7 +28,7 @@ macro_rules! test_encode_decode {
 				assert_eq!(decoded, expected);
 			}
 		}
-	}
+	};
 }
 
 // test address
@@ -195,7 +195,7 @@ test_encode_decode! {
 		let array1 = Token::FixedArray(vec![address3, address4]);
 		[Token::Array(vec![array0, array1])]
 	},
-   	data: "
+	   data: "
 		0000000000000000000000000000000000000000000000000000000000000020
 		0000000000000000000000000000000000000000000000000000000000000002
 		0000000000000000000000001111111111111111111111111111111111111111
@@ -254,7 +254,7 @@ test_encode_decode! {
 	//   0: 0000000000000000000000000000000000000000000000000000000000000020
 	//  32: 0000000000000000000000000000000000000000000000000000000000000002 len outer => 2
 	//  64: 0000000000000000000000000000000000000000000000000000000000000040 tail of outer => offset of array0
-	//  96: 0000000000000000000000000000000000000000000000000000000000000140 
+	//  96: 0000000000000000000000000000000000000000000000000000000000000140
 	// array0:
 	// 128: 0000000000000000000000000000000000000000000000000000000000000040 tail offset of array0 => offset of array0[0]
 	// 160: 00000000000000000000000000000000000000000000000000000000000000a0 offset of array0[1] => 160
