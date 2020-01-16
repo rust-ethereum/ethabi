@@ -4,11 +4,13 @@ The format is based on [Keep a Changelog].
 
 [Keep a Changelog]: http://keepachangelog.com/en/1.0.0/
 
-## [Unreleased]
+## [11.0.0] - 2020-01-08
 ### Changed
-- Add support for overloaded contract functions (PR #166)
-- Removed `error_chain` and reworked errors manually. Also removes the `backtrace` feature. (#167)
+- Support overloaded contract functions (PR #166)
+- Removed `error_chain` and the `backtrace` feature. (#167)
 - Update to 2018 edition (PR #171, #172)
+- Fix handling of large ints (PR #173)
+- Support Tuple parameter types (structs in Solidity) (PR #174)
 ### Dependencies
 - Upgrade syn, proc-macro2, quote and heck crates (PR #169)
 
