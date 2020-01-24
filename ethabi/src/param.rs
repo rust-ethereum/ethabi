@@ -227,4 +227,49 @@ mod tests {
 			}
 		);
 	}
+
+	#[test]
+	fn param_tuple_with_nested_tuple_arrays_deserialization() {
+		let s = r#"{
+			"name": "foo",
+			"type": "tuple",
+			"components": [
+				{
+					"name": "bar",
+					"type": "tuple[]",
+					"components": [
+						{
+							"name": "a",
+							"type": "address"
+						}
+					]
+				},
+				{
+					"name": "baz",
+					"type": "tuple[42]",
+					"components": [
+						{
+							"name": "b",
+							"type": "address"
+						}
+					]
+				}
+			]
+		}"#;
+
+		let deserialized: Param = serde_json::from_str(s).unwrap();
+
+		assert_eq!(
+			deserialized,
+			Param {
+				name: "foo".to_owned(),
+				kind: ParamType::Tuple(vec![
+					Box::new(ParamType::Array(Box::new(ParamType::Tuple(vec![Box::new(ParamType::Address)])))),
+					Box::new(
+						ParamType::FixedArray(Box::new(ParamType::Tuple(vec![Box::new(ParamType::Address)])), 42,)
+					),
+				]),
+			}
+		);
+	}
 }
