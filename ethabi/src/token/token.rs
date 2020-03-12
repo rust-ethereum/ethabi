@@ -8,8 +8,10 @@
 
 //! Ethereum ABI params.
 use crate::{Address, Bytes, FixedBytes, ParamType, Uint};
+use crate::errors::Error;
 use hex::ToHex;
 use std::fmt;
+use std::convert::TryInto;
 
 /// Ethereum ABI params.
 #[derive(Debug, PartialEq, Clone)]
@@ -82,6 +84,62 @@ impl fmt::Display for Token {
 
 				write!(f, "({})", s)
 			}
+		}
+	}
+}
+
+impl TryInto<Address> for Token {
+    type Error = Error;
+
+	fn try_into(self) -> Result<Address, Self::Error> {
+		match self {
+			Token::Address(inner) => Ok(inner),
+			_ => Err(Error::InvalidData),
+		}
+	}
+}
+
+impl TryInto<bool> for Token {
+    type Error = Error;
+
+	fn try_into(self) -> Result<bool, Self::Error> {
+		match self {
+			Token::Bool(inner) => Ok(inner),
+			_ => Err(Error::InvalidData),
+		}
+	}
+}
+
+impl TryInto<Bytes> for Token {
+    type Error = Error;
+
+	fn try_into(self) -> Result<Bytes, Self::Error> {
+		match self {
+			Token::Bytes(inner) => Ok(inner),
+			_ => Err(Error::InvalidData),
+		}
+	}
+}
+
+impl TryInto<String> for Token {
+    type Error = Error;
+
+	fn try_into(self) -> Result<String, Self::Error> {
+		match self {
+			Token::String(inner) => Ok(inner),
+			_ => Err(Error::InvalidData),
+		}
+	}
+}
+
+impl TryInto<Uint> for Token {
+    type Error = Error;
+
+	fn try_into(self) -> Result<Uint, Self::Error> {
+		match self {
+			Token::Uint(inner) => Ok(inner),
+			Token::Int(inner) => Ok(inner),
+			_ => Err(Error::InvalidData),
 		}
 	}
 }
