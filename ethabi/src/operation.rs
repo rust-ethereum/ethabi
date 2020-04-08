@@ -23,6 +23,7 @@ pub enum Operation {
 	Event(Event),
 	/// Fallback, ignored.
 	Fallback,
+	Receive,
 }
 
 impl<'a> Deserialize<'a> for Operation {
@@ -53,7 +54,8 @@ impl<'a> Deserialize<'a> for Operation {
 				Operation::Event(e)
 			}),
 			"fallback" => Ok(Operation::Fallback),
-			_ => Err(SerdeError::custom("Invalid operation type.")),
+			"receive" => Ok(Operation::Receive),
+			other => Err(SerdeError::custom(format!("Invalid operation type {}.", other))),
 		};
 		result.map_err(|e| D::Error::custom(e.to_string()))
 	}

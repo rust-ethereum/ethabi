@@ -26,6 +26,8 @@ pub struct Contract {
 	pub functions: HashMap<String, Vec<Function>>,
 	/// Contract events, maps signature to event.
 	pub events: HashMap<String, Vec<Event>>,
+	/// Contract has receive function.
+	pub receive: bool,
 	/// Contract has fallback function.
 	pub fallback: bool,
 }
@@ -48,12 +50,14 @@ impl<'a> Visitor<'a> for ContractVisitor {
 		formatter.write_str("valid abi spec file")
 	}
 
-	fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
-	where
-		A: SeqAccess<'a>,
-	{
-		let mut result =
-			Contract { constructor: None, functions: HashMap::default(), events: HashMap::default(), fallback: false };
+	fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error> where A: SeqAccess<'a> {
+		let mut result = Contract {
+			constructor: None,
+			functions: HashMap::default(),
+			events: HashMap::default(),
+			receive: true,
+			fallback: false,
+		};
 
 		while let Some(operation) = seq.next_element()? {
 			match operation {
@@ -68,7 +72,10 @@ impl<'a> Visitor<'a> for ContractVisitor {
 				}
 				Operation::Fallback => {
 					result.fallback = true;
-				}
+				},
+				Operation::Receive => {
+					result.receive = true;
+				},
 			}
 		}
 
@@ -116,11 +123,6 @@ impl Contract {
 	/// Iterate over all events of the contract in arbitrary order.
 	pub fn events(&self) -> Events {
 		Events(self.events.values().flatten())
-	}
-
-	/// Returns true if contract has fallback
-	pub fn fallback(&self) -> bool {
-		self.fallback
 	}
 }
 
