@@ -1,6 +1,6 @@
 [package]
 name = "ethabi"
-version = "11.0.0"
+version = "12.0.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 homepage = "https://github.com/paritytech/ethabi"
 license = "MIT/Apache-2.0"
@@ -13,7 +13,7 @@ hex = { version = "2.0", package = "rustc-hex" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tiny-keccak = "1.4"
-ethereum-types = "0.8.0"
+ethereum-types = "0.9.0"
 uint = "0.8.2"
 
 [dev-dependencies]
