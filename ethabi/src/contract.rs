@@ -17,7 +17,7 @@ use std::iter::Flatten;
 use std::{fmt, io};
 
 /// API building calls to contracts ABI.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct Contract {
 	/// Contract constructor.
 	pub constructor: Option<Constructor>,
@@ -50,13 +50,7 @@ impl<'a> Visitor<'a> for ContractVisitor {
 	}
 
 	fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error> where A: SeqAccess<'a> {
-		let mut result = Contract {
-			constructor: None,
-			functions: HashMap::default(),
-			events: HashMap::default(),
-			receive: true,
-			fallback: false,
-		};
+		let mut result = Contract::default();
 
 		while let Some(operation) = seq.next_element()? {
 			match operation {
