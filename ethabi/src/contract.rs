@@ -117,6 +117,11 @@ impl Contract {
 	pub fn events(&self) -> Events {
 		Events(self.events.values().flatten())
 	}
+
+	/// Returns true if contract has fallback
+	pub fn fallback(&self) -> bool {
+		self.fallback
+	}
 }
 
 /// Contract functions iterator.
