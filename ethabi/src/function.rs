@@ -10,7 +10,8 @@
 
 use std::string::ToString;
 
-use crate::{decode, encode, signature::short_signature, Bytes, Error, Param, ParamType, Result, Token};
+use crate::signature::short_signature;
+use crate::{decode, encode, Bytes, Error, Param, ParamType, Result, StateMutability, Token};
 use serde::Deserialize;
 
 /// Contract function specification.
@@ -22,9 +23,15 @@ pub struct Function {
 	pub inputs: Vec<Param>,
 	/// Function output.
 	pub outputs: Vec<Param>,
+	#[deprecated(note = "The constant attribute was removed in Solidity 0.5.0 and has been \
+				replaced with stateMutability. If parsing a JSON AST created with \
+				this version or later this value will always be false, which may be wrong.")]
 	/// Constant function.
 	#[serde(default)]
 	pub constant: bool,
+	/// Whether the function reads or modifies blockchain state
+	#[serde(rename = "stateMutability", default)]
+	pub state_mutability: StateMutability,
 }
 
 impl Function {
@@ -82,7 +89,7 @@ impl Function {
 
 #[cfg(test)]
 mod tests {
-	use crate::{Function, Param, ParamType, Token};
+	use crate::{Function, Param, ParamType, StateMutability, Token};
 	use hex_literal::hex;
 
 	#[test]
@@ -95,6 +102,7 @@ mod tests {
 			],
 			outputs: vec![],
 			constant: false,
+			state_mutability: StateMutability::Payable,
 		};
 
 		let mut uint = [0u8; 32];
