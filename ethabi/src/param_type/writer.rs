@@ -51,5 +51,15 @@ mod tests {
 			Writer::write(&ParamType::FixedArray(Box::new(ParamType::Array(Box::new(ParamType::Bool))), 2)),
 			"bool[][2]".to_owned()
 		);
+		assert_eq!(
+			Writer::write(&ParamType::Array(Box::new(ParamType::Tuple(vec![
+				ParamType::Array(Box::new(ParamType::Tuple(vec![
+					ParamType::Int(256),
+					ParamType::Uint(256)
+				]))),
+				ParamType::FixedBytes(32),
+			])))),
+			"((int256,uint256)[],bytes32)[]".to_owned()
+		);
 	}
 }
