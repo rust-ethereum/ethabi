@@ -222,8 +222,13 @@ mod tests {
 
 	#[test]
 	fn test_no_params() {
-		let ethabi_function =
-			ethabi::Function { name: "empty".into(), inputs: vec![], outputs: vec![], constant: false };
+		let ethabi_function = ethabi::Function {
+			name: "empty".into(),
+			inputs: vec![],
+			outputs: vec![],
+			constant: false,
+			state_mutability: ethabi::StateMutability::Payable,
+		};
 
 		let f = Function::from(&ethabi_function);
 
@@ -238,6 +243,7 @@ mod tests {
 						inputs: vec![],
 						outputs: vec![],
 						constant: false,
+						state_mutability: ::ethabi::StateMutability::Payable
 					}
 				}
 
@@ -284,6 +290,7 @@ mod tests {
 			inputs: vec![ethabi::Param { name: "foo".into(), kind: ethabi::ParamType::Address }],
 			outputs: vec![ethabi::Param { name: "bar".into(), kind: ethabi::ParamType::Uint(256) }],
 			constant: false,
+			state_mutability: ethabi::StateMutability::Payable,
 		};
 
 		let f = Function::from(&ethabi_function);
@@ -305,6 +312,7 @@ mod tests {
 							kind: ethabi::ParamType::Uint(256usize)
 						}],
 						constant: false,
+						state_mutability: ::ethabi::StateMutability::Payable
 					}
 				}
 
@@ -363,6 +371,7 @@ mod tests {
 				ethabi::Param { name: "".into(), kind: ethabi::ParamType::String },
 			],
 			constant: false,
+			state_mutability: ethabi::StateMutability::Payable,
 		};
 
 		let f = Function::from(&ethabi_function);
@@ -390,6 +399,7 @@ mod tests {
 							kind: ethabi::ParamType::String
 						}],
 						constant: false,
+						state_mutability: ::ethabi::StateMutability::Payable
 					}
 				}
 
