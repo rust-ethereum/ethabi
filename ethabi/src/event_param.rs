@@ -151,4 +151,74 @@ mod tests {
 			}
 		);
 	}
+
+	#[test]
+	fn event_param_tuple_array_deserialization() {
+		let s = r#"{
+			"components": [
+				{ "type": "uint256" },
+				{ "type": "address" },
+				{
+					"components": [
+						{ "type": "address" },
+						{ "type": "address" }
+					],
+					"type": "tuple"
+				},
+				{ "type": "uint256" },
+				{
+					"components": [
+						{
+							"components": [
+								{ "type": "address" },
+								{ "type": "bytes" }
+							],
+							"type": "tuple[]"
+						},
+						{
+							"components": [
+								{ "type": "address" },
+								{ "type": "uint256" }
+							],
+							"type": "tuple[]"
+						},
+						{ "type": "uint256" }
+					],
+					"type": "tuple[]"
+				},
+				{ "type": "uint256" }
+			],
+			"indexed": false,
+			"name": "LogTaskSubmitted",
+			"type": "tuple"
+        }"#;
+
+		let deserialized: EventParam = serde_json::from_str(s).unwrap();
+
+		assert_eq!(
+			deserialized,
+			EventParam {
+				name: "LogTaskSubmitted".to_owned(),
+				kind: ParamType::Tuple(vec![
+					Box::new(ParamType::Uint(256)),
+					Box::new(ParamType::Address),
+					Box::new(ParamType::Tuple(vec![Box::new(ParamType::Address), Box::new(ParamType::Address)])),
+					Box::new(ParamType::Uint(256)),
+					Box::new(ParamType::Array(Box::new(ParamType::Tuple(vec![
+						Box::new(ParamType::Array(Box::new(ParamType::Tuple(vec![
+							Box::new(ParamType::Address),
+							Box::new(ParamType::Bytes),
+						])))),
+						Box::new(ParamType::Array(Box::new(ParamType::Tuple(vec![
+							Box::new(ParamType::Address),
+							Box::new(ParamType::Uint(256))
+						])))),
+						Box::new(ParamType::Uint(256))
+					])))),
+					Box::new(ParamType::Uint(256))
+				]),
+				indexed: false,
+			}
+		);
+	}
 }

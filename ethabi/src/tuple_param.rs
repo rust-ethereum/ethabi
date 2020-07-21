@@ -74,13 +74,35 @@ impl<'a> Visitor<'a> for TupleParamVisitor {
 			}
 		}
 
-		let kind = kind.ok_or_else(|| Error::missing_field("kind")).and_then(|param_type| {
-			if let ParamType::Tuple(_) = param_type {
+		let kind = kind.ok_or_else(|| Error::missing_field("kind")).and_then(|param_type| match param_type {
+			ParamType::Tuple(_) => {
 				let tuple_params = components.ok_or_else(|| Error::missing_field("components"))?;
 				Ok(ParamType::Tuple(tuple_params.into_iter().map(|param| param.kind).map(Box::new).collect()))
-			} else {
-				Ok(param_type)
 			}
+			ParamType::Array(ref inner) => {
+				if let ParamType::Tuple(_) = **inner {
+					let tuple_params = components.ok_or_else(|| Error::missing_field("components"))?;
+					Ok(ParamType::Array(Box::new(ParamType::Tuple(
+						tuple_params.into_iter().map(|param| param.kind).map(Box::new).collect(),
+					))))
+				} else {
+					Ok(param_type)
+				}
+			}
+			ParamType::FixedArray(ref inner, size) => {
+				if let ParamType::Tuple(_) = **inner {
+					let tuple_params = components.ok_or_else(|| Error::missing_field("components"))?;
+					Ok(ParamType::FixedArray(
+						Box::new(ParamType::Tuple(
+							tuple_params.into_iter().map(|param| param.kind).map(Box::new).collect(),
+						)),
+						size,
+					))
+				} else {
+					Ok(param_type)
+				}
+			}
+			_ => Ok(param_type),
 		})?;
 
 		Ok(TupleParam { name, kind })

@@ -248,4 +248,15 @@ mod tests {
 			])
 		);
 	}
+
+	#[test]
+	fn test_read_nested_tuple_array_param() {
+		assert_eq!(
+			Reader::read("(uint256,bytes32)[]").unwrap(),
+			ParamType::Array(Box::new(ParamType::Tuple(vec![
+				Box::new(ParamType::Uint(256)),
+				Box::new(ParamType::FixedBytes(32))
+			])))
+		)
+	}
 }
