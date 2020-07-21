@@ -113,6 +113,7 @@ mod tests {
 
 		assert_eq!(deserialized, EventParam { name: "foo".to_owned(), kind: ParamType::Address, indexed: true });
 	}
+
 	#[test]
 	fn event_param_tuple_deserialization() {
 		let s = r#"{
