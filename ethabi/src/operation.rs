@@ -66,7 +66,7 @@ impl<'a> Deserialize<'a> for Operation {
 #[cfg(test)]
 mod tests {
 	use super::Operation;
-	use crate::{Function, Param, ParamType};
+	use crate::{Function, Param, ParamType, StateMutability};
 	use serde_json;
 
 	#[test]
@@ -90,6 +90,7 @@ mod tests {
 				inputs: vec![Param { name: "a".to_owned(), kind: ParamType::Address }],
 				outputs: vec![],
 				constant: false,
+				state_mutability: StateMutability::NonPayable,
 			})
 		);
 	}
