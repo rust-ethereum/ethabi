@@ -528,6 +528,55 @@ test_encode_decode! {
 	types: [ParamType::FixedBytes(2)],
 	tokens: [Token::FixedBytes(vec![0x12, 0x34])],
 	data: "1234000000000000000000000000000000000000000000000000000000000000"
+
+}
+
+// test tuple with tuple array member
+test_encode_decode! {
+	name: tuple_with_tuple_array_test,
+	types: [
+		ParamType::Tuple(vec![
+			Box::new(ParamType::Array(Box::new(ParamType::Tuple(
+				vec![
+					Box::new(ParamType::Address),
+					Box::new(ParamType::Uint(256))
+				]
+			))))
+		])
+	],
+	tokens: {
+		[
+			Token::Tuple(
+				vec![
+					Token::Array(vec![
+						Token::Tuple(vec![
+							Token::Address([0x11u8; 20].into()),
+							Token::Uint([0x11u8; 32].into()),
+						]),
+						Token::Tuple(vec![
+							Token::Address([0x22u8; 20].into()),
+							Token::Uint([0x22u8; 32].into()),
+						]),
+						Token::Tuple(vec![
+							Token::Address([0x33u8; 20].into()),
+							Token::Uint([0x44u8; 32].into()),
+						])
+					])
+				]
+			)
+		]
+	},
+	data: "
+		0000000000000000000000000000000000000000000000000000000000000020
+		0000000000000000000000000000000000000000000000000000000000000020
+		0000000000000000000000000000000000000000000000000000000000000003
+		0000000000000000000000001111111111111111111111111111111111111111
+		1111111111111111111111111111111111111111111111111111111111111111
+		0000000000000000000000002222222222222222222222222222222222222222
+		2222222222222222222222222222222222222222222222222222222222222222
+		0000000000000000000000003333333333333333333333333333333333333333
+		4444444444444444444444444444444444444444444444444444444444444444
+	"
 }
 
 // comprehensive test
