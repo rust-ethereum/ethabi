@@ -35,11 +35,18 @@ macro_rules! use_contract {
 		}
     };
 
+    // match for the extra comma in the last parameter:
+	// use_contract!{erc721, "../res/ERC721.abi",
+	//     "safeTransferFrom(address,address,uint256,bytes)" => "safe_transfer_with_data",
+	// }
     ($module:ident, $path: expr, $($signature:expr => $alias:expr,)*) => {
         use_contract!(@inner $module, $path, ($($signature => $alias),*));
     };
 
-	// entry point, start parsing
+	// match for:
+	// use_contract!{erc721, "../res/ERC721.abi",
+	//     "safeTransferFrom(address,address,uint256,bytes)" => "safe_transfer_with_data"
+	// }
     ($module:ident, $path: expr, $($signature:expr => $alias:expr),*) => {
         use_contract!(@inner $module, $path, ($($signature => $alias),*));
     };
