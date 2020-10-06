@@ -39,7 +39,6 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<proc_macro2::TokenStream
 	let source_file = fs::File::open(&normalized_path)
 		.map_err(|_| format!("Cannot load contract abi from `{}`", normalized_path.display()))?;
 	let contract = Contract::load(source_file)?;
-	// let c = contract::Contract::from(&contract);
 	let c = contract::Contract::new(&contract, Some(contract_options));
 	Ok(c.generate())
 }
