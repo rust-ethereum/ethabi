@@ -79,6 +79,15 @@ impl Function {
 			(_, _) => format!("{}({}):({})", self.name, inputs, outputs),
 		}
 	}
+
+	/// Returns a signature that uniquely identifies this function.
+	///
+	/// Examples:
+	/// - `d7d15059`
+	pub fn short_signature(&self) -> [u8; 4] {
+		let params = self.input_param_types();
+		short_signature(&self.name, &params)
+	}
 }
 
 #[cfg(test)]

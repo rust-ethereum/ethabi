@@ -20,4 +20,27 @@ macro_rules! use_contract {
 			struct _Dummy;
 		}
 	};
+
+	(@inner $module:ident, $path: expr, ($($signature:expr => $alias:expr),*)) => {
+        #[allow(dead_code)]
+		#[allow(missing_docs)]
+		#[allow(unused_imports)]
+		#[allow(unused_mut)]
+		#[allow(unused_variables)]
+		pub mod $module {
+			#[derive(ethabi_derive::EthabiContract)]
+			#[ethabi_contract_options(path = $path)]
+			$(#[ethabi_function_options(signature = $signature, alias = $alias)])*
+			struct _Dummy;
+		}
+    };
+
+    ($module:ident, $path: expr, $($signature:expr => $alias:expr,)*) => {
+        use_contract!(@inner $module, $path, ($($signature => $alias),*));
+    };
+
+	// entry point, start parsing
+    ($module:ident, $path: expr, $($signature:expr => $alias:expr),*) => {
+        use_contract!(@inner $module, $path, ($($signature => $alias),*));
+    };
 }
