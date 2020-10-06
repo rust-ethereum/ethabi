@@ -58,11 +58,11 @@ struct Outputs {
 pub struct Function {
 	/// Function name.
 	pub name: String,
-	/// Function module name.
+	/// Function module name. ex: safe_transfer_from
 	pub module_name: String,
-	/// Function signature.
+	/// Function signature. ex: safeTransferFrom(address,address,uint256)
 	pub signature: String,
-	/// Function signature.
+	/// Function short signature. ex: 0x42842e0e
 	pub short_signature: [u8; 4],
 	/// Function input params.
 	inputs: Inputs,
