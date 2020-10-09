@@ -14,17 +14,19 @@ mod constructor;
 mod contract;
 mod event;
 mod function;
+mod options;
 
 use ethabi::{Contract, Param, ParamType, Result};
 use heck::SnakeCase;
 use quote::quote;
+use options::ContractOptions;
 use std::path::PathBuf;
 use std::{env, fs};
 use syn::export::Span;
 
 const ERROR_MSG: &str = "`derive(EthabiContract)` failed";
 
-#[proc_macro_derive(EthabiContract, attributes(ethabi_contract_options))]
+#[proc_macro_derive(EthabiContract, attributes(ethabi_contract_options,ethabi_function_options))]
 pub fn ethabi_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 	let ast = syn::parse(input).expect(ERROR_MSG);
 	let gen = impl_ethabi_derive(&ast).expect(ERROR_MSG);
@@ -32,46 +34,13 @@ pub fn ethabi_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
 }
 
 fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<proc_macro2::TokenStream> {
-	let options = get_options(&ast.attrs, "ethabi_contract_options")?;
-	let path = get_option(&options, "path")?;
-	let normalized_path = normalize_path(&path)?;
+	let contract_options = ContractOptions::from_attrs(ast.attrs.as_slice())?;
+	let normalized_path = normalize_path(&contract_options.path)?;
 	let source_file = fs::File::open(&normalized_path)
 		.map_err(|_| format!("Cannot load contract abi from `{}`", normalized_path.display()))?;
 	let contract = Contract::load(source_file)?;
-	let c = contract::Contract::from(&contract);
+	let c = contract::Contract::new(&contract, Some(contract_options));
 	Ok(c.generate())
-}
-
-fn get_options(attrs: &[syn::Attribute], name: &str) -> Result<Vec<syn::NestedMeta>> {
-	let options = attrs.iter().flat_map(syn::Attribute::parse_meta).find(|meta| meta.path().is_ident(name));
-
-	match options {
-		Some(syn::Meta::List(list)) => Ok(list.nested.into_iter().collect()),
-		_ => Err("Unexpected meta item".into()),
-	}
-}
-
-fn get_option(options: &[syn::NestedMeta], name: &str) -> Result<String> {
-	let item = options
-		.iter()
-		.flat_map(|nested| match *nested {
-			syn::NestedMeta::Meta(ref meta) => Some(meta),
-			_ => None,
-		})
-		.find(|meta| meta.path().is_ident(name))
-		.ok_or_else(|| format!("Expected to find option {}", name))?;
-
-	str_value_of_meta_item(item, name)
-}
-
-fn str_value_of_meta_item(item: &syn::Meta, name: &str) -> Result<String> {
-	if let syn::Meta::NameValue(ref name_value) = *item {
-		if let syn::Lit::Str(ref value) = name_value.lit {
-			return Ok(value.value());
-		}
-	}
-
-	Err(format!(r#"`{}` must be in the form `#[{}="something"]`"#, name, name).into())
 }
 
 fn normalize_path(relative_path: &str) -> Result<PathBuf> {

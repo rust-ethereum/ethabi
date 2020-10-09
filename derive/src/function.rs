@@ -57,7 +57,13 @@ struct Outputs {
 /// Structure used to generate contract's function interface.
 pub struct Function {
 	/// Function name.
-	name: String,
+	pub name: String,
+	/// Function module name. ex: safe_transfer_from
+	pub module_name: String,
+	/// Function signature. ex: safeTransferFrom(address,address,uint256)
+	pub signature: String,
+	/// Function short signature. ex: 0x42842e0e
+	pub short_signature: [u8; 4],
 	/// Function input params.
 	inputs: Inputs,
 	/// Function output params.
@@ -124,8 +130,12 @@ impl<'a> From<&'a ethabi::Function> for Function {
 			}
 		};
 
+
 		Function {
 			name: f.name.clone(),
+			module_name: f.name.clone().to_snake_case(),
+			signature: f.signature().split(":").collect::<Vec<&str>>()[0].to_string(),
+			short_signature: f.short_signature(),
 			inputs: Inputs { tokenize, template_params, recreate_quote: to_ethabi_param_vec(&f.inputs) },
 			outputs: Outputs {
 				implementation: output_implementation,
@@ -141,7 +151,7 @@ impl Function {
 	/// Generates the interface for contract's function.
 	pub fn generate(&self) -> TokenStream {
 		let name = &self.name;
-		let module_name = syn::Ident::new(&self.name.to_snake_case(), Span::call_site());
+		let module_name = syn::Ident::new(&self.module_name, Span::call_site());
 		let tokenize = &self.inputs.tokenize;
 		let declarations: &Vec<_> = &self.inputs.template_params.iter().map(|i| &i.declaration).collect();
 		let definitions: &Vec<_> = &self.inputs.template_params.iter().map(|i| &i.definition).collect();
