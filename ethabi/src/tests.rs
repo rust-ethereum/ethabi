@@ -536,12 +536,12 @@ test_encode_decode! {
 	name: tuple_with_tuple_array_test,
 	types: [
 		ParamType::Tuple(vec![
-			Box::new(ParamType::Array(Box::new(ParamType::Tuple(
+			ParamType::Array(Box::new(ParamType::Tuple(
 				vec![
-					Box::new(ParamType::Address),
-					Box::new(ParamType::Uint(256))
+					ParamType::Address,
+					ParamType::Uint(256)
 				]
-			))))
+			)))
 		])
 	],
 	tokens: {
