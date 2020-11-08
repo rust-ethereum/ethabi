@@ -75,11 +75,19 @@ impl<'a> Visitor<'a> for TupleParamVisitor {
 		}
 
 		let kind = kind.ok_or_else(|| Error::missing_field("kind")).and_then(|param_type| {
-			if let ParamType::Tuple(_) = param_type {
+			let tuple_with_params = || {
 				let tuple_params = components.ok_or_else(|| Error::missing_field("components"))?;
 				Ok(ParamType::Tuple(tuple_params.into_iter().map(|param| param.kind).map(Box::new).collect()))
-			} else {
-				Ok(param_type)
+			};
+			match param_type {
+				ParamType::Tuple(_) => tuple_with_params(),
+				ParamType::Array(p) if matches!(*p, ParamType::Tuple(_)) => {
+					Ok(ParamType::Array(Box::new(tuple_with_params()?)))
+				}
+				ParamType::FixedArray(p, n) if matches!(*p, ParamType::Tuple(_)) => {
+					Ok(ParamType::FixedArray(Box::new(tuple_with_params()?), n))
+				}
+				param_type => Ok(param_type),
 			}
 		})?;
 
@@ -105,7 +113,25 @@ mod tests {
 			"type": "address"
 			},{
 			"type": "bool"
-			}
+			},{
+          	"components": [
+              {
+                "name": "tupleCompenent",
+                "type": "uint32"
+              }
+            ],
+            "name": "tupleArray",
+            "type": "tuple[]"
+            },{
+          	"components": [
+              {
+                "name": "tupleCompenent",
+                "type": "uint32"
+              }
+            ],
+            "name": "tupleFixedArray",
+            "type": "tuple[10]"
+            }
 		]"#;
 
 		let deserialized: Vec<TupleParam> = serde_json::from_str(s).unwrap();
@@ -117,6 +143,14 @@ mod tests {
 				TupleParam { name: Some(String::from("bar")), kind: ParamType::Address },
 				TupleParam { name: Some(String::from("baz")), kind: ParamType::Address },
 				TupleParam { name: None, kind: ParamType::Bool },
+				TupleParam {
+					name: Some(String::from("tupleArray")),
+					kind: ParamType::Array(Box::new(ParamType::Tuple(vec![Box::new(ParamType::Uint(32))])))
+				},
+				TupleParam {
+					name: Some(String::from("tupleFixedArray")),
+					kind: ParamType::FixedArray(Box::new(ParamType::Tuple(vec![Box::new(ParamType::Uint(32))])), 10)
+				},
 			]
 		);
 	}
