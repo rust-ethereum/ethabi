@@ -7,8 +7,10 @@
 // except according to those terms.
 
 use super::{ParamType, Reader};
-use serde::de::{Error as SerdeError, Visitor};
-use serde::{Deserialize, Deserializer};
+use serde::{
+	de::{Error as SerdeError, Visitor},
+	Deserialize, Deserializer,
+};
 use std::fmt;
 
 impl<'a> Deserialize<'a> for ParamType {

@@ -8,8 +8,10 @@
 
 //! Function param.
 
-use serde::de::{Error, MapAccess, Visitor};
-use serde::{Deserialize, Deserializer};
+use serde::{
+	de::{Error, MapAccess, Visitor},
+	Deserialize, Deserializer,
+};
 use std::fmt;
 
 use crate::{ParamType, TupleParam};

@@ -6,8 +6,10 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use crate::param_type::{ParamType, Writer};
-use crate::Hash;
+use crate::{
+	param_type::{ParamType, Writer},
+	Hash,
+};
 use tiny_keccak::Keccak;
 
 pub fn short_signature(name: &str, params: &[ParamType]) -> [u8; 4] {

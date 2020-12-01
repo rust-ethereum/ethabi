@@ -6,11 +6,11 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+use ethabi;
 use heck::{CamelCase, SnakeCase};
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::export::Span;
-use {ethabi, syn};
+use syn::{self, export::Span};
 
 use super::{from_token, get_template_names, rust_type, to_syntax_string, to_token};
 

@@ -9,10 +9,8 @@
 //! Operation type.
 
 use crate::{Constructor, Event, Function};
-use serde::de::Error as SerdeError;
-use serde::{Deserialize, Deserializer};
-use serde_json::value::from_value;
-use serde_json::Value;
+use serde::{de::Error as SerdeError, Deserialize, Deserializer};
+use serde_json::{value::from_value, Value};
 
 /// Operation type.
 #[derive(Clone, Debug, PartialEq)]

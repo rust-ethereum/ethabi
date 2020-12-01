@@ -12,9 +12,7 @@ mod lenient;
 mod strict;
 mod token;
 
-pub use self::lenient::LenientTokenizer;
-pub use self::strict::StrictTokenizer;
-pub use self::token::Token;
+pub use self::{lenient::LenientTokenizer, strict::StrictTokenizer, token::Token};
 use crate::{Error, ParamType};
 
 /// This trait should be used to parse string values as tokens.

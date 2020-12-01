@@ -6,9 +6,11 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use crate::errors::Error;
-use crate::token::{StrictTokenizer, Tokenizer};
-use crate::Uint;
+use crate::{
+	errors::Error,
+	token::{StrictTokenizer, Tokenizer},
+	Uint,
+};
 
 /// Tries to parse string as a token. Does not require string to clearly represent the value.
 pub struct LenientTokenizer;
