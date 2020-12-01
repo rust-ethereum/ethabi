@@ -8,6 +8,7 @@
 
 //! Ethereum ABI encoding decoding library.
 
+#![allow(clippy::module_inception)]
 #![warn(missing_docs)]
 
 mod constructor;

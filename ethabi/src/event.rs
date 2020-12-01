@@ -133,7 +133,7 @@ impl Event {
 			// verify
 			let event_signature = topics.get(0).ok_or(Error::InvalidData)?;
 			if event_signature != &self.signature() {
-				return Err(Error::InvalidData.into());
+				return Err(Error::InvalidData);
 			}
 			1
 		};

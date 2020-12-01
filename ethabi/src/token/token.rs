@@ -96,18 +96,10 @@ impl Token {
 			Token::Address(_) => *param_type == ParamType::Address,
 			Token::Bytes(_) => *param_type == ParamType::Bytes,
 			Token::Int(_) => {
-				if let ParamType::Int(_) = *param_type {
-					true
-				} else {
-					false
-				}
+				matches!(*param_type, ParamType::Int(_))
 			}
 			Token::Uint(_) => {
-				if let ParamType::Uint(_) = *param_type {
-					true
-				} else {
-					false
-				}
+				matches!(*param_type, ParamType::Uint(_))
 			}
 			Token::Bool(_) => *param_type == ParamType::Bool,
 			Token::String(_) => *param_type == ParamType::String,

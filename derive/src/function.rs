@@ -6,11 +6,10 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use ethabi;
 use heck::SnakeCase;
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{self, export::Span};
+use syn::export::Span;
 
 use super::{
 	from_template_param, from_token, get_output_kinds, get_template_names, input_names, rust_type, template_param_type,
@@ -202,7 +201,6 @@ impl Function {
 #[cfg(test)]
 mod tests {
 	use super::Function;
-	use ethabi;
 	use quote::quote;
 
 	#[test]

@@ -100,7 +100,6 @@ impl<'a> Visitor<'a> for EventParamVisitor {
 #[cfg(test)]
 mod tests {
 	use crate::{EventParam, ParamType};
-	use serde_json;
 
 	#[test]
 	fn event_param_deserialization() {

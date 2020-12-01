@@ -92,7 +92,6 @@ impl<'a> Visitor<'a> for TupleParamVisitor {
 #[cfg(test)]
 mod tests {
 	use crate::{ParamType, TupleParam};
-	use serde_json;
 
 	#[test]
 	fn tuple_param_deserialization() {

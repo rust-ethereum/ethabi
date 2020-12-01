@@ -63,7 +63,7 @@ pub fn decode(types: &[ParamType], data: &[u8]) -> Result<Vec<Token>, Error> {
 }
 
 fn peek(slices: &[Word], position: usize) -> Result<&Word, Error> {
-	slices.get(position).ok_or_else(|| Error::InvalidData)
+	slices.get(position).ok_or(Error::InvalidData)
 }
 
 fn take_bytes(slices: &[Word], position: usize, len: usize) -> Result<BytesTaken, Error> {
@@ -202,8 +202,8 @@ fn decode_param(param: &ParamType, slices: &[Word], offset: usize) -> Result<Dec
 
 			let len = t.len();
 			let mut tokens = Vec::with_capacity(len);
-			for i in 0..len {
-				let res = decode_param(&t[i], &tail, new_offset)?;
+			for param in t {
+				let res = decode_param(param, &tail, new_offset)?;
 				new_offset = res.new_offset;
 				tokens.push(res.token);
 			}

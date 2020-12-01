@@ -6,7 +6,6 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use ethabi;
 use proc_macro2::TokenStream;
 use quote::quote;
 
@@ -85,7 +84,6 @@ impl Constructor {
 #[cfg(test)]
 mod tests {
 	use super::Constructor;
-	use ethabi;
 	use quote::quote;
 
 	#[test]

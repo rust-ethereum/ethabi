@@ -46,7 +46,7 @@ impl Reader {
 							}
 							// If there have not been any characters since the last item
 							// increment position without inserting any subtypes
-							else if name[last_item..pos].len() < 1 {
+							else if name[last_item..pos].is_empty() {
 								last_item = pos + 1;
 							}
 							// If the item is in the top level of the tuple insert it into subtypes
@@ -80,7 +80,7 @@ impl Reader {
 						',' => {
 							// If there have not been any characters since the last item
 							// increment position without inserting any subtypes
-							if name[last_item..pos].len() < 1 {
+							if name[last_item..pos].is_empty() {
 								last_item = pos + 1
 							}
 							// If the item is in the top level of the tuple insert it into subtypes

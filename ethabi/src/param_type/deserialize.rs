@@ -49,7 +49,6 @@ impl<'a> Visitor<'a> for ParamTypeVisitor {
 #[cfg(test)]
 mod tests {
 	use crate::ParamType;
-	use serde_json;
 
 	#[test]
 	fn param_type_deserialization() {
