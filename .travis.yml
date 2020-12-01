@@ -33,6 +33,7 @@ before_script:
 
 script:
   - cargo fmt --all -- --check --config merge_imports=true
+  - cargo clippy --all --all-features
   - cargo test
 
 after_success:
