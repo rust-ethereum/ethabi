@@ -310,7 +310,7 @@ mod tests {
 					let e = event();
 					let mut log = e.parse_log(log)?.params.into_iter();
 					let result = super::super::logs::One {
-						foo: log.next().expect(INTERNAL_ERR).value.to_address().expect(INTERNAL_ERR)
+						foo: log.next().expect(INTERNAL_ERR).value.into_address().expect(INTERNAL_ERR)
 					};
 					Ok(result)
 				}
