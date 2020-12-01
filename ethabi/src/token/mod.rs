@@ -45,7 +45,7 @@ pub trait Tokenizer {
 	}
 
 	/// Tried to parse a struct as a vector of tokens
-	fn tokenize_struct(value: &str, param: &[Box<ParamType>]) -> Result<Vec<Token>, Error> {
+	fn tokenize_struct(value: &str, param: &[ParamType]) -> Result<Vec<Token>, Error> {
 		if !value.starts_with('(') || !value.ends_with(')') {
 			return Err(Error::InvalidData);
 		}
