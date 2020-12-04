@@ -7,6 +7,7 @@
 // except according to those terms.
 
 use crate::{decode, encode, ParamType, Token};
+use bytes::Bytes;
 use hex_literal::hex;
 
 macro_rules! test_encode_decode {
@@ -56,7 +57,7 @@ test_encode_decode! {
 test_encode_decode! {
 	name: bytes,
 	types: [ParamType::Bytes],
-	tokens: [Token::Bytes(vec![0x12, 0x34])],
+	tokens: [Token::Bytes(Bytes::from_static(&hex!("1234")))],
 	data: "
 		0000000000000000000000000000000000000000000000000000000000000020
 		0000000000000000000000000000000000000000000000000000000000000002
@@ -65,7 +66,7 @@ test_encode_decode! {
 test_encode_decode! {
 	name: bytes2,
 	types: [ParamType::Bytes],
-	tokens: [Token::Bytes(hex!("10000000000000000000000000000000000000000000000000000000000002").to_vec())],
+	tokens: [Token::Bytes(hex!("10000000000000000000000000000000000000000000000000000000000002").to_vec().into())],
 	data: "
 		0000000000000000000000000000000000000000000000000000000000000020
 		000000000000000000000000000000000000000000000000000000000000001f
@@ -78,7 +79,7 @@ test_encode_decode! {
 		Token::Bytes(hex!("
 			1000000000000000000000000000000000000000000000000000000000000000
 			1000000000000000000000000000000000000000000000000000000000000000
-		").to_vec())
+		").to_vec().into())
 	],
 	data: "
 		0000000000000000000000000000000000000000000000000000000000000020
@@ -90,8 +91,8 @@ test_encode_decode! {
 	name: two_bytes,
 	types: [ParamType::Bytes, ParamType::Bytes],
 	tokens: [
-		Token::Bytes(hex!("10000000000000000000000000000000000000000000000000000000000002").to_vec()),
-		Token::Bytes(hex!("0010000000000000000000000000000000000000000000000000000000000002").to_vec())
+		Token::Bytes(hex!("10000000000000000000000000000000000000000000000000000000000002").to_vec().into()),
+		Token::Bytes(hex!("0010000000000000000000000000000000000000000000000000000000000002").to_vec().into())
 	],
 	data: "
 		0000000000000000000000000000000000000000000000000000000000000040
@@ -356,7 +357,7 @@ test_encode_decode! {
 	name: dynamic_array_of_bytes,
 	types: [ParamType::Array(Box::new(ParamType::Bytes))],
 	tokens: {
-		let bytes = hex!("019c80031b20d5e69c8093a571162299032018d913930d93ab320ae5ea44a4218a274f00d607").to_vec();
+		let bytes = hex!("019c80031b20d5e69c8093a571162299032018d913930d93ab320ae5ea44a4218a274f00d607").to_vec().into();
 		[Token::Array(vec![Token::Bytes(bytes)])]
 	},
 	// line 1 at 0x00 =   0: tail offset of array
@@ -378,8 +379,8 @@ test_encode_decode! {
 	types: [ParamType::Array(Box::new(ParamType::Bytes))],
 	tokens: [
 		Token::Array(vec![
-			Token::Bytes(hex!("4444444444444444444444444444444444444444444444444444444444444444444444444444").to_vec()),
-			Token::Bytes(hex!("6666666666666666666666666666666666666666666666666666666666666666666666666666").to_vec()),
+			Token::Bytes(hex!("4444444444444444444444444444444444444444444444444444444444444444444444444444").to_vec().into()),
+			Token::Bytes(hex!("6666666666666666666666666666666666666666666666666666666666666666666666666666").to_vec().into()),
 		])
 	],
 	data: "
@@ -501,7 +502,7 @@ test_encode_decode! {
 test_encode_decode! {
 	name: fixed_bytes,
 	types: [ParamType::FixedBytes(2)],
-	tokens: [Token::FixedBytes(vec![0x12, 0x34])],
+	tokens: [Token::FixedBytes(Bytes::from_static(&hex!("1234")))],
 	data: "1234000000000000000000000000000000000000000000000000000000000000"
 }
 
@@ -515,10 +516,10 @@ test_encode_decode! {
 		ParamType::Bytes,
 	],
 	tokens: {
-		let bytes = hex!("
+		let bytes = Bytes::from_static(&hex!("
 			131a3afc00d1b1e3461b955e53fc866dcf303b3eb9f4c16f89e388930f48134b
 			131a3afc00d1b1e3461b955e53fc866dcf303b3eb9f4c16f89e388930f48134b
-		").to_vec();
+		"));
 		[
 			Token::Int(5.into()),
 			Token::Bytes(bytes.clone()),

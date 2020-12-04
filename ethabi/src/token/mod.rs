@@ -14,6 +14,8 @@ mod token;
 
 use std::cmp::Ordering::{Equal, Less};
 
+use bytes::Bytes;
+
 pub use self::{lenient::LenientTokenizer, strict::StrictTokenizer, token::Token};
 use crate::{Error, ParamType};
 
@@ -164,10 +166,10 @@ pub trait Tokenizer {
 	fn tokenize_bool(value: &str) -> Result<bool, Error>;
 
 	/// Tries to parse a value as bytes.
-	fn tokenize_bytes(value: &str) -> Result<Vec<u8>, Error>;
+	fn tokenize_bytes(value: &str) -> Result<Bytes, Error>;
 
 	/// Tries to parse a value as bytes.
-	fn tokenize_fixed_bytes(value: &str, len: usize) -> Result<Vec<u8>, Error>;
+	fn tokenize_fixed_bytes(value: &str, len: usize) -> Result<Bytes, Error>;
 
 	/// Tries to parse a value as unsigned integer.
 	fn tokenize_uint(value: &str) -> Result<[u8; 32], Error>;

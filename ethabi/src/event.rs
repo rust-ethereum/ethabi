@@ -8,6 +8,7 @@
 
 //! Contract event.
 
+use bytes::Bytes;
 use serde::Deserialize;
 use sha3::{Digest, Keccak256};
 use std::collections::HashMap;
@@ -141,7 +142,7 @@ impl Event {
 		let topic_types =
 			topic_params.iter().map(|p| self.convert_topic_param_type(&p.kind)).collect::<Vec<ParamType>>();
 
-		let flat_topics = topics.into_iter().skip(to_skip).flat_map(|t| t.as_ref().to_vec()).collect::<Vec<u8>>();
+		let flat_topics = topics.into_iter().skip(to_skip).flat_map(|t| t.as_ref().to_vec()).collect::<Bytes>();
 
 		let topic_tokens = decode(&topic_types, &flat_topics)?;
 
@@ -180,6 +181,7 @@ mod tests {
 		token::Token,
 		Event, EventParam, LogParam, ParamType,
 	};
+	use bytes::Bytes;
 	use hex_literal::hex;
 
 	#[test]
@@ -226,13 +228,12 @@ mod tests {
 				hex!("00000000000000000bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb").into(),
 				hex!("00000000000000000ccccccccccccccccccccccccccccccccccccccccccccccc").into(),
 			],
-			data: hex!(
+			data: Bytes::from_static(&hex!(
 				"
 				0000000000000000000000000000000000000000000000000000000000000003
 				0000000000000000000000002222222222222222222222222222222222222222
 			"
-			)
-			.into(),
+			)),
 		};
 		let result = event.parse_log(log).unwrap();
 
@@ -246,21 +247,21 @@ mod tests {
 					("d", Token::Address(hex!("1111111111111111111111111111111111111111").into())),
 					(
 						"e",
-						Token::FixedBytes(
-							hex!("00000000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa").into()
-						)
+						Token::FixedBytes(Bytes::from_static(&hex!(
+							"00000000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+						)))
 					),
 					(
 						"f",
-						Token::FixedBytes(
-							hex!("00000000000000000bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb").into()
-						)
+						Token::FixedBytes(Bytes::from_static(&hex!(
+							"00000000000000000bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+						)))
 					),
 					(
 						"g",
-						Token::FixedBytes(
-							hex!("00000000000000000ccccccccccccccccccccccccccccccccccccccccccccccc").into()
-						)
+						Token::FixedBytes(Bytes::from_static(&hex!(
+							"00000000000000000ccccccccccccccccccccccccccccccccccccccccccccccc"
+						)))
 					),
 				]
 				.iter()

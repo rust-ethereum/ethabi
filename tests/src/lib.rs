@@ -16,7 +16,7 @@ use_contract!(test_rust_keywords, "../res/test_rust_keywords.abi");
 #[cfg(test)]
 mod tests {
 	use crate::{eip20, validators};
-	use ethabi::{Address, Uint};
+	use ethabi::{Address, Bytes, Uint};
 	use hex_literal::hex;
 
 	struct Wrapper([u8; 20]);
@@ -65,7 +65,7 @@ mod tests {
 	fn test_encoding_constructor_as_array() {
 		use validators::constructor;
 
-		let code = Vec::new();
+		let code = Bytes::new();
 		let first = [0x11u8; 20];
 		let second = [0x22u8; 20];
 

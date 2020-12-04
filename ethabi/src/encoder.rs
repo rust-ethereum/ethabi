@@ -176,13 +176,14 @@ fn encode_token(token: &Token) -> Mediate {
 #[cfg(test)]
 mod tests {
 	use crate::{encode, util::pad_u32, Token};
+	use bytes::Bytes;
 	use hex_literal::hex;
 
 	#[test]
 	fn encode_address() {
 		let address = Token::Address([0x11u8; 20].into());
 		let encoded = encode(&[address]);
-		let expected = hex!("0000000000000000000000001111111111111111111111111111111111111111");
+		let expected = Bytes::from_static(&hex!("0000000000000000000000001111111111111111111111111111111111111111"));
 		assert_eq!(encoded, expected);
 	}
 
@@ -395,7 +396,7 @@ mod tests {
 
 	#[test]
 	fn encode_bytes() {
-		let bytes = Token::Bytes(vec![0x12, 0x34]);
+		let bytes = Token::Bytes((&hex!("1234") as &[u8]).into());
 		let encoded = encode(&[bytes]);
 		let expected = hex!(
 			"
@@ -410,9 +411,9 @@ mod tests {
 
 	#[test]
 	fn encode_fixed_bytes() {
-		let bytes = Token::FixedBytes(vec![0x12, 0x34]);
+		let bytes = Token::FixedBytes((&hex!("1234") as &[u8]).into());
 		let encoded = encode(&[bytes]);
-		let expected = hex!("1234000000000000000000000000000000000000000000000000000000000000");
+		let expected = hex!("1234000000000000000000000000000000000000000000000000000000000000").to_vec();
 		assert_eq!(encoded, expected);
 	}
 
@@ -433,7 +434,8 @@ mod tests {
 
 	#[test]
 	fn encode_bytes2() {
-		let bytes = Token::Bytes(hex!("10000000000000000000000000000000000000000000000000000000000002").to_vec());
+		let bytes =
+			Token::Bytes((&hex!("10000000000000000000000000000000000000000000000000000000000002") as &[u8]).into());
 		let encoded = encode(&[bytes]);
 		let expected = hex!(
 			"
@@ -448,34 +450,32 @@ mod tests {
 
 	#[test]
 	fn encode_bytes3() {
-		let bytes = Token::Bytes(
-			hex!(
-				"
+		let bytes = Token::Bytes(Bytes::from_static(&hex!(
+			"
 			1000000000000000000000000000000000000000000000000000000000000000
 			1000000000000000000000000000000000000000000000000000000000000000
 		"
-			)
-			.to_vec(),
-		);
+		)));
 		let encoded = encode(&[bytes]);
-		let expected = hex!(
+		let expected = Bytes::from_static(&hex!(
 			"
 			0000000000000000000000000000000000000000000000000000000000000020
 			0000000000000000000000000000000000000000000000000000000000000040
 			1000000000000000000000000000000000000000000000000000000000000000
 			1000000000000000000000000000000000000000000000000000000000000000
 		"
-		)
-		.to_vec();
+		));
 		assert_eq!(encoded, expected);
 	}
 
 	#[test]
 	fn encode_two_bytes() {
-		let bytes1 = Token::Bytes(hex!("10000000000000000000000000000000000000000000000000000000000002").to_vec());
-		let bytes2 = Token::Bytes(hex!("0010000000000000000000000000000000000000000000000000000000000002").to_vec());
+		let bytes1 =
+			Token::Bytes(Bytes::from_static(&hex!("10000000000000000000000000000000000000000000000000000000000002")));
+		let bytes2 =
+			Token::Bytes(Bytes::from_static(&hex!("0010000000000000000000000000000000000000000000000000000000000002")));
 		let encoded = encode(&[bytes1, bytes2]);
-		let expected = hex!(
+		let expected = Bytes::from_static(&hex!(
 			"
 			0000000000000000000000000000000000000000000000000000000000000040
 			0000000000000000000000000000000000000000000000000000000000000080
@@ -484,8 +484,7 @@ mod tests {
 			0000000000000000000000000000000000000000000000000000000000000020
 			0010000000000000000000000000000000000000000000000000000000000002
 		"
-		)
-		.to_vec();
+		));
 		assert_eq!(encoded, expected);
 	}
 
@@ -494,7 +493,7 @@ mod tests {
 		let mut uint = [0u8; 32];
 		uint[31] = 4;
 		let encoded = encode(&[Token::Uint(uint.into())]);
-		let expected = hex!("0000000000000000000000000000000000000000000000000000000000000004");
+		let expected = Bytes::from_static(&hex!("0000000000000000000000000000000000000000000000000000000000000004"));
 		assert_eq!(encoded, expected);
 	}
 
@@ -503,33 +502,32 @@ mod tests {
 		let mut int = [0u8; 32];
 		int[31] = 4;
 		let encoded = encode(&[Token::Int(int.into())]);
-		let expected = hex!("0000000000000000000000000000000000000000000000000000000000000004");
+		let expected = Bytes::from_static(&hex!("0000000000000000000000000000000000000000000000000000000000000004"));
 		assert_eq!(encoded, expected);
 	}
 
 	#[test]
 	fn encode_bool() {
 		let encoded = encode(&[Token::Bool(true)]);
-		let expected = hex!("0000000000000000000000000000000000000000000000000000000000000001");
+		let expected = Bytes::from_static(&hex!("0000000000000000000000000000000000000000000000000000000000000001"));
 		assert_eq!(encoded, expected);
 	}
 
 	#[test]
 	fn encode_bool2() {
 		let encoded = encode(&[Token::Bool(false)]);
-		let expected = hex!("0000000000000000000000000000000000000000000000000000000000000000");
+		let expected = Bytes::from_static(&hex!("0000000000000000000000000000000000000000000000000000000000000000"));
 		assert_eq!(encoded, expected);
 	}
 
 	#[test]
 	fn comprehensive_test() {
-		let bytes = hex!(
+		let bytes = Bytes::from_static(&hex!(
 			"
 			131a3afc00d1b1e3461b955e53fc866dcf303b3eb9f4c16f89e388930f48134b
 			131a3afc00d1b1e3461b955e53fc866dcf303b3eb9f4c16f89e388930f48134b
 		"
-		)
-		.to_vec();
+		));
 		let encoded =
 			encode(&[Token::Int(5.into()), Token::Bytes(bytes.clone()), Token::Int(3.into()), Token::Bytes(bytes)]);
 
@@ -591,8 +589,8 @@ mod tests {
 
 	#[test]
 	fn encode_dynamic_array_of_bytes() {
-		let bytes = hex!("019c80031b20d5e69c8093a571162299032018d913930d93ab320ae5ea44a4218a274f00d607");
-		let encoded = encode(&[Token::Array(vec![Token::Bytes(bytes.to_vec())])]);
+		let bytes = &hex!("019c80031b20d5e69c8093a571162299032018d913930d93ab320ae5ea44a4218a274f00d607");
+		let encoded = encode(&[Token::Array(vec![Token::Bytes(Bytes::from_static(bytes))])]);
 
 		let expected = hex!(
 			"
@@ -612,7 +610,8 @@ mod tests {
 	fn encode_dynamic_array_of_bytes2() {
 		let bytes = hex!("4444444444444444444444444444444444444444444444444444444444444444444444444444");
 		let bytes2 = hex!("6666666666666666666666666666666666666666666666666666666666666666666666666666");
-		let encoded = encode(&[Token::Array(vec![Token::Bytes(bytes.to_vec()), Token::Bytes(bytes2.to_vec())])]);
+		let encoded =
+			encode(&[Token::Array(vec![Token::Bytes(bytes.to_vec().into()), Token::Bytes(bytes2.to_vec().into())])]);
 
 		let expected = hex!(
 			"
@@ -673,7 +672,8 @@ mod tests {
 	fn encode_dynamic_tuple_of_bytes2() {
 		let bytes = hex!("4444444444444444444444444444444444444444444444444444444444444444444444444444");
 		let bytes2 = hex!("6666666666666666666666666666666666666666666666666666666666666666666666666666");
-		let encoded = encode(&[Token::Tuple(vec![Token::Bytes(bytes.to_vec()), Token::Bytes(bytes2.to_vec())])]);
+		let encoded =
+			encode(&[Token::Tuple(vec![Token::Bytes(bytes.to_vec().into()), Token::Bytes(bytes2.to_vec().into())])]);
 
 		let expected = hex!(
 			"

@@ -6,6 +6,8 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+use bytes::Bytes;
+
 use crate::{
 	errors::Error,
 	token::{StrictTokenizer, Tokenizer},
@@ -29,11 +31,11 @@ impl Tokenizer for LenientTokenizer {
 		StrictTokenizer::tokenize_bool(value)
 	}
 
-	fn tokenize_bytes(value: &str) -> Result<Vec<u8>, Error> {
+	fn tokenize_bytes(value: &str) -> Result<Bytes, Error> {
 		StrictTokenizer::tokenize_bytes(value)
 	}
 
-	fn tokenize_fixed_bytes(value: &str, len: usize) -> Result<Vec<u8>, Error> {
+	fn tokenize_fixed_bytes(value: &str, len: usize) -> Result<Bytes, Error> {
 		StrictTokenizer::tokenize_fixed_bytes(value, len)
 	}
 
@@ -43,7 +45,7 @@ impl Tokenizer for LenientTokenizer {
 			return result;
 		}
 
-		let uint = Uint::from_dec_str(value)?;
+		let uint = Uint::from_dec_str(value).map_err(anyhow::Error::from)?;
 		Ok(uint.into())
 	}
 
@@ -56,7 +58,7 @@ impl Tokenizer for LenientTokenizer {
 			return result;
 		}
 
-		let abs = Uint::from_dec_str(value.trim_start_matches('-'))?;
+		let abs = Uint::from_dec_str(value.trim_start_matches('-')).map_err(anyhow::Error::from)?;
 		let max = Uint::max_value() / 2;
 		let int = if value.starts_with('-') {
 			if abs.is_zero() {

@@ -142,7 +142,7 @@ impl Token {
 	}
 
 	/// Converts token to...
-	pub fn into_fixed_bytes(self) -> Option<Vec<u8>> {
+	pub fn into_fixed_bytes(self) -> Option<Bytes> {
 		match self {
 			Token::FixedBytes(bytes) => Some(bytes),
 			_ => None,
@@ -150,7 +150,7 @@ impl Token {
 	}
 
 	/// Converts token to...
-	pub fn into_bytes(self) -> Option<Vec<u8>> {
+	pub fn into_bytes(self) -> Option<Bytes> {
 		match self {
 			Token::Bytes(bytes) => Some(bytes),
 			_ => None,
@@ -226,6 +226,8 @@ impl Token {
 #[cfg(test)]
 mod tests {
 	use crate::{ParamType, Token};
+	use bytes::Bytes;
+	use hex_literal::hex;
 
 	#[test]
 	fn test_type_check() {
@@ -247,9 +249,12 @@ mod tests {
 			vec![ParamType::Uint(32), ParamType::Bool],
 		);
 
-		assert_type_check(vec![Token::FixedBytes(vec![0, 0, 0, 0])], vec![ParamType::FixedBytes(4)]);
-		assert_type_check(vec![Token::FixedBytes(vec![0, 0, 0])], vec![ParamType::FixedBytes(4)]);
-		assert_not_type_check(vec![Token::FixedBytes(vec![0, 0, 0, 0])], vec![ParamType::FixedBytes(3)]);
+		assert_type_check(vec![Token::FixedBytes((&hex!("00000000") as &[u8]).into())], vec![ParamType::FixedBytes(4)]);
+		assert_type_check(vec![Token::FixedBytes((&hex!("000000") as &[u8]).into())], vec![ParamType::FixedBytes(4)]);
+		assert_not_type_check(
+			vec![Token::FixedBytes((&hex!("00000000") as &[u8]).into())],
+			vec![ParamType::FixedBytes(3)],
+		);
 
 		assert_type_check(
 			vec![Token::Array(vec![Token::Bool(false), Token::Bool(true)])],
@@ -285,8 +290,8 @@ mod tests {
 	#[test]
 	fn test_is_dynamic() {
 		assert_eq!(Token::Address("0000000000000000000000000000000000000000".parse().unwrap()).is_dynamic(), false);
-		assert_eq!(Token::Bytes(vec![0, 0, 0, 0]).is_dynamic(), true);
-		assert_eq!(Token::FixedBytes(vec![0, 0, 0, 0]).is_dynamic(), false);
+		assert_eq!(Token::Bytes(Bytes::from_static(&hex!("00000000"))).is_dynamic(), true);
+		assert_eq!(Token::FixedBytes(Bytes::from_static(&hex!("00000000"))).is_dynamic(), false);
 		assert_eq!(Token::Uint(0.into()).is_dynamic(), false);
 		assert_eq!(Token::Int(0.into()).is_dynamic(), false);
 		assert_eq!(Token::Bool(false).is_dynamic(), false);

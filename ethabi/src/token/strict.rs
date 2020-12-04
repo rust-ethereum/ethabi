@@ -7,13 +7,14 @@
 // except according to those terms.
 
 use crate::{errors::Error, token::Tokenizer};
+use bytes::Bytes;
 
 /// Tries to parse string as a token. Require string to clearly represent the value.
 pub struct StrictTokenizer;
 
 impl Tokenizer for StrictTokenizer {
 	fn tokenize_address(value: &str) -> Result<[u8; 20], Error> {
-		let hex: Vec<u8> = hex::decode(value)?;
+		let hex = hex::decode(value)?;
 		match hex.len() == 20 {
 			false => Err(Error::InvalidData),
 			true => {
@@ -36,20 +37,20 @@ impl Tokenizer for StrictTokenizer {
 		}
 	}
 
-	fn tokenize_bytes(value: &str) -> Result<Vec<u8>, Error> {
-		hex::decode(value).map_err(Into::into)
+	fn tokenize_bytes(value: &str) -> Result<Bytes, Error> {
+		Ok(hex::decode(value)?.into())
 	}
 
-	fn tokenize_fixed_bytes(value: &str, len: usize) -> Result<Vec<u8>, Error> {
-		let hex: Vec<u8> = hex::decode(value)?;
+	fn tokenize_fixed_bytes(value: &str, len: usize) -> Result<Bytes, Error> {
+		let hex = hex::decode(value)?;
 		match hex.len() == len {
-			true => Ok(hex),
+			true => Ok(hex.into()),
 			false => Err(Error::InvalidData),
 		}
 	}
 
 	fn tokenize_uint(value: &str) -> Result<[u8; 32], Error> {
-		let hex: Vec<u8> = hex::decode(value)?;
+		let hex = hex::decode(value)?;
 		match hex.len() == 32 {
 			true => {
 				let mut uint = [0u8; 32];
@@ -71,6 +72,8 @@ mod tests {
 		token::{StrictTokenizer, Token, Tokenizer},
 		ParamType,
 	};
+	use bytes::Bytes;
+	use hex_literal::hex;
 
 	#[test]
 	fn tokenize_address() {
@@ -105,20 +108,23 @@ mod tests {
 	fn tokenize_bytes() {
 		assert_eq!(
 			StrictTokenizer::tokenize(&ParamType::Bytes, "123456").unwrap(),
-			Token::Bytes(vec![0x12, 0x34, 0x56])
+			Token::Bytes(Bytes::from_static(&hex!("123456")))
 		);
-		assert_eq!(StrictTokenizer::tokenize(&ParamType::Bytes, "0017").unwrap(), Token::Bytes(vec![0x00, 0x17]));
+		assert_eq!(
+			StrictTokenizer::tokenize(&ParamType::Bytes, "0017").unwrap(),
+			Token::Bytes(Bytes::from_static(&hex!("0017")))
+		);
 	}
 
 	#[test]
 	fn tokenize_fixed_bytes() {
 		assert_eq!(
 			StrictTokenizer::tokenize(&ParamType::FixedBytes(3), "123456").unwrap(),
-			Token::FixedBytes(vec![0x12, 0x34, 0x56])
+			Token::FixedBytes(Bytes::from_static(&hex!("123456")))
 		);
 		assert_eq!(
 			StrictTokenizer::tokenize(&ParamType::FixedBytes(2), "0017").unwrap(),
-			Token::FixedBytes(vec![0x00, 0x17])
+			Token::FixedBytes(Bytes::from_static(&hex!("0017")))
 		);
 	}
 

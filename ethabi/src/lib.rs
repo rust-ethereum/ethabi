@@ -56,10 +56,10 @@ pub type Word = [u8; 32];
 pub type Address = ethereum_types::Address;
 
 /// ABI fixed bytes.
-pub type FixedBytes = Vec<u8>;
+pub type FixedBytes = bytes::Bytes;
 
 /// ABI bytes.
-pub type Bytes = Vec<u8>;
+pub type Bytes = bytes::Bytes;
 
 /// ABI signed integer.
 pub type Int = ethereum_types::U256;

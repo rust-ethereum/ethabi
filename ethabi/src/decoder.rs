@@ -8,6 +8,8 @@
 
 //! ABI decoder.
 
+use bytes::Bytes;
+
 use crate::{util::slice_data, Error, ParamType, Token, Word};
 
 struct DecodeResult {
@@ -16,7 +18,7 @@ struct DecodeResult {
 }
 
 struct BytesTaken {
-	bytes: Vec<u8>,
+	bytes: Bytes,
 	new_offset: usize,
 }
 
@@ -143,7 +145,10 @@ fn decode_param(param: &ParamType, slices: &[Word], offset: usize) -> Result<Dec
 
 			let taken = take_bytes(slices, len_offset + 1, len)?;
 
-			let result = DecodeResult { token: Token::String(String::from_utf8(taken.bytes)?), new_offset: offset + 1 };
+			let result = DecodeResult {
+				token: Token::String(String::from_utf8(taken.bytes.into_iter().collect())?),
+				new_offset: offset + 1,
+			};
 			Ok(result)
 		}
 		ParamType::Array(ref t) => {
@@ -224,6 +229,7 @@ fn decode_param(param: &ParamType, slices: &[Word], offset: usize) -> Result<Dec
 #[cfg(test)]
 mod tests {
 	use crate::{decode, ParamType, Token};
+	use bytes::Bytes;
 	use hex_literal::hex;
 
 	#[test]
@@ -497,8 +503,8 @@ mod tests {
 			.unwrap(),
 			&[
 				Token::Address(hex!("8497afefdc5ac170a664a231f6efb25526ef813f").into()),
-				Token::FixedBytes([0u8; 32].to_vec()),
-				Token::FixedBytes([0u8; 4].to_vec()),
+				Token::FixedBytes(Bytes::from_static(&[0u8; 32])),
+				Token::FixedBytes(Bytes::from_static(&[0u8; 4])),
 				Token::String("0x0000001F".into()),
 			]
 		);
