@@ -10,8 +10,7 @@
 
 use std::string::ToString;
 
-use crate::signature::short_signature;
-use crate::{decode, encode, Bytes, Error, Param, ParamType, Result, Token};
+use crate::{decode, encode, signature::short_signature, Bytes, Error, Param, ParamType, Result, Token};
 use serde::Deserialize;
 
 /// Contract function specification.

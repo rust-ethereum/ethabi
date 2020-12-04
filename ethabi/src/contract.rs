@@ -6,15 +6,17 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use crate::operation::Operation;
-use crate::{errors, Constructor, Error, Event, Function};
-use serde::de::{SeqAccess, Visitor};
-use serde::{Deserialize, Deserializer};
+use crate::{errors, operation::Operation, Constructor, Error, Event, Function};
+use serde::{
+	de::{SeqAccess, Visitor},
+	Deserialize, Deserializer,
+};
 use serde_json;
-use std::collections::hash_map::Values;
-use std::collections::HashMap;
-use std::iter::Flatten;
-use std::{fmt, io};
+use std::{
+	collections::{hash_map::Values, HashMap},
+	fmt, io,
+	iter::Flatten,
+};
 
 /// API building calls to contracts ABI.
 #[derive(Clone, Debug, PartialEq)]

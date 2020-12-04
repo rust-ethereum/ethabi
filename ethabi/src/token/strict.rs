@@ -6,8 +6,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use crate::errors::Error;
-use crate::token::Tokenizer;
+use crate::{errors::Error, token::Tokenizer};
 use hex::FromHex;
 
 /// Tries to parse string as a token. Require string to clearly represent the value.
@@ -69,8 +68,10 @@ impl Tokenizer for StrictTokenizer {
 
 #[cfg(test)]
 mod tests {
-	use crate::token::{StrictTokenizer, Token, Tokenizer};
-	use crate::ParamType;
+	use crate::{
+		token::{StrictTokenizer, Token, Tokenizer},
+		ParamType,
+	};
 
 	#[test]
 	fn tokenize_address() {

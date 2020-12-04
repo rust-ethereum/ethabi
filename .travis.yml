@@ -32,7 +32,7 @@ before_script:
   - rustup component add rustfmt
 
 script:
-  - cargo fmt --all -- --check
+  - cargo fmt --all -- --check --config merge_imports=true
   - cargo test
 
 after_success:

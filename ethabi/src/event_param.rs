@@ -9,8 +9,10 @@
 //! Event param specification.
 
 use crate::{ParamType, TupleParam};
-use serde::de::{Error, MapAccess, Visitor};
-use serde::{Deserialize, Deserializer};
+use serde::{
+	de::{Error, MapAccess, Visitor},
+	Deserialize, Deserializer,
+};
 use std::fmt;
 
 /// Event param specification.

@@ -9,8 +9,10 @@
 //! Tuple param type.
 
 use crate::ParamType;
-use serde::de::{Error, MapAccess, Visitor};
-use serde::{Deserialize, Deserializer};
+use serde::{
+	de::{Error, MapAccess, Visitor},
+	Deserialize, Deserializer,
+};
 use std::fmt;
 
 /// Tuple params specification

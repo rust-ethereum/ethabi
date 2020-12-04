@@ -1,9 +1,12 @@
 mod error;
 
 use crate::error::Error;
-use ethabi::param_type::{ParamType, Reader};
-use ethabi::token::{LenientTokenizer, StrictTokenizer, Token, Tokenizer};
-use ethabi::{decode, encode, Contract, Event, Function, Hash};
+use ethabi::{
+	decode, encode,
+	param_type::{ParamType, Reader},
+	token::{LenientTokenizer, StrictTokenizer, Token, Tokenizer},
+	Contract, Event, Function, Hash,
+};
 use itertools::Itertools;
 use rustc_hex::{FromHex, ToHex};
 use std::fs::File;

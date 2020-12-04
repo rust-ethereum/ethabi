@@ -8,8 +8,7 @@
 
 //! ABI decoder.
 
-use crate::util::slice_data;
-use crate::{Error, ParamType, Token, Word};
+use crate::{util::slice_data, Error, ParamType, Token, Word};
 
 struct DecodeResult {
 	token: Token,
