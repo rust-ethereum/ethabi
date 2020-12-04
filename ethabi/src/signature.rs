@@ -10,7 +10,7 @@ use crate::{
 	param_type::{ParamType, Writer},
 	Hash,
 };
-use tiny_keccak::Keccak;
+use sha3::{Digest, Keccak256};
 
 pub fn short_signature(name: &str, params: &[ParamType]) -> [u8; 4] {
 	let mut result = [0u8; 4];
@@ -29,9 +29,7 @@ fn fill_signature(name: &str, params: &[ParamType], result: &mut [u8]) {
 
 	let data: Vec<u8> = From::from(format!("{}({})", name, types).as_str());
 
-	let mut sponge = Keccak::new_keccak256();
-	sponge.update(&data);
-	sponge.finalize(result);
+	result.copy_from_slice(&Keccak256::digest(&data)[..result.len()])
 }
 
 #[cfg(test)]
