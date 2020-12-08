@@ -46,14 +46,14 @@ impl Reader {
 							}
 							// If there have not been any characters since the last item
 							// increment position without inserting any subtypes
-							else if name[last_item..pos].len() < 1 {
+							else if name[last_item..pos].is_empty() {
 								last_item = pos + 1;
 							}
 							// If the item is in the top level of the tuple insert it into subtypes
 							else if nested == 0 {
 								let sub = &name[last_item..pos];
 								let subtype = Reader::read(sub)?;
-								subtypes.push(Box::new(subtype));
+								subtypes.push(subtype);
 								last_item = pos + 1;
 							}
 							// If the item is in a sublevel of the tuple:
@@ -63,16 +63,16 @@ impl Reader {
 							else if nested > 0 {
 								let sub = &name[last_item..pos];
 								let subtype = Reader::read(sub)?;
-								subtuples[(nested - 1) as usize].push(Box::new(subtype));
+								subtuples[(nested - 1) as usize].push(subtype);
 								let initial_tuple_params = subtuples.remove(0);
 								let tuple_params = subtuples.into_iter().fold(
 									initial_tuple_params,
 									|mut tuple_params, nested_param_set| {
-										tuple_params.push(Box::new(ParamType::Tuple(nested_param_set)));
+										tuple_params.push(ParamType::Tuple(nested_param_set));
 										tuple_params
 									},
 								);
-								subtypes.push(Box::new(ParamType::Tuple(tuple_params)));
+								subtypes.push(ParamType::Tuple(tuple_params));
 								subtuples = Vec::new();
 								last_item = pos + 1;
 							}
@@ -80,14 +80,14 @@ impl Reader {
 						',' => {
 							// If there have not been any characters since the last item
 							// increment position without inserting any subtypes
-							if name[last_item..pos].len() < 1 {
+							if name[last_item..pos].is_empty() {
 								last_item = pos + 1
 							}
 							// If the item is in the top level of the tuple insert it into subtypes
 							else if nested == 1 {
 								let sub = &name[last_item..pos];
 								let subtype = Reader::read(sub)?;
-								subtypes.push(Box::new(subtype));
+								subtypes.push(subtype);
 								last_item = pos + 1;
 							}
 							// If the item is in a sublevel of the tuple
@@ -95,7 +95,7 @@ impl Reader {
 							else if nested > 1 {
 								let sub = &name[last_item..pos];
 								let subtype = Reader::read(sub)?;
-								subtuples[(nested - 2) as usize].push(Box::new(subtype));
+								subtuples[(nested - 2) as usize].push(subtype);
 								last_item = pos + 1;
 							}
 						}
@@ -209,14 +209,11 @@ mod tests {
 	fn test_read_struct_param() {
 		assert_eq!(
 			Reader::read("(address,bool)").unwrap(),
-			ParamType::Tuple(vec![Box::new(ParamType::Address), Box::new(ParamType::Bool)])
+			ParamType::Tuple(vec![ParamType::Address, ParamType::Bool])
 		);
 		assert_eq!(
 			Reader::read("(bool[3],uint256)").unwrap(),
-			ParamType::Tuple(vec![
-				Box::new(ParamType::FixedArray(Box::new(ParamType::Bool), 3)),
-				Box::new(ParamType::Uint(256))
-			])
+			ParamType::Tuple(vec![ParamType::FixedArray(Box::new(ParamType::Bool), 3), ParamType::Uint(256)])
 		);
 	}
 
@@ -225,9 +222,9 @@ mod tests {
 		assert_eq!(
 			Reader::read("(address,bool,(bool,uint256))").unwrap(),
 			ParamType::Tuple(vec![
-				Box::new(ParamType::Address),
-				Box::new(ParamType::Bool),
-				Box::new(ParamType::Tuple(vec![Box::new(ParamType::Bool), Box::new(ParamType::Uint(256))]))
+				ParamType::Address,
+				ParamType::Bool,
+				ParamType::Tuple(vec![ParamType::Bool, ParamType::Uint(256)])
 			])
 		);
 	}
@@ -237,14 +234,14 @@ mod tests {
 		assert_eq!(
 			Reader::read("(address,bool,(bool,uint256,(bool,uint256)),(bool,uint256))").unwrap(),
 			ParamType::Tuple(vec![
-				Box::new(ParamType::Address),
-				Box::new(ParamType::Bool),
-				Box::new(ParamType::Tuple(vec![
-					Box::new(ParamType::Bool),
-					Box::new(ParamType::Uint(256)),
-					Box::new(ParamType::Tuple(vec![Box::new(ParamType::Bool), Box::new(ParamType::Uint(256))]))
-				])),
-				Box::new(ParamType::Tuple(vec![Box::new(ParamType::Bool), Box::new(ParamType::Uint(256))]))
+				ParamType::Address,
+				ParamType::Bool,
+				ParamType::Tuple(vec![
+					ParamType::Bool,
+					ParamType::Uint(256),
+					ParamType::Tuple(vec![ParamType::Bool, ParamType::Uint(256)])
+				]),
+				ParamType::Tuple(vec![ParamType::Bool, ParamType::Uint(256)])
 			])
 		);
 	}

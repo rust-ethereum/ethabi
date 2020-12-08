@@ -87,7 +87,7 @@ mod tests {
 
 	#[test]
 	fn test_function_encode_call() {
-		let interface = Function {
+		let func = Function {
 			name: "baz".to_owned(),
 			inputs: vec![
 				Param { name: "a".to_owned(), kind: ParamType::Uint(32) },
@@ -97,7 +97,6 @@ mod tests {
 			constant: false,
 		};
 
-		let func = Function::from(interface);
 		let mut uint = [0u8; 32];
 		uint[31] = 69;
 		let encoded = func.encode_input(&[Token::Uint(uint.into()), Token::Bool(true)]).unwrap();

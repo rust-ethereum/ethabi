@@ -6,11 +6,10 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use ethabi;
 use heck::SnakeCase;
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{self, export::Span};
+use syn::export::Span;
 
 use super::{
 	from_template_param, from_token, get_output_kinds, get_template_names, input_names, rust_type, template_param_type,
@@ -202,7 +201,6 @@ impl Function {
 #[cfg(test)]
 mod tests {
 	use super::Function;
-	use ethabi;
 	use quote::quote;
 
 	#[test]
@@ -301,7 +299,7 @@ mod tests {
 
 					fn decode(&self, output: &[u8]) -> ethabi::Result<Self::Output> {
 						let out = self.0.decode_output(output)?.into_iter().next().expect(INTERNAL_ERR);
-						Ok(out.to_uint().expect(INTERNAL_ERR))
+						Ok(out.into_uint().expect(INTERNAL_ERR))
 					}
 				}
 
@@ -386,7 +384,7 @@ mod tests {
 
 					fn decode(&self, output: &[u8]) -> ethabi::Result<Self::Output> {
 						let mut out = self.0.decode_output(output)?.into_iter();
-						Ok((out.next().expect(INTERNAL_ERR).to_uint().expect(INTERNAL_ERR), out.next().expect(INTERNAL_ERR).to_string().expect(INTERNAL_ERR)))
+						Ok((out.next().expect(INTERNAL_ERR).into_uint().expect(INTERNAL_ERR), out.next().expect(INTERNAL_ERR).into_string().expect(INTERNAL_ERR)))
 					}
 				}
 

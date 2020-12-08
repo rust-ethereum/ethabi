@@ -80,13 +80,13 @@ impl<'a> Visitor<'a> for ParamVisitor {
 			kind.ok_or_else(|| Error::missing_field("kind")).and_then(|param_type: ParamType| match param_type {
 				ParamType::Tuple(_) => {
 					let tuple_params = components.ok_or_else(|| Error::missing_field("components"))?;
-					Ok(ParamType::Tuple(tuple_params.into_iter().map(|param| param.kind).map(Box::new).collect()))
+					Ok(ParamType::Tuple(tuple_params.into_iter().map(|param| param.kind).collect()))
 				}
 				ParamType::Array(inner_param_type) => match *inner_param_type {
 					ParamType::Tuple(_) => {
 						let tuple_params = components.ok_or_else(|| Error::missing_field("components"))?;
 						Ok(ParamType::Array(Box::new(ParamType::Tuple(
-							tuple_params.into_iter().map(|param| param.kind).map(Box::new).collect(),
+							tuple_params.into_iter().map(|param| param.kind).collect(),
 						))))
 					}
 					_ => Ok(ParamType::Array(inner_param_type)),
@@ -95,9 +95,7 @@ impl<'a> Visitor<'a> for ParamVisitor {
 					ParamType::Tuple(_) => {
 						let tuple_params = components.ok_or_else(|| Error::missing_field("components"))?;
 						Ok(ParamType::FixedArray(
-							Box::new(ParamType::Tuple(
-								tuple_params.into_iter().map(|param| param.kind).map(Box::new).collect(),
-							)),
+							Box::new(ParamType::Tuple(tuple_params.into_iter().map(|param| param.kind).collect())),
 							size,
 						))
 					}
@@ -112,7 +110,6 @@ impl<'a> Visitor<'a> for ParamVisitor {
 #[cfg(test)]
 mod tests {
 	use crate::{Param, ParamType};
-	use serde_json;
 
 	#[test]
 	fn param_deserialization() {
@@ -155,10 +152,7 @@ mod tests {
 			deserialized,
 			Param {
 				name: "foo".to_owned(),
-				kind: ParamType::Tuple(vec![
-					Box::new(ParamType::Uint(48)),
-					Box::new(ParamType::Tuple(vec![Box::new(ParamType::Address)]))
-				]),
+				kind: ParamType::Tuple(vec![ParamType::Uint(48), ParamType::Tuple(vec![ParamType::Address])]),
 			}
 		);
 	}
@@ -191,9 +185,9 @@ mod tests {
 			Param {
 				name: "foo".to_owned(),
 				kind: ParamType::Array(Box::new(ParamType::Tuple(vec![
-					Box::new(ParamType::Uint(48)),
-					Box::new(ParamType::Address),
-					Box::new(ParamType::Address)
+					ParamType::Uint(48),
+					ParamType::Address,
+					ParamType::Address
 				]))),
 			}
 		);
@@ -227,11 +221,7 @@ mod tests {
 			Param {
 				name: "foo".to_owned(),
 				kind: ParamType::FixedArray(
-					Box::new(ParamType::Tuple(vec![
-						Box::new(ParamType::Uint(48)),
-						Box::new(ParamType::Address),
-						Box::new(ParamType::Address)
-					])),
+					Box::new(ParamType::Tuple(vec![ParamType::Uint(48), ParamType::Address, ParamType::Address])),
 					2
 				),
 			}

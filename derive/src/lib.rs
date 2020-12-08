@@ -220,12 +220,12 @@ fn to_token(name: &proc_macro2::TokenStream, kind: &ParamType) -> proc_macro2::T
 
 fn from_token(kind: &ParamType, token: &proc_macro2::TokenStream) -> proc_macro2::TokenStream {
 	match *kind {
-		ParamType::Address => quote! { #token.to_address().expect(INTERNAL_ERR) },
-		ParamType::Bytes => quote! { #token.to_bytes().expect(INTERNAL_ERR) },
+		ParamType::Address => quote! { #token.into_address().expect(INTERNAL_ERR) },
+		ParamType::Bytes => quote! { #token.into_bytes().expect(INTERNAL_ERR) },
 		ParamType::FixedBytes(32) => quote! {
 			{
 				let mut result = [0u8; 32];
-				let v = #token.to_fixed_bytes().expect(INTERNAL_ERR);
+				let v = #token.into_fixed_bytes().expect(INTERNAL_ERR);
 				result.copy_from_slice(&v);
 				ethabi::Hash::from(result)
 			}
@@ -235,21 +235,21 @@ fn from_token(kind: &ParamType, token: &proc_macro2::TokenStream) -> proc_macro2
 			quote! {
 				{
 					let mut result = [0u8; #size];
-					let v = #token.to_fixed_bytes().expect(INTERNAL_ERR);
+					let v = #token.into_fixed_bytes().expect(INTERNAL_ERR);
 					result.copy_from_slice(&v);
 					result
 				}
 			}
 		}
-		ParamType::Int(_) => quote! { #token.to_int().expect(INTERNAL_ERR) },
-		ParamType::Uint(_) => quote! { #token.to_uint().expect(INTERNAL_ERR) },
-		ParamType::Bool => quote! { #token.to_bool().expect(INTERNAL_ERR) },
-		ParamType::String => quote! { #token.to_string().expect(INTERNAL_ERR) },
+		ParamType::Int(_) => quote! { #token.into_int().expect(INTERNAL_ERR) },
+		ParamType::Uint(_) => quote! { #token.into_uint().expect(INTERNAL_ERR) },
+		ParamType::Bool => quote! { #token.into_bool().expect(INTERNAL_ERR) },
+		ParamType::String => quote! { #token.into_string().expect(INTERNAL_ERR) },
 		ParamType::Array(ref kind) => {
 			let inner = quote! { inner };
 			let inner_loop = from_token(kind, &inner);
 			quote! {
-				#token.to_array().expect(INTERNAL_ERR).into_iter()
+				#token.into_array().expect(INTERNAL_ERR).into_iter()
 					.map(|#inner| #inner_loop)
 					.collect()
 			}

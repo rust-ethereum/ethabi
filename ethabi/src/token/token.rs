@@ -96,18 +96,10 @@ impl Token {
 			Token::Address(_) => *param_type == ParamType::Address,
 			Token::Bytes(_) => *param_type == ParamType::Bytes,
 			Token::Int(_) => {
-				if let ParamType::Int(_) = *param_type {
-					true
-				} else {
-					false
-				}
+				matches!(*param_type, ParamType::Int(_))
 			}
 			Token::Uint(_) => {
-				if let ParamType::Uint(_) = *param_type {
-					true
-				} else {
-					false
-				}
+				matches!(*param_type, ParamType::Uint(_))
 			}
 			Token::Bool(_) => *param_type == ParamType::Bool,
 			Token::String(_) => *param_type == ParamType::String,
@@ -143,7 +135,7 @@ impl Token {
 	}
 
 	/// Converts token to...
-	pub fn to_address(self) -> Option<Address> {
+	pub fn into_address(self) -> Option<Address> {
 		match self {
 			Token::Address(address) => Some(address),
 			_ => None,
@@ -151,7 +143,7 @@ impl Token {
 	}
 
 	/// Converts token to...
-	pub fn to_fixed_bytes(self) -> Option<Vec<u8>> {
+	pub fn into_fixed_bytes(self) -> Option<Vec<u8>> {
 		match self {
 			Token::FixedBytes(bytes) => Some(bytes),
 			_ => None,
@@ -159,7 +151,7 @@ impl Token {
 	}
 
 	/// Converts token to...
-	pub fn to_bytes(self) -> Option<Vec<u8>> {
+	pub fn into_bytes(self) -> Option<Vec<u8>> {
 		match self {
 			Token::Bytes(bytes) => Some(bytes),
 			_ => None,
@@ -167,7 +159,7 @@ impl Token {
 	}
 
 	/// Converts token to...
-	pub fn to_int(self) -> Option<Uint> {
+	pub fn into_int(self) -> Option<Uint> {
 		match self {
 			Token::Int(int) => Some(int),
 			_ => None,
@@ -175,7 +167,7 @@ impl Token {
 	}
 
 	/// Converts token to...
-	pub fn to_uint(self) -> Option<Uint> {
+	pub fn into_uint(self) -> Option<Uint> {
 		match self {
 			Token::Uint(uint) => Some(uint),
 			_ => None,
@@ -183,7 +175,7 @@ impl Token {
 	}
 
 	/// Converts token to...
-	pub fn to_bool(self) -> Option<bool> {
+	pub fn into_bool(self) -> Option<bool> {
 		match self {
 			Token::Bool(b) => Some(b),
 			_ => None,
@@ -191,7 +183,7 @@ impl Token {
 	}
 
 	/// Converts token to...
-	pub fn to_string(self) -> Option<String> {
+	pub fn into_string(self) -> Option<String> {
 		match self {
 			Token::String(s) => Some(s),
 			_ => None,
@@ -199,7 +191,7 @@ impl Token {
 	}
 
 	/// Converts token to...
-	pub fn to_fixed_array(self) -> Option<Vec<Token>> {
+	pub fn into_fixed_array(self) -> Option<Vec<Token>> {
 		match self {
 			Token::FixedArray(arr) => Some(arr),
 			_ => None,
@@ -207,7 +199,7 @@ impl Token {
 	}
 
 	/// Converts token to...
-	pub fn to_array(self) -> Option<Vec<Token>> {
+	pub fn into_array(self) -> Option<Vec<Token>> {
 		match self {
 			Token::Array(arr) => Some(arr),
 			_ => None,

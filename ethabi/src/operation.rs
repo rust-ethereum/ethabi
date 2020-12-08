@@ -63,7 +63,6 @@ impl<'a> Deserialize<'a> for Operation {
 mod tests {
 	use super::Operation;
 	use crate::{Function, Param, ParamType};
-	use serde_json;
 
 	#[test]
 	fn deserialize_operation() {

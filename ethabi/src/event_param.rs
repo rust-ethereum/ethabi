@@ -87,7 +87,7 @@ impl<'a> Visitor<'a> for EventParamVisitor {
 		let kind = kind.ok_or_else(|| Error::missing_field("kind")).and_then(|param_type| {
 			if let ParamType::Tuple(_) = param_type {
 				let tuple_params = components.ok_or_else(|| Error::missing_field("components"))?;
-				Ok(ParamType::Tuple(tuple_params.into_iter().map(|param| param.kind).map(Box::new).collect()))
+				Ok(ParamType::Tuple(tuple_params.into_iter().map(|param| param.kind).collect()))
 			} else {
 				Ok(param_type)
 			}
@@ -100,7 +100,6 @@ impl<'a> Visitor<'a> for EventParamVisitor {
 #[cfg(test)]
 mod tests {
 	use crate::{EventParam, ParamType};
-	use serde_json;
 
 	#[test]
 	fn event_param_deserialization() {
@@ -144,10 +143,7 @@ mod tests {
 			deserialized,
 			EventParam {
 				name: "foo".to_owned(),
-				kind: ParamType::Tuple(vec![
-					Box::new(ParamType::Uint(48)),
-					Box::new(ParamType::Tuple(vec![Box::new(ParamType::Address)]))
-				]),
+				kind: ParamType::Tuple(vec![ParamType::Uint(48), ParamType::Tuple(vec![ParamType::Address])]),
 				indexed: true,
 			}
 		);

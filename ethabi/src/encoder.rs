@@ -102,7 +102,7 @@ impl Mediate {
 	}
 }
 
-fn encode_head_tail(mediates: &Vec<Mediate>) -> Vec<Word> {
+fn encode_head_tail(mediates: &[Mediate]) -> Vec<Word> {
 	let heads_len = mediates.iter().fold(0, |acc, m| acc + m.head_len());
 
 	let (mut result, len) =
@@ -122,7 +122,7 @@ fn encode_head_tail(mediates: &Vec<Mediate>) -> Vec<Word> {
 
 /// Encodes vector of tokens into ABI compliant vector of bytes.
 pub fn encode(tokens: &[Token]) -> Bytes {
-	let mediates = &tokens.iter().map(encode_token).collect();
+	let mediates = &tokens.iter().map(encode_token).collect::<Vec<_>>();
 
 	encode_head_tail(mediates).iter().flat_map(|word| word.to_vec()).collect()
 }
@@ -181,7 +181,7 @@ mod tests {
 	#[test]
 	fn encode_address() {
 		let address = Token::Address([0x11u8; 20].into());
-		let encoded = encode(&vec![address]);
+		let encoded = encode(&[address]);
 		let expected = hex!("0000000000000000000000001111111111111111111111111111111111111111");
 		assert_eq!(encoded, expected);
 	}
@@ -191,7 +191,7 @@ mod tests {
 		let address1 = Token::Address([0x11u8; 20].into());
 		let address2 = Token::Address([0x22u8; 20].into());
 		let addresses = Token::Array(vec![address1, address2]);
-		let encoded = encode(&vec![addresses]);
+		let encoded = encode(&[addresses]);
 		let expected = hex!(
 			"
 			0000000000000000000000000000000000000000000000000000000000000020
@@ -209,7 +209,7 @@ mod tests {
 		let address1 = Token::Address([0x11u8; 20].into());
 		let address2 = Token::Address([0x22u8; 20].into());
 		let addresses = Token::FixedArray(vec![address1, address2]);
-		let encoded = encode(&vec![addresses]);
+		let encoded = encode(&[addresses]);
 		let expected = hex!(
 			"
 			0000000000000000000000001111111111111111111111111111111111111111
@@ -224,7 +224,7 @@ mod tests {
 	fn encode_two_addresses() {
 		let address1 = Token::Address([0x11u8; 20].into());
 		let address2 = Token::Address([0x22u8; 20].into());
-		let encoded = encode(&vec![address1, address2]);
+		let encoded = encode(&[address1, address2]);
 		let expected = hex!(
 			"
 			0000000000000000000000001111111111111111111111111111111111111111
@@ -244,7 +244,7 @@ mod tests {
 		let array0 = Token::Array(vec![address1, address2]);
 		let array1 = Token::Array(vec![address3, address4]);
 		let fixed = Token::FixedArray(vec![array0, array1]);
-		let encoded = encode(&vec![fixed]);
+		let encoded = encode(&[fixed]);
 		let expected = hex!(
 			"
 			0000000000000000000000000000000000000000000000000000000000000020
@@ -271,7 +271,7 @@ mod tests {
 		let array0 = Token::FixedArray(vec![address1, address2]);
 		let array1 = Token::FixedArray(vec![address3, address4]);
 		let dynamic = Token::Array(vec![array0, array1]);
-		let encoded = encode(&vec![dynamic]);
+		let encoded = encode(&[dynamic]);
 		let expected = hex!(
 			"
 			0000000000000000000000000000000000000000000000000000000000000020
@@ -293,7 +293,7 @@ mod tests {
 		let array0 = Token::Array(vec![address1]);
 		let array1 = Token::Array(vec![address2]);
 		let dynamic = Token::Array(vec![array0, array1]);
-		let encoded = encode(&vec![dynamic]);
+		let encoded = encode(&[dynamic]);
 		let expected = hex!(
 			"
 			0000000000000000000000000000000000000000000000000000000000000020
@@ -319,7 +319,7 @@ mod tests {
 		let array0 = Token::Array(vec![address1, address2]);
 		let array1 = Token::Array(vec![address3, address4]);
 		let dynamic = Token::Array(vec![array0, array1]);
-		let encoded = encode(&vec![dynamic]);
+		let encoded = encode(&[dynamic]);
 		let expected = hex!(
 			"
 			0000000000000000000000000000000000000000000000000000000000000020
@@ -347,7 +347,7 @@ mod tests {
 		let array0 = Token::FixedArray(vec![address1, address2]);
 		let array1 = Token::FixedArray(vec![address3, address4]);
 		let fixed = Token::FixedArray(vec![array0, array1]);
-		let encoded = encode(&vec![fixed]);
+		let encoded = encode(&[fixed]);
 		let expected = hex!(
 			"
 			0000000000000000000000001111111111111111111111111111111111111111
@@ -363,7 +363,7 @@ mod tests {
 	#[test]
 	fn encode_empty_array() {
 		// Empty arrays
-		let encoded = encode(&vec![Token::Array(vec![]), Token::Array(vec![])]);
+		let encoded = encode(&[Token::Array(vec![]), Token::Array(vec![])]);
 		let expected = hex!(
 			"
 			0000000000000000000000000000000000000000000000000000000000000040
@@ -376,7 +376,7 @@ mod tests {
 		assert_eq!(encoded, expected);
 
 		// Nested empty arrays
-		let encoded = encode(&vec![Token::Array(vec![Token::Array(vec![])]), Token::Array(vec![Token::Array(vec![])])]);
+		let encoded = encode(&[Token::Array(vec![Token::Array(vec![])]), Token::Array(vec![Token::Array(vec![])])]);
 		let expected = hex!(
 			"
 			0000000000000000000000000000000000000000000000000000000000000040
@@ -396,7 +396,7 @@ mod tests {
 	#[test]
 	fn encode_bytes() {
 		let bytes = Token::Bytes(vec![0x12, 0x34]);
-		let encoded = encode(&vec![bytes]);
+		let encoded = encode(&[bytes]);
 		let expected = hex!(
 			"
 			0000000000000000000000000000000000000000000000000000000000000020
@@ -411,7 +411,7 @@ mod tests {
 	#[test]
 	fn encode_fixed_bytes() {
 		let bytes = Token::FixedBytes(vec![0x12, 0x34]);
-		let encoded = encode(&vec![bytes]);
+		let encoded = encode(&[bytes]);
 		let expected = hex!("1234000000000000000000000000000000000000000000000000000000000000");
 		assert_eq!(encoded, expected);
 	}
@@ -419,7 +419,7 @@ mod tests {
 	#[test]
 	fn encode_string() {
 		let s = Token::String("gavofyork".to_owned());
-		let encoded = encode(&vec![s]);
+		let encoded = encode(&[s]);
 		let expected = hex!(
 			"
 			0000000000000000000000000000000000000000000000000000000000000020
@@ -434,7 +434,7 @@ mod tests {
 	#[test]
 	fn encode_bytes2() {
 		let bytes = Token::Bytes(hex!("10000000000000000000000000000000000000000000000000000000000002").to_vec());
-		let encoded = encode(&vec![bytes]);
+		let encoded = encode(&[bytes]);
 		let expected = hex!(
 			"
 			0000000000000000000000000000000000000000000000000000000000000020
@@ -457,7 +457,7 @@ mod tests {
 			)
 			.to_vec(),
 		);
-		let encoded = encode(&vec![bytes]);
+		let encoded = encode(&[bytes]);
 		let expected = hex!(
 			"
 			0000000000000000000000000000000000000000000000000000000000000020
@@ -474,7 +474,7 @@ mod tests {
 	fn encode_two_bytes() {
 		let bytes1 = Token::Bytes(hex!("10000000000000000000000000000000000000000000000000000000000002").to_vec());
 		let bytes2 = Token::Bytes(hex!("0010000000000000000000000000000000000000000000000000000000000002").to_vec());
-		let encoded = encode(&vec![bytes1, bytes2]);
+		let encoded = encode(&[bytes1, bytes2]);
 		let expected = hex!(
 			"
 			0000000000000000000000000000000000000000000000000000000000000040
@@ -493,7 +493,7 @@ mod tests {
 	fn encode_uint() {
 		let mut uint = [0u8; 32];
 		uint[31] = 4;
-		let encoded = encode(&vec![Token::Uint(uint.into())]);
+		let encoded = encode(&[Token::Uint(uint.into())]);
 		let expected = hex!("0000000000000000000000000000000000000000000000000000000000000004");
 		assert_eq!(encoded, expected);
 	}
@@ -502,21 +502,21 @@ mod tests {
 	fn encode_int() {
 		let mut int = [0u8; 32];
 		int[31] = 4;
-		let encoded = encode(&vec![Token::Int(int.into())]);
+		let encoded = encode(&[Token::Int(int.into())]);
 		let expected = hex!("0000000000000000000000000000000000000000000000000000000000000004");
 		assert_eq!(encoded, expected);
 	}
 
 	#[test]
 	fn encode_bool() {
-		let encoded = encode(&vec![Token::Bool(true)]);
+		let encoded = encode(&[Token::Bool(true)]);
 		let expected = hex!("0000000000000000000000000000000000000000000000000000000000000001");
 		assert_eq!(encoded, expected);
 	}
 
 	#[test]
 	fn encode_bool2() {
-		let encoded = encode(&vec![Token::Bool(false)]);
+		let encoded = encode(&[Token::Bool(false)]);
 		let expected = hex!("0000000000000000000000000000000000000000000000000000000000000000");
 		assert_eq!(encoded, expected);
 	}
@@ -531,7 +531,7 @@ mod tests {
 		)
 		.to_vec();
 		let encoded =
-			encode(&vec![Token::Int(5.into()), Token::Bytes(bytes.clone()), Token::Int(3.into()), Token::Bytes(bytes)]);
+			encode(&[Token::Int(5.into()), Token::Bytes(bytes.clone()), Token::Int(3.into()), Token::Bytes(bytes)]);
 
 		let expected = hex!(
 			"
@@ -592,7 +592,7 @@ mod tests {
 	#[test]
 	fn encode_dynamic_array_of_bytes() {
 		let bytes = hex!("019c80031b20d5e69c8093a571162299032018d913930d93ab320ae5ea44a4218a274f00d607");
-		let encoded = encode(&vec![Token::Array(vec![Token::Bytes(bytes.to_vec())])]);
+		let encoded = encode(&[Token::Array(vec![Token::Bytes(bytes.to_vec())])]);
 
 		let expected = hex!(
 			"
@@ -612,7 +612,7 @@ mod tests {
 	fn encode_dynamic_array_of_bytes2() {
 		let bytes = hex!("4444444444444444444444444444444444444444444444444444444444444444444444444444");
 		let bytes2 = hex!("6666666666666666666666666666666666666666666666666666666666666666666666666666");
-		let encoded = encode(&vec![Token::Array(vec![Token::Bytes(bytes.to_vec()), Token::Bytes(bytes2.to_vec())])]);
+		let encoded = encode(&[Token::Array(vec![Token::Bytes(bytes.to_vec()), Token::Bytes(bytes2.to_vec())])]);
 
 		let expected = hex!(
 			"
@@ -636,7 +636,7 @@ mod tests {
 	fn encode_static_tuple_of_addresses() {
 		let address1 = Token::Address([0x11u8; 20].into());
 		let address2 = Token::Address([0x22u8; 20].into());
-		let encoded = encode(&vec![Token::Tuple(vec![address1, address2])]);
+		let encoded = encode(&[Token::Tuple(vec![address1, address2])]);
 
 		let expected = hex!(
 			"
@@ -653,7 +653,7 @@ mod tests {
 		let string1 = Token::String("gavofyork".to_owned());
 		let string2 = Token::String("gavofyork".to_owned());
 		let tuple = Token::Tuple(vec![string1, string2]);
-		let encoded = encode(&vec![tuple]);
+		let encoded = encode(&[tuple]);
 		let expected = hex!(
 			"
 			0000000000000000000000000000000000000000000000000000000000000020
@@ -673,7 +673,7 @@ mod tests {
 	fn encode_dynamic_tuple_of_bytes2() {
 		let bytes = hex!("4444444444444444444444444444444444444444444444444444444444444444444444444444");
 		let bytes2 = hex!("6666666666666666666666666666666666666666666666666666666666666666666666666666");
-		let encoded = encode(&vec![Token::Tuple(vec![Token::Bytes(bytes.to_vec()), Token::Bytes(bytes2.to_vec())])]);
+		let encoded = encode(&[Token::Tuple(vec![Token::Bytes(bytes.to_vec()), Token::Bytes(bytes2.to_vec())])]);
 
 		let expected = hex!(
 			"
@@ -699,7 +699,7 @@ mod tests {
 		let address1 = Token::Address([0x11u8; 20].into());
 		let address2 = Token::Address([0x22u8; 20].into());
 		let tuple = Token::Tuple(vec![uint, string, address1, address2]);
-		let encoded = encode(&vec![tuple]);
+		let encoded = encode(&[tuple]);
 		let expected = hex!(
 			"
             0000000000000000000000000000000000000000000000000000000000000020
@@ -727,7 +727,7 @@ mod tests {
 		let deep_tuple = Token::Tuple(vec![string5, string6]);
 		let inner_tuple = Token::Tuple(vec![string3, string4, deep_tuple]);
 		let outer_tuple = Token::Tuple(vec![string1, bool, string2, inner_tuple]);
-		let encoded = encode(&vec![outer_tuple]);
+		let encoded = encode(&[outer_tuple]);
 		let expected = hex!(
 			"
 			0000000000000000000000000000000000000000000000000000000000000020
@@ -768,7 +768,7 @@ mod tests {
 		let address2 = Token::Address([0x33u8; 20].into());
 		let address3 = Token::Address([0x44u8; 20].into());
 		let bool2 = Token::Bool(false);
-		let encoded = encode(&vec![address1, tuple, address2, address3, bool2]);
+		let encoded = encode(&[address1, tuple, address2, address3, bool2]);
 		let expected = hex!(
 			"
 			0000000000000000000000002222222222222222222222222222222222222222
@@ -798,7 +798,7 @@ mod tests {
 		let tuple = Token::Tuple(vec![address2, bool1, bool2]);
 		let address3 = Token::Address([0x33u8; 20].into());
 		let address4 = Token::Address([0x44u8; 20].into());
-		let encoded = encode(&vec![address1, tuple, address3, address4]);
+		let encoded = encode(&[address1, tuple, address3, address4]);
 		let expected = hex!(
 			"
 			0000000000000000000000001111111111111111111111111111111111111111
