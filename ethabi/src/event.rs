@@ -9,8 +9,8 @@
 //! Contract event.
 
 use serde::Deserialize;
+use sha3::{Digest, Keccak256};
 use std::collections::HashMap;
-use tiny_keccak::keccak256;
 
 use crate::{
 	decode, encode, signature::long_signature, Error, EventParam, Hash, Log, LogParam, ParamType, RawLog,
@@ -61,7 +61,7 @@ impl Event {
 				data.copy_from_slice(&encoded);
 				Ok(data.into())
 			} else {
-				Ok(keccak256(&encoded).into())
+				Ok(Hash::from_slice(Keccak256::digest(&encoded).as_slice()))
 			}
 		}
 

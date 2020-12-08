@@ -9,9 +9,9 @@ use ethabi::{
 };
 use itertools::Itertools;
 use rustc_hex::{FromHex, ToHex};
+use sha3::{Digest, Keccak256};
 use std::fs::File;
 use structopt::StructOpt;
-use tiny_keccak::Keccak;
 
 #[derive(StructOpt, Debug)]
 /// Ethereum ABI coder.
@@ -245,12 +245,7 @@ fn decode_log(path: &str, name_or_signature: &str, topics: &[String], data: &str
 }
 
 fn hash_signature(sig: &str) -> Hash {
-	let mut result = [0u8; 32];
-	let data = sig.replace(" ", "").into_bytes();
-	let mut sponge = Keccak::new_keccak256();
-	sponge.update(&data);
-	sponge.finalize(&mut result);
-	Hash::from_slice(&result)
+	Hash::from_slice(Keccak256::digest(&sig.replace(" ", "").as_bytes()).as_slice())
 }
 
 #[cfg(test)]
