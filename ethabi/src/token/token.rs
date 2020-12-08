@@ -8,7 +8,6 @@
 
 //! Ethereum ABI params.
 use crate::{Address, Bytes, FixedBytes, ParamType, Uint};
-use hex::ToHex;
 use std::fmt;
 
 /// Ethereum ABI params.
@@ -70,7 +69,7 @@ impl fmt::Display for Token {
 			Token::Bool(b) => write!(f, "{}", b),
 			Token::String(ref s) => write!(f, "{}", s),
 			Token::Address(ref a) => write!(f, "{:x}", a),
-			Token::Bytes(ref bytes) | Token::FixedBytes(ref bytes) => write!(f, "{}", bytes.to_hex::<String>()),
+			Token::Bytes(ref bytes) | Token::FixedBytes(ref bytes) => write!(f, "{}", hex::encode(&bytes)),
 			Token::Uint(ref i) | Token::Int(ref i) => write!(f, "{:x}", i),
 			Token::Array(ref arr) | Token::FixedArray(ref arr) => {
 				let s = arr.iter().map(|ref t| format!("{}", t)).collect::<Vec<String>>().join(",");

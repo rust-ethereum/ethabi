@@ -8,5 +8,5 @@ edition = "2018"
 ethabi = { path = "../ethabi" }
 ethabi-derive = { path = "../derive" }
 ethabi-contract = { path = "../contract" }
-rustc-hex = "2.0"
-hex-literal = "0.2.0"
+hex = "0.4"
+hex-literal = "0.3"
