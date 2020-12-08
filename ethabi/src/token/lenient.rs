@@ -11,6 +11,7 @@ use crate::{
 	token::{StrictTokenizer, Tokenizer},
 	Uint,
 };
+use anyhow::anyhow;
 
 /// Tries to parse string as a token. Does not require string to clearly represent the value.
 pub struct LenientTokenizer;
@@ -61,12 +62,12 @@ impl Tokenizer for LenientTokenizer {
 			if abs.is_zero() {
 				return Ok(abs.into());
 			} else if abs > max + 1 {
-				return Err(Error::Other("int256 parse error: Underflow".into()));
+				return Err(anyhow!("int256 parse error: Underflow").into());
 			}
 			!abs + 1 // two's complement
 		} else {
 			if abs > max {
-				return Err(Error::Other("int256 parse error: Overflow".into()));
+				return Err(anyhow!("int256 parse error: Overflow").into());
 			}
 			abs
 		};
