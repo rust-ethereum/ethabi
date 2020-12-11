@@ -24,4 +24,4 @@ uint = "0.8.2"
 
 [dev-dependencies]
 hex-literal = "0.3"
-paste = "0.1.6"
+paste = "1"
