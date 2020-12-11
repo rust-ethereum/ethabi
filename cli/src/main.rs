@@ -1,6 +1,4 @@
-mod error;
-
-use crate::error::Error;
+use anyhow::anyhow;
 use ethabi::{
 	decode, encode,
 	param_type::{ParamType, Reader},
@@ -69,13 +67,13 @@ enum Decode {
 	},
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> anyhow::Result<()> {
 	println!("{}", execute(std::env::args())?);
 
 	Ok(())
 }
 
-fn execute<I>(args: I) -> Result<String, Error>
+fn execute<I>(args: I) -> anyhow::Result<String>
 where
 	I: IntoIterator,
 	I::Item: Into<std::ffi::OsString> + Clone,
@@ -97,7 +95,7 @@ where
 	}
 }
 
-fn load_function(path: &str, name_or_signature: &str) -> Result<Function, Error> {
+fn load_function(path: &str, name_or_signature: &str) -> anyhow::Result<Function> {
 	let file = File::open(path)?;
 	let contract = Contract::load(file)?;
 	let params_start = name_or_signature.find('(');
@@ -112,7 +110,7 @@ fn load_function(path: &str, name_or_signature: &str) -> Result<Function, Error>
 				.iter()
 				.find(|f| f.signature() == name_or_signature)
 				.cloned()
-				.ok_or_else(|| Error::InvalidFunctionSignature(name_or_signature.to_owned()))
+				.ok_or_else(|| anyhow!("invalid function signature `{}`", name_or_signature))
 		}
 
 		// It's a name
@@ -121,13 +119,16 @@ fn load_function(path: &str, name_or_signature: &str) -> Result<Function, Error>
 			match functions.len() {
 				0 => unreachable!(),
 				1 => Ok(functions[0].clone()),
-				_ => Err(Error::AmbiguousFunctionName(name_or_signature.to_owned())),
+				_ => Err(anyhow!(
+					"More than one function found for name `{}`, try providing the full signature",
+					name_or_signature
+				)),
 			}
 		}
 	}
 }
 
-fn load_event(path: &str, name_or_signature: &str) -> Result<Event, Error> {
+fn load_event(path: &str, name_or_signature: &str) -> anyhow::Result<Event> {
 	let file = File::open(path)?;
 	let contract = Contract::load(file)?;
 	let params_start = name_or_signature.find('(');
@@ -142,7 +143,7 @@ fn load_event(path: &str, name_or_signature: &str) -> Result<Event, Error> {
 				.iter()
 				.find(|event| event.signature() == signature)
 				.cloned()
-				.ok_or(Error::InvalidSignature(signature))
+				.ok_or_else(|| anyhow!("Invalid signature `{}`", signature))
 		}
 
 		// It's a name.
@@ -151,13 +152,16 @@ fn load_event(path: &str, name_or_signature: &str) -> Result<Event, Error> {
 			match events.len() {
 				0 => unreachable!(),
 				1 => Ok(events[0].clone()),
-				_ => Err(Error::AmbiguousEventName(name_or_signature.to_string())),
+				_ => Err(anyhow!(
+					"More than one function found for name `{}`, try providing the full signature",
+					name_or_signature
+				)),
 			}
 		}
 	}
 }
 
-fn parse_tokens(params: &[(ParamType, &str)], lenient: bool) -> Result<Vec<Token>, Error> {
+fn parse_tokens(params: &[(ParamType, &str)], lenient: bool) -> anyhow::Result<Vec<Token>> {
 	params
 		.iter()
 		.map(|&(ref param, value)| match lenient {
@@ -168,7 +172,7 @@ fn parse_tokens(params: &[(ParamType, &str)], lenient: bool) -> Result<Vec<Token
 		.map_err(From::from)
 }
 
-fn encode_input(path: &str, name_or_signature: &str, values: &[String], lenient: bool) -> Result<String, Error> {
+fn encode_input(path: &str, name_or_signature: &str, values: &[String], lenient: bool) -> anyhow::Result<String> {
 	let function = load_function(path, name_or_signature)?;
 
 	let params: Vec<_> =
@@ -180,7 +184,7 @@ fn encode_input(path: &str, name_or_signature: &str, values: &[String], lenient:
 	Ok(result.to_hex())
 }
 
-fn encode_params(params: &[String], lenient: bool) -> Result<String, Error> {
+fn encode_params(params: &[String], lenient: bool) -> anyhow::Result<String> {
 	assert_eq!(params.len() % 2, 0);
 
 	let params = params
@@ -195,7 +199,7 @@ fn encode_params(params: &[String], lenient: bool) -> Result<String, Error> {
 	Ok(result.to_hex())
 }
 
-fn decode_call_output(path: &str, name_or_signature: &str, data: &str) -> Result<String, Error> {
+fn decode_call_output(path: &str, name_or_signature: &str, data: &str) -> anyhow::Result<String> {
 	let function = load_function(path, name_or_signature)?;
 	let data: Vec<u8> = data.from_hex()?;
 	let tokens = function.decode_output(&data)?;
@@ -213,7 +217,7 @@ fn decode_call_output(path: &str, name_or_signature: &str, data: &str) -> Result
 	Ok(result)
 }
 
-fn decode_params(types: &[String], data: &str) -> Result<String, Error> {
+fn decode_params(types: &[String], data: &str) -> anyhow::Result<String> {
 	let types: Vec<ParamType> = types.iter().map(|s| Reader::read(s)).collect::<Result<_, _>>()?;
 
 	let data: Vec<u8> = data.from_hex()?;
@@ -228,7 +232,7 @@ fn decode_params(types: &[String], data: &str) -> Result<String, Error> {
 	Ok(result)
 }
 
-fn decode_log(path: &str, name_or_signature: &str, topics: &[String], data: &str) -> Result<String, Error> {
+fn decode_log(path: &str, name_or_signature: &str, topics: &[String], data: &str) -> anyhow::Result<String> {
 	let event = load_event(path, name_or_signature)?;
 	let topics: Vec<Hash> = topics.iter().map(|t| t.parse()).collect::<Result<_, _>>()?;
 	let data = data.from_hex()?;
@@ -282,7 +286,7 @@ mod tests {
 		let result = execute(command);
 		assert!(result.is_err());
 		let err = result.unwrap_err();
-		assert_eq!(err.to_string(), "Ethabi error: Uint parse error: InvalidCharacter");
+		assert_eq!(err.to_string(), "Uint parse error: InvalidCharacter");
 	}
 
 	#[test]
@@ -303,14 +307,14 @@ mod tests {
 
 		// i256::min_value() - 1 is too much
 		let command = "ethabi encode params -v int256 -57896044618658097711785492504343953926634992332820282019728792003956564819969 --lenient".split(' ');
-		assert_eq!(execute(command).unwrap_err().to_string(), "Ethabi error: int256 parse error: Underflow");
+		assert_eq!(execute(command).unwrap_err().to_string(), "int256 parse error: Underflow");
 	}
 
 	#[test]
 	fn int_encode_large_positive_numbers() {
 		// Overflow
 		let command = "ethabi encode params -v int256 100000000000000000000000000000000022222222222222221111111111111333333333344556 --lenient".split(' ');
-		assert_eq!(execute(command).unwrap_err().to_string(), "Ethabi error: int256 parse error: Overflow");
+		assert_eq!(execute(command).unwrap_err().to_string(), "int256 parse error: Overflow");
 
 		// i256::max_value() is ok
 		let command = "ethabi encode params -v int256 57896044618658097711785492504343953926634992332820282019728792003956564819967 --lenient".split(' ');
@@ -319,7 +323,7 @@ mod tests {
 
 		// i256::max_value() + 1 is too much
 		let command = "ethabi encode params -v int256 57896044618658097711785492504343953926634992332820282019728792003956564819968 --lenient".split(' ');
-		assert_eq!(execute(command).unwrap_err().to_string(), "Ethabi error: int256 parse error: Overflow");
+		assert_eq!(execute(command).unwrap_err().to_string(), "int256 parse error: Overflow");
 	}
 
 	#[test]
