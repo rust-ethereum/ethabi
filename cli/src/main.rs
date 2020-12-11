@@ -12,8 +12,6 @@ use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
 /// Ethereum ABI coder.
-///
-/// Copyright 2016-2019 Parity Technologies (UK) Limited
 enum Opt {
 	/// Encode ABI call.
 	Encode(Encode),
