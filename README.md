@@ -1,12 +1,5 @@
 # ethabi
 
-[![Build Status][travis-image]][travis-url][![Build coverage][coveralls-image]][coveralls-url]
-
-[travis-image]: https://travis-ci.org/paritytech/ethabi.svg?branch=master
-[travis-url]: https://travis-ci.org/paritytech/ethabi
-[coveralls-image]: https://coveralls.io/repos/github/paritytech/ethabi/badge.svg?branch=master
-[coveralls-url]: http://coveralls.io/github/paritytech/ethabi?branch=master
-
 The ABI, Application Binary Interface, is basically how you call functions in a contract and get data back.
 
 > An ABI determines such details as how functions are called and in which binary format information should be passed from one program component to the next...
@@ -24,17 +17,8 @@ Please make sure to pre-process your ABI in case it's not supported before using
 
 ### Installation
 
-- via cargo
-
   ```
   cargo install ethabi-cli
-  ```
-
-- via homebrew
-
-  ```
-  brew tap paritytech/paritytech
-  brew install ethabi
   ```
 
 ### Usage
@@ -242,17 +226,3 @@ ethabi decode log ./examples/event.json Event -l 0000000000000000000000000000000
 
 > a bool true<br/>
 > b address 4444444444444444444444444444444444444444
-
-### Alternative tools
-
--  [ethabi-js](https://github.com/jacogr/ethabi-js) - javascript port of this library created by [@jacogr](https://github.com/jacogr)
-
-## Parity Ethereum toolchain
-
-In addition to the Parity Ethereum client, there are additional tools in this repository available:
-
-- [evmbin](https://github.com/paritytech/parity-ethereum/blob/master/evmbin/) - EVM implementation for Parity Ethereum.
-- [ethabi](https://github.com/paritytech/ethabi) - Parity Ethereum function calls encoding.
-- [ethstore](https://github.com/paritytech/parity-ethereum/blob/master/ethstore/) - Parity Ethereum key management.
-- [ethkey](https://github.com/paritytech/parity-ethereum/blob/master/ethkey/) - Parity Ethereum keys generator.
-- [whisper](https://github.com/paritytech/parity-ethereum/blob/master/whisper/) - Implementation of Whisper-v2 PoC.
