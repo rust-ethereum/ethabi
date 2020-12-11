@@ -1,8 +1,12 @@
 [package]
 name = "ethabi-contract"
 version = "11.0.0"
-authors = ["Parity Technologies <admin@parity.io>"]
-homepage = "https://github.com/paritytech/ethabi"
+authors = [
+    "Parity Technologies <admin@parity.io>",
+    "Artem Vorotnikov <artem@vorotnikov.me>",
+    "Nicholas Rodrigues Lordello <nlordell@gmail.com>",
+]
+homepage = "https://github.com/rust-ethereum/ethabi"
 license = "MIT/Apache-2.0"
 keywords = ["ethereum", "eth", "abi", "solidity", "derive"]
 description = "Easy to use conversion of ethereum contract calls to bytecode."

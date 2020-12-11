@@ -1,8 +1,12 @@
 [package]
 name = "ethabi"
 version = "12.0.0"
-authors = ["Parity Technologies <admin@parity.io>"]
-homepage = "https://github.com/paritytech/ethabi"
+authors = [
+    "Parity Technologies <admin@parity.io>",
+    "Artem Vorotnikov <artem@vorotnikov.me>",
+    "Nicholas Rodrigues Lordello <nlordell@gmail.com>",
+]
+homepage = "https://github.com/rust-ethereum/ethabi"
 license = "Apache-2.0"
 keywords = ["ethereum", "eth", "abi", "solidity"]
 description = "Easy to use conversion of ethereum contract calls to bytecode."
@@ -21,7 +25,3 @@ uint = "0.8.2"
 [dev-dependencies]
 hex-literal = "0.2.1"
 paste = "0.1.6"
-
-[badges]
-travis-ci = { repository = "paritytech/ethabi", branch = "master" }
-coveralls = { repository = "paritytech/ethabi", branch = "master" }
