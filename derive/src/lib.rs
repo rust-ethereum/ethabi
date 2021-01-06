@@ -20,7 +20,7 @@ use ethabi::{Contract, Param, ParamType, Result};
 use heck::SnakeCase;
 use quote::quote;
 use std::{env, fs, path::PathBuf};
-use syn::export::Span;
+use proc_macro2::Span;
 
 const ERROR_MSG: &str = "`derive(EthabiContract)` failed";
 
