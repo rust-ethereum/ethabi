@@ -7,7 +7,7 @@
 // except according to those terms.
 
 use heck::{CamelCase, SnakeCase};
-use proc_macro2::{TokenStream, Span};
+use proc_macro2::{Span, TokenStream};
 use quote::quote;
 
 use super::{from_token, get_template_names, rust_type, to_syntax_string, to_token};
