@@ -18,9 +18,9 @@ mod function;
 use anyhow::anyhow;
 use ethabi::{Contract, Param, ParamType, Result};
 use heck::SnakeCase;
+use proc_macro2::Span;
 use quote::quote;
 use std::{env, fs, path::PathBuf};
-use syn::export::Span;
 
 const ERROR_MSG: &str = "`derive(EthabiContract)` failed";
 

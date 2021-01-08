@@ -1,6 +1,6 @@
 [package]
 name = "ethabi-derive"
-version = "12.0.0"
+version = "13.0.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 homepage = "https://github.com/paritytech/ethabi"
 license = "Apache-2.0"
@@ -13,7 +13,7 @@ proc-macro = true
 
 [dependencies]
 anyhow = "1"
-ethabi = { path = "../ethabi", version = "12.0.0" }
+ethabi = { path = "../ethabi", version = "13.0.0" }
 heck = "0.3.1"
 syn = { version = "1.0.13", default-features = false, features = ["derive", "parsing", "printing", "proc-macro"] }
 quote = "1.0.2"
