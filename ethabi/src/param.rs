@@ -264,10 +264,8 @@ mod tests {
 			Param {
 				name: "foo".to_owned(),
 				kind: ParamType::Tuple(vec![
-					Box::new(ParamType::Array(Box::new(ParamType::Tuple(vec![Box::new(ParamType::Address)])))),
-					Box::new(
-						ParamType::FixedArray(Box::new(ParamType::Tuple(vec![Box::new(ParamType::Address)])), 42,)
-					),
+					ParamType::Array(Box::new(ParamType::Tuple(vec![ParamType::Address]))),
+					ParamType::FixedArray(Box::new(ParamType::Tuple(vec![ParamType::Address])), 42,)
 				]),
 			}
 		);
