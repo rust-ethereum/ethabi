@@ -8,7 +8,7 @@
 
 //! ABI decoder.
 
-use crate::{Word, Token, Error, ParamType};
+use crate::{Error, ParamType, Token, Word};
 
 #[derive(Debug)]
 struct DecodeResult {
@@ -92,54 +92,36 @@ fn decode_param(param: &ParamType, data: &[u8], offset: usize) -> Result<DecodeR
 			let slice = peek_32_bytes(data, offset)?;
 			let mut address = [0u8; 20];
 			address.copy_from_slice(&slice[12..]);
-			let result = DecodeResult {
-				token: Token::Address(address.into()),
-				new_offset: offset + 32,
-			};
+			let result = DecodeResult { token: Token::Address(address.into()), new_offset: offset + 32 };
 			Ok(result)
 		}
 		ParamType::Int(_) => {
 			let slice = peek_32_bytes(data, offset)?;
-			let result = DecodeResult {
-				token: Token::Int(slice.clone().into()),
-				new_offset: offset + 32,
-			};
+			let result = DecodeResult { token: Token::Int(slice.clone().into()), new_offset: offset + 32 };
 			Ok(result)
 		}
 		ParamType::Uint(_) => {
 			let slice = peek_32_bytes(data, offset)?;
-			let result = DecodeResult {
-				token: Token::Uint(slice.clone().into()),
-				new_offset: offset + 32,
-			};
+			let result = DecodeResult { token: Token::Uint(slice.clone().into()), new_offset: offset + 32 };
 			Ok(result)
 		}
 		ParamType::Bool => {
 			let b = as_bool(&peek_32_bytes(data, offset)?)?;
-			let result = DecodeResult {
-				token: Token::Bool(b),
-				new_offset: offset + 32,
-			};
+			let result = DecodeResult { token: Token::Bool(b), new_offset: offset + 32 };
 			Ok(result)
 		}
 		ParamType::FixedBytes(len) => {
 			// FixedBytes is anything from bytes1 to bytes32. These values
 			// are padded with trailing zeros to fill 32 bytes.
 			let bytes = take_bytes(data, offset, len)?;
-			let result = DecodeResult {
-				token: Token::FixedBytes(bytes),
-				new_offset: offset + 32,
-			};
+			let result = DecodeResult { token: Token::FixedBytes(bytes), new_offset: offset + 32 };
 			Ok(result)
 		}
 		ParamType::Bytes => {
 			let dynamic_offset = as_usize(&peek_32_bytes(data, offset)?)?;
 			let len = as_usize(&peek_32_bytes(data, dynamic_offset)?)?;
 			let bytes = take_bytes(data, dynamic_offset + 32, len)?;
-			let result = DecodeResult {
-				token: Token::Bytes(bytes),
-				new_offset: offset + 32,
-			};
+			let result = DecodeResult { token: Token::Bytes(bytes), new_offset: offset + 32 };
 			Ok(result)
 		}
 		ParamType::String => {
@@ -172,21 +154,15 @@ fn decode_param(param: &ParamType, data: &[u8], offset: usize) -> Result<DecodeR
 				tokens.push(res.token);
 			}
 
-			let result = DecodeResult {
-				token: Token::Array(tokens),
-				new_offset: offset + 32,
-			};
+			let result = DecodeResult { token: Token::Array(tokens), new_offset: offset + 32 };
 
 			Ok(result)
 		}
 		ParamType::FixedArray(ref t, len) => {
 			let is_dynamic = param.is_dynamic();
 
-			let (tail, mut new_offset) = if is_dynamic {
-				(&data[as_usize(&peek_32_bytes(data, offset)?)?..], 0)
-			} else {
-				(data, offset)
-			};
+			let (tail, mut new_offset) =
+				if is_dynamic { (&data[as_usize(&peek_32_bytes(data, offset)?)?..], 0) } else { (data, offset) };
 
 			let mut tokens = vec![];
 
@@ -208,11 +184,8 @@ fn decode_param(param: &ParamType, data: &[u8], offset: usize) -> Result<DecodeR
 
 			// The first element in a dynamic Tuple is an offset to the Tuple's data
 			// For a static Tuple the data begins right away
-			let (tail, mut new_offset) = if is_dynamic {
-				(&data[as_usize(&peek_32_bytes(data, offset)?)?..], 0)
-			} else {
-				(data, offset)
-			};
+			let (tail, mut new_offset) =
+				if is_dynamic { (&data[as_usize(&peek_32_bytes(data, offset)?)?..], 0) } else { (data, offset) };
 
 			let len = t.len();
 			let mut tokens = Vec::with_capacity(len);
@@ -237,8 +210,8 @@ fn decode_param(param: &ParamType, data: &[u8], offset: usize) -> Result<DecodeR
 
 #[cfg(test)]
 mod tests {
-	use hex_literal::hex;
 	use crate::{decode, ParamType, Token, Uint};
+	use hex_literal::hex;
 
 	#[test]
 	fn decode_from_empty_byte_slice() {
@@ -538,9 +511,6 @@ mod tests {
         "
 		);
 
-		assert_eq!(
-			decode(&[ParamType::String,], &encoded).unwrap(),
-			&[Token::String("不�".into())]
-		);
+		assert_eq!(decode(&[ParamType::String,], &encoded).unwrap(), &[Token::String("不�".into())]);
 	}
 }
