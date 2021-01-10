@@ -53,10 +53,7 @@ mod tests {
 		);
 		assert_eq!(
 			Writer::write(&ParamType::Array(Box::new(ParamType::Tuple(vec![
-				ParamType::Array(Box::new(ParamType::Tuple(vec![
-					ParamType::Int(256),
-					ParamType::Uint(256)
-				]))),
+				ParamType::Array(Box::new(ParamType::Tuple(vec![ParamType::Int(256), ParamType::Uint(256)]))),
 				ParamType::FixedBytes(32),
 			])))),
 			"((int256,uint256)[],bytes32)[]".to_owned()

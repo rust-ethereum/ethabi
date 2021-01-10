@@ -50,7 +50,10 @@ impl<'a> Visitor<'a> for ContractVisitor {
 		formatter.write_str("valid abi spec file")
 	}
 
-	fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error> where A: SeqAccess<'a> {
+	fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+	where
+		A: SeqAccess<'a>,
+	{
 		let mut result = Contract {
 			constructor: None,
 			functions: HashMap::default(),
@@ -72,10 +75,10 @@ impl<'a> Visitor<'a> for ContractVisitor {
 				}
 				Operation::Fallback => {
 					result.fallback = true;
-				},
+				}
 				Operation::Receive => {
 					result.receive = true;
-				},
+				}
 			}
 		}
 

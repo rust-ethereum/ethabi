@@ -203,14 +203,8 @@ mod tests {
 					ParamType::Tuple(vec![ParamType::Address, ParamType::Address]),
 					ParamType::Uint(256),
 					ParamType::Array(Box::new(ParamType::Tuple(vec![
-						ParamType::Array(Box::new(ParamType::Tuple(vec![
-							ParamType::Address,
-							ParamType::Bytes,
-						]))),
-						ParamType::Array(Box::new(ParamType::Tuple(vec![
-							ParamType::Address,
-							ParamType::Uint(256)
-						]))),
+						ParamType::Array(Box::new(ParamType::Tuple(vec![ParamType::Address, ParamType::Bytes,]))),
+						ParamType::Array(Box::new(ParamType::Tuple(vec![ParamType::Address, ParamType::Uint(256)]))),
 						ParamType::Uint(256),
 					]))),
 					ParamType::Uint(256),
