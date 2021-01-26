@@ -513,4 +513,22 @@ mod tests {
 
 		assert_eq!(decode(&[ParamType::String,], &encoded).unwrap(), &[Token::String("不�".into())]);
 	}
+
+	#[test]
+	fn decode_corrupted_dynamic_array() {
+		// line 1 at 0x00 =   0: tail offset of array
+		// line 2 at 0x20 =  32: length of array
+		// line 3 at 0x40 =  64: first word
+		// line 4 at 0x60 =  96: second word
+		let encoded = hex!(
+			"
+		0000000000000000000000000000000000000000000000000000000000000020
+		00000000000000000000000000000000000000000000000000000000ffffffff
+		0000000000000000000000000000000000000000000000000000000000000001
+		0000000000000000000000000000000000000000000000000000000000000002
+        "
+		);
+
+		assert!(decode(&[ParamType::Array(Box::new(ParamType::Uint(32)))], &encoded).is_err());
+	}
 }
