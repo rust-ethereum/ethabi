@@ -76,35 +76,32 @@ impl<'a> Visitor<'a> for ParamVisitor {
 			}
 		}
 		let name = name.ok_or_else(|| Error::missing_field("name"))?;
-		let kind =
-			kind.ok_or_else(|| Error::missing_field("kind")).and_then(|param_type: ParamType| match param_type {
-				ParamType::Tuple(_) => {
-					let tuple_params = components.ok_or_else(|| Error::missing_field("components"))?;
-					Ok(ParamType::Tuple(tuple_params.into_iter().map(|param| param.kind).collect()))
-				}
-				ParamType::Array(inner_param_type) => match *inner_param_type {
-					ParamType::Tuple(_) => {
-						let tuple_params = components.ok_or_else(|| Error::missing_field("components"))?;
-						Ok(ParamType::Array(Box::new(ParamType::Tuple(
-							tuple_params.into_iter().map(|param| param.kind).collect(),
-						))))
-					}
-					_ => Ok(ParamType::Array(inner_param_type)),
-				},
-				ParamType::FixedArray(inner_param_type, size) => match *inner_param_type {
-					ParamType::Tuple(_) => {
-						let tuple_params = components.ok_or_else(|| Error::missing_field("components"))?;
-						Ok(ParamType::FixedArray(
-							Box::new(ParamType::Tuple(tuple_params.into_iter().map(|param| param.kind).collect())),
-							size,
-						))
-					}
-					_ => Ok(ParamType::FixedArray(inner_param_type, size)),
-				},
-				_ => Ok(param_type),
-			})?;
+		let mut kind = kind.ok_or_else(|| Error::missing_field("kind"))?;
+		set_tuple_components::<V::Error>(&mut kind, components)?;
 		Ok(Param { name, kind })
 	}
+}
+
+fn inner_tuple(mut param: &mut ParamType) -> Option<&mut Vec<ParamType>> {
+	loop {
+		match param {
+			ParamType::Array(inner) => param = inner.as_mut(),
+			ParamType::FixedArray(inner, _) => param = inner.as_mut(),
+			ParamType::Tuple(inner) => return Some(inner),
+			_ => return None,
+		}
+	}
+}
+
+pub fn set_tuple_components<Error: serde::de::Error>(
+	kind: &mut ParamType,
+	components: Option<Vec<TupleParam>>,
+) -> Result<(), Error> {
+	if let Some(inner_tuple) = inner_tuple(kind) {
+		let tuple_params = components.ok_or_else(|| Error::missing_field("components"))?;
+		inner_tuple.extend(tuple_params.into_iter().map(|param| param.kind))
+	}
+	Ok(())
 }
 
 #[cfg(test)]
@@ -189,6 +186,36 @@ mod tests {
 					ParamType::Address,
 					ParamType::Address
 				]))),
+			}
+		);
+	}
+
+	#[test]
+	fn param_array_of_array_of_tuple_deserialization() {
+		let s = r#"{
+			"name": "foo",
+			"type": "tuple[][]",
+			"components": [
+				{
+					"name": "u0",
+					"type": "uint8"
+				},
+				{
+					"name": "u1",
+					"type": "uint16"
+				}
+			]
+		}"#;
+
+		let deserialized: Param = serde_json::from_str(s).unwrap();
+		assert_eq!(
+			deserialized,
+			Param {
+				name: "foo".to_owned(),
+				kind: ParamType::Array(Box::new(ParamType::Array(Box::new(ParamType::Tuple(vec![
+					ParamType::Uint(8),
+					ParamType::Uint(16),
+				]))))),
 			}
 		);
 	}
