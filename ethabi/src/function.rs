@@ -13,6 +13,23 @@ use std::string::ToString;
 use crate::{decode, encode, signature::short_signature, Bytes, Error, Param, ParamType, Result, Token};
 use serde::Deserialize;
 
+/// The state mutability of the function
+#[derive(Debug, Clone, Copy, PartialEq, Deserialize)]
+pub enum StateMutability {
+	/// The function does not access the block chain
+	#[serde(rename = "pure")]
+	Pure,
+	/// The function only reads from the block chain
+	#[serde(rename = "view")]
+	View,
+	/// The function writes to the block chain but does not accept ETH
+	#[serde(rename = "nonpayable")]
+	NonPayable,
+	/// The function writes to the block chain and accepts ETH
+	#[serde(rename = "payable")]
+	Payable,
+}
+
 /// Contract function specification.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct Function {
@@ -22,12 +39,23 @@ pub struct Function {
 	pub inputs: Vec<Param>,
 	/// Function output.
 	pub outputs: Vec<Param>,
-	/// Constant function.
-	#[serde(default)]
-	pub constant: bool,
+	/// State mutability (pure, view, nonpayable, payable) of the function.
+	#[serde(rename = "stateMutability")]
+	pub state_mutability: Option<StateMutability>,
+	/// State mutability for older solidity compilers that only provide a 'constant' field instead of 'stateMutability'
+	pub constant: Option<bool>,
 }
 
 impl Function {
+	/// Returns true iff the function doesn't modify blockchain state (i.e. is 'view' or 'pure')
+	pub fn constant(&self) -> bool {
+		if let Some(state_mutability) = self.state_mutability {
+			state_mutability == StateMutability::Pure || state_mutability == StateMutability::View
+		} else {
+			self.constant.unwrap_or(false)
+		}
+	}
+
 	/// Returns all input params of given function.
 	fn input_param_types(&self) -> Vec<ParamType> {
 		self.inputs.iter().map(|p| p.kind.clone()).collect()
@@ -82,7 +110,7 @@ impl Function {
 
 #[cfg(test)]
 mod tests {
-	use crate::{Function, Param, ParamType, Token};
+	use crate::{Function, Param, ParamType, StateMutability, Token};
 	use hex_literal::hex;
 
 	#[test]
@@ -94,7 +122,8 @@ mod tests {
 				Param { name: "b".to_owned(), kind: ParamType::Bool },
 			],
 			outputs: vec![],
-			constant: false,
+			state_mutability: Some(StateMutability::Payable),
+			constant: None,
 		};
 
 		let mut uint = [0u8; 32];

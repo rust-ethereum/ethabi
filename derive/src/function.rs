@@ -60,8 +60,11 @@ pub struct Function {
 	inputs: Inputs,
 	/// Function output params.
 	outputs: Outputs,
-	/// Constant function.
-	constant: bool,
+	/// StateMutability of the function (pure, view, payable, nonpayable)
+	state_mutability: Option<ethabi::StateMutability>,
+	/// StateMutability of the function. True, iff it is 'pure' or 'view'.
+	/// Older solidity compilers don't give more detailed information.
+	constant: Option<bool>,
 }
 
 impl<'a> From<&'a ethabi::Function> for Function {
@@ -130,8 +133,27 @@ impl<'a> From<&'a ethabi::Function> for Function {
 				result: output_result,
 				recreate_quote: to_ethabi_param_vec(&f.outputs),
 			},
+			state_mutability: f.state_mutability,
 			constant: f.constant,
 		}
+	}
+}
+
+fn tokenize_state_mutability(state_mutability: Option<ethabi::StateMutability>) -> TokenStream {
+	match state_mutability {
+		Some(ethabi::StateMutability::Pure) => quote! {Some(::ethabi::StateMutability::Pure)},
+		Some(ethabi::StateMutability::View) => quote! {Some(::ethabi::StateMutability::View)},
+		Some(ethabi::StateMutability::NonPayable) => quote! {Some(::ethabi::StateMutability::NonPayable)},
+		Some(ethabi::StateMutability::Payable) => quote! {Some(::ethabi::StateMutability::Payable)},
+		None => quote! {None},
+	}
+}
+
+fn tokenize_constant(constant: Option<bool>) -> TokenStream {
+	match constant {
+		None => quote! { None },
+		Some(true) => quote! {Some(true)},
+		Some(false) => quote! {Some(false)},
 	}
 }
 
@@ -145,7 +167,8 @@ impl Function {
 		let definitions: &Vec<_> = &self.inputs.template_params.iter().map(|i| &i.definition).collect();
 		let recreate_inputs = &self.inputs.recreate_quote;
 		let recreate_outputs = &self.outputs.recreate_quote;
-		let constant = &self.constant;
+		let state_mutability = tokenize_state_mutability(self.state_mutability);
+		let constant = tokenize_constant(self.constant);
 		let outputs_result = &self.outputs.result;
 		let outputs_implementation = &self.outputs.implementation;
 
@@ -159,7 +182,8 @@ impl Function {
 						name: #name.into(),
 						inputs: #recreate_inputs,
 						outputs: #recreate_outputs,
-						constant: #constant,
+						state_mutability: #state_mutability,
+												constant: #constant,
 					}
 				}
 
@@ -204,8 +228,13 @@ mod tests {
 
 	#[test]
 	fn test_no_params() {
-		let ethabi_function =
-			ethabi::Function { name: "empty".into(), inputs: vec![], outputs: vec![], constant: false };
+		let ethabi_function = ethabi::Function {
+			name: "empty".into(),
+			inputs: vec![],
+			outputs: vec![],
+			state_mutability: Some(ethabi::StateMutability::NonPayable),
+			constant: None,
+		};
 
 		let f = Function::from(&ethabi_function);
 
@@ -219,7 +248,8 @@ mod tests {
 						name: "empty".into(),
 						inputs: vec![],
 						outputs: vec![],
-						constant: false,
+						state_mutability: Some(::ethabi::StateMutability::NonPayable),
+												constant: None,
 					}
 				}
 
@@ -265,7 +295,8 @@ mod tests {
 			name: "hello".into(),
 			inputs: vec![ethabi::Param { name: "foo".into(), kind: ethabi::ParamType::Address }],
 			outputs: vec![ethabi::Param { name: "bar".into(), kind: ethabi::ParamType::Uint(256) }],
-			constant: false,
+			state_mutability: Some(ethabi::StateMutability::Payable),
+			constant: Some(false),
 		};
 
 		let f = Function::from(&ethabi_function);
@@ -286,7 +317,8 @@ mod tests {
 							name: "bar".to_owned(),
 							kind: ethabi::ParamType::Uint(256usize)
 						}],
-						constant: false,
+						state_mutability: Some(::ethabi::StateMutability::Payable),
+												constant: Some(false),
 					}
 				}
 
@@ -344,7 +376,8 @@ mod tests {
 				ethabi::Param { name: "".into(), kind: ethabi::ParamType::Uint(256) },
 				ethabi::Param { name: "".into(), kind: ethabi::ParamType::String },
 			],
-			constant: false,
+			state_mutability: Some(::ethabi::StateMutability::Payable),
+			constant: None,
 		};
 
 		let f = Function::from(&ethabi_function);
@@ -371,7 +404,8 @@ mod tests {
 							name: "".to_owned(),
 							kind: ethabi::ParamType::String
 						}],
-						constant: false,
+						state_mutability: Some(::ethabi::StateMutability::Payable),
+												constant: None,
 					}
 				}
 

@@ -62,7 +62,7 @@ impl<'a> Deserialize<'a> for Operation {
 #[cfg(test)]
 mod tests {
 	use super::Operation;
-	use crate::{Function, Param, ParamType};
+	use crate::{Function, Param, ParamType, StateMutability};
 
 	#[test]
 	fn deserialize_operation() {
@@ -73,7 +73,8 @@ mod tests {
 				"type":"address"
 			}],
 			"name":"foo",
-			"outputs": []
+			"outputs": [],
+                        "stateMutability": "payable"
 		}"#;
 
 		let deserialized: Operation = serde_json::from_str(s).unwrap();
@@ -84,7 +85,8 @@ mod tests {
 				name: "foo".to_owned(),
 				inputs: vec![Param { name: "a".to_owned(), kind: ParamType::Address }],
 				outputs: vec![],
-				constant: false,
+				state_mutability: Some(StateMutability::Payable),
+				constant: None,
 			})
 		);
 	}

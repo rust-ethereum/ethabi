@@ -41,7 +41,7 @@ pub use crate::{
 	event::Event,
 	event_param::EventParam,
 	filter::{RawTopicFilter, Topic, TopicFilter},
-	function::Function,
+	function::{Function, StateMutability},
 	log::{Log, LogFilter, LogParam, ParseLog, RawLog},
 	param::Param,
 	param_type::ParamType,
