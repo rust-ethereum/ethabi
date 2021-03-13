@@ -7,7 +7,7 @@
 // except according to those terms.
 
 //! Ethereum ABI params.
-use crate::{Address, Bytes, FixedBytes, ParamType, Uint};
+use crate::{Address, Bytes, FixedBytes, Int, ParamType, Uint};
 use std::fmt;
 
 /// Ethereum ABI params.
@@ -33,7 +33,7 @@ pub enum Token {
 	/// Signed integer.
 	///
 	/// solidity name: int
-	Int(Uint),
+	Int(Int),
 	/// Unisnged integer.
 	///
 	/// solidity name: uint
@@ -158,7 +158,7 @@ impl Token {
 	}
 
 	/// Converts token to...
-	pub fn into_int(self) -> Option<Uint> {
+	pub fn into_int(self) -> Option<Int> {
 		match self {
 			Token::Int(int) => Some(int),
 			_ => None,
