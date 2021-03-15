@@ -9,7 +9,9 @@
 //! Function and event param types.
 
 use super::Writer;
-use std::fmt;
+#[cfg(not(feature = "std"))]
+use alloc::{boxed::Box, vec::Vec};
+use core::fmt;
 
 /// Function and event param types.
 #[derive(Debug, Clone, PartialEq)]
@@ -68,6 +70,8 @@ impl ParamType {
 #[cfg(test)]
 mod tests {
 	use crate::ParamType;
+	#[cfg(not(feature = "std"))]
+	use alloc::{borrow::ToOwned, boxed::Box};
 
 	#[test]
 	fn test_param_type_display() {

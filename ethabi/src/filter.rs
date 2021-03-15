@@ -7,9 +7,13 @@
 // except according to those terms.
 
 use crate::{Hash, Token};
+#[cfg(not(feature = "std"))]
+use alloc::vec::Vec;
+use core::ops;
+#[cfg(feature = "std")]
 use serde::{Serialize, Serializer};
+#[cfg(feature = "std")]
 use serde_json::Value;
-use std::ops;
 
 /// Raw topic filter.
 #[derive(Debug, PartialEq, Default)]
@@ -35,6 +39,7 @@ pub struct TopicFilter {
 	pub topic3: Topic<Hash>,
 }
 
+#[cfg(feature = "std")]
 impl Serialize for TopicFilter {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
 	where
@@ -114,6 +119,7 @@ impl<T> Into<Vec<T>> for Topic<T> {
 	}
 }
 
+#[cfg(feature = "std")]
 impl Serialize for Topic<Hash> {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
 	where
@@ -150,13 +156,20 @@ impl<T> ops::Index<usize> for Topic<T> {
 
 #[cfg(test)]
 mod tests {
-	use super::{Topic, TopicFilter};
+	use super::Topic;
+	#[cfg(feature = "std")]
+	use super::TopicFilter;
 	use crate::Hash;
+	#[cfg(not(feature = "std"))]
+	use alloc::vec::Vec;
 
+	// TODO: warning: function is never used: `hash`
+	#[cfg_attr(not(feature = "std"), allow(dead_code))]
 	fn hash(s: &'static str) -> Hash {
 		s.parse().unwrap()
 	}
 
+	#[cfg(feature = "std")]
 	#[test]
 	fn test_topic_filter_serialization() {
 		let expected = r#"["0x000000000000000000000000a94f5374fce5edbc8e2a8697c15331677e6ebf0b",null,["0x000000000000000000000000a94f5374fce5edbc8e2a8697c15331677e6ebf0b","0x0000000000000000000000000aff3454fce5edbc8cca8697c15331677e6ebccc"],null]"#;

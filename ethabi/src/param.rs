@@ -8,13 +8,18 @@
 
 //! Function param.
 
+use crate::ParamType;
+#[cfg(feature = "std")]
+use crate::TupleParam;
+#[cfg(not(feature = "std"))]
+use alloc::string::String;
+#[cfg(feature = "std")]
 use serde::{
 	de::{Error, MapAccess, Visitor},
 	Deserialize, Deserializer,
 };
+#[cfg(feature = "std")]
 use std::fmt;
-
-use crate::{ParamType, TupleParam};
 
 /// Function param.
 #[derive(Debug, Clone, PartialEq)]
@@ -25,6 +30,7 @@ pub struct Param {
 	pub kind: ParamType,
 }
 
+#[cfg(feature = "std")]
 impl<'a> Deserialize<'a> for Param {
 	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
 	where
@@ -34,8 +40,10 @@ impl<'a> Deserialize<'a> for Param {
 	}
 }
 
+#[cfg(feature = "std")]
 struct ParamVisitor;
 
+#[cfg(feature = "std")]
 impl<'a> Visitor<'a> for ParamVisitor {
 	type Value = Param;
 
@@ -107,7 +115,7 @@ impl<'a> Visitor<'a> for ParamVisitor {
 	}
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "std"))]
 mod tests {
 	use crate::{Param, ParamType};
 

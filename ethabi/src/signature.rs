@@ -10,6 +10,8 @@ use crate::{
 	param_type::{ParamType, Writer},
 	Hash,
 };
+#[cfg(not(feature = "std"))]
+use alloc::{string::String, vec::Vec};
 use sha3::{Digest, Keccak256};
 
 pub fn short_signature(name: &str, params: &[ParamType]) -> [u8; 4] {

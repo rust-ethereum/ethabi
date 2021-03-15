@@ -9,10 +9,14 @@
 //! Tuple param type.
 
 use crate::ParamType;
+#[cfg(not(feature = "std"))]
+use alloc::string::String;
+#[cfg(feature = "std")]
 use serde::{
 	de::{Error, MapAccess, Visitor},
 	Deserialize, Deserializer,
 };
+#[cfg(feature = "std")]
 use std::fmt;
 
 /// Tuple params specification
@@ -25,6 +29,7 @@ pub struct TupleParam {
 	pub kind: ParamType,
 }
 
+#[cfg(feature = "std")]
 impl<'a> Deserialize<'a> for TupleParam {
 	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
 	where
@@ -34,8 +39,10 @@ impl<'a> Deserialize<'a> for TupleParam {
 	}
 }
 
+#[cfg(feature = "std")]
 struct TupleParamVisitor;
 
+#[cfg(feature = "std")]
 impl<'a> Visitor<'a> for TupleParamVisitor {
 	type Value = TupleParam;
 
@@ -89,7 +96,7 @@ impl<'a> Visitor<'a> for TupleParamVisitor {
 	}
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "std"))]
 mod tests {
 	use crate::{ParamType, TupleParam};
 

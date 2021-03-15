@@ -12,10 +12,12 @@ mod lenient;
 mod strict;
 mod token;
 
-use std::cmp::Ordering::{Equal, Less};
-
 pub use self::{lenient::LenientTokenizer, strict::StrictTokenizer, token::Token};
+
 use crate::{Error, ParamType};
+#[cfg(not(feature = "std"))]
+use alloc::{string::String, vec::Vec};
+use core::cmp::Ordering::{Equal, Less};
 
 /// This trait should be used to parse string values as tokens.
 pub trait Tokenizer {

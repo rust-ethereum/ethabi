@@ -12,15 +12,28 @@ keywords = ["ethereum", "eth", "abi", "solidity"]
 description = "Easy to use conversion of ethereum contract calls to bytecode."
 edition = "2018"
 
+[features]
+default = ["std"]
+
+std = [
+    "anyhow/std",
+    "hex/std",
+    "serde",
+    "serde_json",
+    "sha3/std",
+    "ethereum-types/std",
+    "thiserror",
+]
+
 [dependencies]
-anyhow = "1"
-hex = "0.4"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-sha3 = "0.9"
-ethereum-types = "0.10.0"
-thiserror = "1"
-uint = "0.9.0"
+anyhow = { version = "1", default-features = false }
+hex = { version = "0.4", default-features = false, features = ["alloc"] }
+serde = { version = "1.0", features = ["derive"], optional = true }
+serde_json = { version = "1.0", optional = true }
+sha3 = { version = "0.9", default-features = false }
+ethereum-types = { version = "0.11.0", default-features = false }
+thiserror = { version = "1", optional = true }
+uint = { version = "0.9.0", default-features = false }
 
 [dev-dependencies]
 hex-literal = "0.3"

@@ -9,10 +9,14 @@
 //! Operation type.
 
 use crate::{Constructor, Event, Function};
+#[cfg(feature = "std")]
 use serde::{de::Error as SerdeError, Deserialize, Deserializer};
+#[cfg(feature = "std")]
 use serde_json::{value::from_value, Value};
 
 /// Operation type.
+// TODO: warning: variant is never constructed: `Fallback`
+#[cfg_attr(not(feature = "std"), allow(dead_code))]
 #[derive(Clone, Debug, PartialEq)]
 pub enum Operation {
 	/// Contract constructor.
@@ -25,6 +29,7 @@ pub enum Operation {
 	Fallback,
 }
 
+#[cfg(feature = "std")]
 impl<'a> Deserialize<'a> for Operation {
 	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
 	where
@@ -59,7 +64,7 @@ impl<'a> Deserialize<'a> for Operation {
 	}
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "std"))]
 mod tests {
 	use super::Operation;
 	use crate::{Function, Param, ParamType};

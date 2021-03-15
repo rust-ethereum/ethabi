@@ -7,6 +7,8 @@
 // except according to those terms.
 
 use crate::{decode, encode, ParamType, Token};
+#[cfg(not(feature = "std"))]
+use alloc::{borrow::ToOwned, boxed::Box};
 use hex_literal::hex;
 
 macro_rules! test_encode_decode {

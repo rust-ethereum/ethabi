@@ -9,6 +9,8 @@
 //! ABI encoder.
 
 use crate::{util::pad_u32, Bytes, Token, Word};
+#[cfg(not(feature = "std"))]
+use alloc::vec::Vec;
 
 fn pad_bytes(bytes: &[u8]) -> Vec<Word> {
 	let mut result = vec![pad_u32(bytes.len() as u32)];
@@ -176,6 +178,8 @@ fn encode_token(token: &Token) -> Mediate {
 #[cfg(test)]
 mod tests {
 	use crate::{encode, util::pad_u32, Token};
+	#[cfg(not(feature = "std"))]
+	use alloc::borrow::ToOwned;
 	use hex_literal::hex;
 
 	#[test]

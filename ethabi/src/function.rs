@@ -8,13 +8,18 @@
 
 //! Contract function call builder.
 
-use std::string::ToString;
-
 use crate::{decode, encode, signature::short_signature, Bytes, Error, Param, ParamType, Result, Token};
+#[cfg(not(feature = "std"))]
+use alloc::{
+	string::{String, ToString},
+	vec::Vec,
+};
+#[cfg(feature = "std")]
 use serde::Deserialize;
 
 /// Contract function specification.
-#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[cfg_attr(feature = "std", derive(Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Function {
 	/// Function name.
 	pub name: String,
@@ -23,7 +28,7 @@ pub struct Function {
 	/// Function output.
 	pub outputs: Vec<Param>,
 	/// Constant function.
-	#[serde(default)]
+	#[cfg_attr(feature = "std", serde(default))]
 	pub constant: bool,
 }
 
@@ -83,6 +88,8 @@ impl Function {
 #[cfg(test)]
 mod tests {
 	use crate::{Function, Param, ParamType, Token};
+	#[cfg(not(feature = "std"))]
+	use alloc::borrow::ToOwned;
 	use hex_literal::hex;
 
 	#[test]

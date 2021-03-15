@@ -11,6 +11,8 @@ use crate::{
 	token::{StrictTokenizer, Tokenizer},
 	Uint,
 };
+#[cfg(not(feature = "std"))]
+use alloc::{string::String, vec::Vec};
 use anyhow::anyhow;
 
 /// Tries to parse string as a token. Does not require string to clearly represent the value.

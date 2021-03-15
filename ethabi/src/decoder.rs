@@ -9,6 +9,8 @@
 //! ABI decoder.
 
 use crate::{util::slice_data, Error, ParamType, Token, Word};
+#[cfg(not(feature = "std"))]
+use alloc::{string::String, vec::Vec};
 
 struct DecodeResult {
 	token: Token,
@@ -224,6 +226,8 @@ fn decode_param(param: &ParamType, slices: &[Word], offset: usize) -> Result<Dec
 #[cfg(test)]
 mod tests {
 	use crate::{decode, ParamType, Token};
+	#[cfg(not(feature = "std"))]
+	use alloc::{borrow::ToOwned, boxed::Box};
 	use hex_literal::hex;
 
 	#[test]

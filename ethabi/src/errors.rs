@@ -6,14 +6,20 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+#[cfg(not(feature = "std"))]
+use alloc::string::{self, String};
 use anyhow::anyhow;
-use std::{num, string};
+use core::num;
+#[cfg(feature = "std")]
+use std::string;
+#[cfg(feature = "std")]
 use thiserror::Error;
 
 /// Ethabi result type
-pub type Result<T> = std::result::Result<T, Error>;
+pub type Result<T> = core::result::Result<T, Error>;
 
 /// Ethabi errors
+#[cfg(feature = "std")]
 #[derive(Debug, Error)]
 pub enum Error {
 	/// Invalid entity such as a bad function name.
@@ -37,6 +43,52 @@ pub enum Error {
 	/// Other errors.
 	#[error("{0}")]
 	Other(#[from] anyhow::Error),
+}
+
+/// Ethabi `no_std` errors
+#[cfg(not(feature = "std"))]
+#[derive(Debug)]
+pub enum Error {
+	/// Invalid entity such as a bad function name.
+	InvalidName(String),
+	/// Invalid data.
+	InvalidData,
+	/// Integer parsing error.
+	ParseInt(num::ParseIntError),
+	/// UTF-8 parsing error.
+	Utf8(string::FromUtf8Error),
+	/// Hex string parsing error.
+	Hex(hex::FromHexError),
+	/// Other errors.
+	Other(anyhow::Error),
+}
+
+#[cfg(not(feature = "std"))]
+impl From<num::ParseIntError> for Error {
+	fn from(err: num::ParseIntError) -> Self {
+		Self::ParseInt(err)
+	}
+}
+
+#[cfg(not(feature = "std"))]
+impl From<string::FromUtf8Error> for Error {
+	fn from(err: string::FromUtf8Error) -> Self {
+		Self::Utf8(err)
+	}
+}
+
+#[cfg(not(feature = "std"))]
+impl From<hex::FromHexError> for Error {
+	fn from(err: hex::FromHexError) -> Self {
+		Self::Hex(err)
+	}
+}
+
+#[cfg(not(feature = "std"))]
+impl From<anyhow::Error> for Error {
+	fn from(err: anyhow::Error) -> Self {
+		Self::Other(err)
+	}
 }
 
 impl From<uint::FromDecStrErr> for Error {

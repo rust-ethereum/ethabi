@@ -7,6 +7,8 @@
 // except according to those terms.
 
 use crate::ParamType;
+#[cfg(not(feature = "std"))]
+use alloc::{borrow::ToOwned, string::String, vec::Vec};
 
 /// Output formatter for param type.
 pub struct Writer;
@@ -35,6 +37,8 @@ impl Writer {
 mod tests {
 	use super::Writer;
 	use crate::ParamType;
+	#[cfg(not(feature = "std"))]
+	use alloc::{borrow::ToOwned, boxed::Box};
 
 	#[test]
 	fn test_write_param() {

@@ -8,11 +8,17 @@
 
 //! Event param specification.
 
-use crate::{ParamType, TupleParam};
+use crate::ParamType;
+#[cfg(feature = "std")]
+use crate::TupleParam;
+#[cfg(not(feature = "std"))]
+use alloc::string::String;
+#[cfg(feature = "std")]
 use serde::{
 	de::{Error, MapAccess, Visitor},
 	Deserialize, Deserializer,
 };
+#[cfg(feature = "std")]
 use std::fmt;
 
 /// Event param specification.
@@ -26,6 +32,7 @@ pub struct EventParam {
 	pub indexed: bool,
 }
 
+#[cfg(feature = "std")]
 impl<'a> Deserialize<'a> for EventParam {
 	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
 	where
@@ -35,8 +42,10 @@ impl<'a> Deserialize<'a> for EventParam {
 	}
 }
 
+#[cfg(feature = "std")]
 struct EventParamVisitor;
 
+#[cfg(feature = "std")]
 impl<'a> Visitor<'a> for EventParamVisitor {
 	type Value = EventParam;
 
@@ -97,7 +106,7 @@ impl<'a> Visitor<'a> for EventParamVisitor {
 	}
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "std"))]
 mod tests {
 	use crate::{EventParam, ParamType};
 

@@ -8,6 +8,7 @@
 
 //! Function and event param types.
 
+#[cfg(feature="std")]
 mod deserialize;
 mod param_type;
 mod reader;

@@ -8,10 +8,14 @@
 
 //! Contract constructor call builder.
 use crate::{encode, Bytes, Error, Param, ParamType, Result, Token};
+#[cfg(not(feature = "std"))]
+use alloc::vec::Vec;
+#[cfg(feature = "std")]
 use serde::Deserialize;
 
 /// Contract constructor specification.
-#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[cfg_attr(feature = "std", derive(Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Constructor {
 	/// Constructor input.
 	pub inputs: Vec<Param>,

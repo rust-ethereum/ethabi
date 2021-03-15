@@ -8,9 +8,13 @@
 
 //! Contract event.
 
+#[cfg(not(feature = "std"))]
+use alloc::{collections::BTreeMap, string::String, vec::Vec};
+#[cfg(feature = "std")]
 use serde::Deserialize;
 use sha3::{Digest, Keccak256};
-use std::collections::HashMap;
+#[cfg(feature = "std")]
+use std::collections::BTreeMap;
 
 use crate::{
 	decode, encode, signature::long_signature, Error, EventParam, Hash, Log, LogParam, ParamType, RawLog,
@@ -18,7 +22,8 @@ use crate::{
 };
 
 /// Contract event.
-#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[cfg_attr(feature = "std", derive(Deserialize))]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Event {
 	/// Event name.
 	pub name: String,
@@ -158,7 +163,7 @@ impl Event {
 
 		let data_named_tokens = data_params.into_iter().map(|p| p.name).zip(data_tokens.into_iter());
 
-		let named_tokens = topics_named_tokens.chain(data_named_tokens).collect::<HashMap<String, Token>>();
+		let named_tokens = topics_named_tokens.chain(data_named_tokens).collect::<BTreeMap<String, Token>>();
 
 		let decoded_params = self
 			.params_names()
@@ -180,6 +185,8 @@ mod tests {
 		token::Token,
 		Event, EventParam, LogParam, ParamType,
 	};
+	#[cfg(not(feature = "std"))]
+	use alloc::{borrow::ToOwned, boxed::Box, string::ToString, vec::Vec};
 	use hex_literal::hex;
 
 	#[test]

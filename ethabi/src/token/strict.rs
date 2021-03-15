@@ -7,6 +7,8 @@
 // except according to those terms.
 
 use crate::{errors::Error, token::Tokenizer};
+#[cfg(not(feature = "std"))]
+use alloc::{borrow::ToOwned, string::String, vec::Vec};
 
 /// Tries to parse string as a token. Require string to clearly represent the value.
 pub struct StrictTokenizer;
@@ -71,6 +73,8 @@ mod tests {
 		token::{StrictTokenizer, Token, Tokenizer},
 		ParamType,
 	};
+	#[cfg(not(feature = "std"))]
+	use alloc::{borrow::ToOwned, boxed::Box};
 
 	#[test]
 	fn tokenize_address() {

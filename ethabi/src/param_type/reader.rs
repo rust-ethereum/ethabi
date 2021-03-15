@@ -7,6 +7,8 @@
 // except according to those terms.
 
 use crate::{Error, ParamType};
+#[cfg(not(feature = "std"))]
+use alloc::{borrow::ToOwned, boxed::Box, string::String, vec::Vec};
 
 /// Used to convert param type represented as a string to rust structure.
 pub struct Reader;
@@ -158,6 +160,8 @@ impl Reader {
 mod tests {
 	use super::Reader;
 	use crate::ParamType;
+	#[cfg(not(feature = "std"))]
+	use alloc::boxed::Box;
 
 	#[test]
 	fn test_read_param() {

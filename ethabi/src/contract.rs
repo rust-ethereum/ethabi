@@ -6,15 +6,23 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use crate::{errors, operation::Operation, Constructor, Error, Event, Function};
+#[cfg(feature = "std")]
+use crate::operation::Operation;
+use crate::{errors, Constructor, Error, Event, Function};
+#[cfg(not(feature = "std"))]
+use alloc::collections::btree_map::{BTreeMap, Values};
+#[cfg(not(feature = "std"))]
+use alloc::{borrow::ToOwned, string::String, vec::Vec};
+use core::iter::Flatten;
+#[cfg(feature = "std")]
 use serde::{
 	de::{SeqAccess, Visitor},
 	Deserialize, Deserializer,
 };
+#[cfg(feature = "std")]
 use std::{
-	collections::{hash_map::Values, HashMap},
+	collections::btree_map::{BTreeMap, Values},
 	fmt, io,
-	iter::Flatten,
 };
 
 /// API building calls to contracts ABI.
@@ -23,13 +31,14 @@ pub struct Contract {
 	/// Contract constructor.
 	pub constructor: Option<Constructor>,
 	/// Contract functions.
-	pub functions: HashMap<String, Vec<Function>>,
+	pub functions: BTreeMap<String, Vec<Function>>,
 	/// Contract events, maps signature to event.
-	pub events: HashMap<String, Vec<Event>>,
+	pub events: BTreeMap<String, Vec<Event>>,
 	/// Contract has fallback function.
 	pub fallback: bool,
 }
 
+#[cfg(feature = "std")]
 impl<'a> Deserialize<'a> for Contract {
 	fn deserialize<D>(deserializer: D) -> Result<Contract, D::Error>
 	where
@@ -39,8 +48,10 @@ impl<'a> Deserialize<'a> for Contract {
 	}
 }
 
+#[cfg(feature = "std")]
 struct ContractVisitor;
 
+#[cfg(feature = "std")]
 impl<'a> Visitor<'a> for ContractVisitor {
 	type Value = Contract;
 
@@ -52,8 +63,12 @@ impl<'a> Visitor<'a> for ContractVisitor {
 	where
 		A: SeqAccess<'a>,
 	{
-		let mut result =
-			Contract { constructor: None, functions: HashMap::default(), events: HashMap::default(), fallback: false };
+		let mut result = Contract {
+			constructor: None,
+			functions: BTreeMap::default(),
+			events: BTreeMap::default(),
+			fallback: false,
+		};
 
 		while let Some(operation) = seq.next_element()? {
 			match operation {
@@ -78,6 +93,7 @@ impl<'a> Visitor<'a> for ContractVisitor {
 
 impl Contract {
 	/// Loads contract from json.
+	#[cfg(feature = "std")]
 	pub fn load<T: io::Read>(reader: T) -> errors::Result<Self> {
 		serde_json::from_reader(reader).map_err(From::from)
 	}

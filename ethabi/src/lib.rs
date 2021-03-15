@@ -9,7 +9,14 @@
 //! Ethereum ABI encoding decoding library.
 
 #![allow(clippy::module_inception)]
+#![cfg_attr(not(feature = "std"), no_std)]
 #![warn(missing_docs)]
+
+#[cfg(not(feature = "std"))]
+#[macro_use]
+extern crate alloc;
+#[cfg(not(feature = "std"))]
+use alloc::vec::Vec;
 
 mod constructor;
 mod contract;
