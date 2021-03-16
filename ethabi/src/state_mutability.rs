@@ -1,5 +1,7 @@
-use serde::de::{Error, Visitor};
-use serde::{Deserialize, Deserializer};
+use serde::{
+	de::{Error, Visitor},
+	Deserialize, Deserializer,
+};
 use std::fmt;
 
 /// Whether a function modifies or reads blockchain state
