@@ -95,6 +95,7 @@ mod tests {
 
 	#[test]
 	fn test_function_encode_call() {
+		#[allow(deprecated)]
 		let func = Function {
 			name: "baz".to_owned(),
 			inputs: vec![

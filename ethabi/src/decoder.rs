@@ -64,7 +64,7 @@ pub fn decode(types: &[ParamType], data: &[u8]) -> Result<Vec<Token>, Error> {
 
 fn peek(data: &[u8], offset: usize, len: usize) -> Result<&[u8], Error> {
 	if offset + len > data.len() {
-		return Err(Error::InvalidData);
+		Err(Error::InvalidData)
 	} else {
 		Ok(&data[offset..(offset + len)])
 	}
@@ -80,7 +80,7 @@ fn peek_32_bytes(data: &[u8], offset: usize) -> Result<Word, Error> {
 
 fn take_bytes(data: &[u8], offset: usize, len: usize) -> Result<Vec<u8>, Error> {
 	if offset + len > data.len() {
-		return Err(Error::InvalidData);
+		Err(Error::InvalidData)
 	} else {
 		Ok((&data[offset..(offset + len)]).to_vec())
 	}
