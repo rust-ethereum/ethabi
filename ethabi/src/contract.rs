@@ -18,7 +18,7 @@ use std::{
 };
 
 /// API building calls to contracts ABI.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct Contract {
 	/// Contract constructor.
 	pub constructor: Option<Constructor>,
@@ -54,14 +54,7 @@ impl<'a> Visitor<'a> for ContractVisitor {
 	where
 		A: SeqAccess<'a>,
 	{
-		let mut result = Contract {
-			constructor: None,
-			functions: HashMap::default(),
-			events: HashMap::default(),
-			receive: true,
-			fallback: false,
-		};
-
+		let mut result = Contract::default();
 		while let Some(operation) = seq.next_element()? {
 			match operation {
 				Operation::Constructor(constructor) => {
