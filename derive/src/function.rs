@@ -222,6 +222,7 @@ mod tests {
 
 	#[test]
 	fn test_no_params() {
+		#[allow(deprecated)]
 		let ethabi_function = ethabi::Function {
 			name: "empty".into(),
 			inputs: vec![],
@@ -285,6 +286,7 @@ mod tests {
 
 	#[test]
 	fn test_one_param() {
+		#[allow(deprecated)]
 		let ethabi_function = ethabi::Function {
 			name: "hello".into(),
 			inputs: vec![ethabi::Param { name: "foo".into(), kind: ethabi::ParamType::Address }],
@@ -354,6 +356,7 @@ mod tests {
 
 	#[test]
 	fn test_multiple_params() {
+		#[allow(deprecated)]
 		let ethabi_function = ethabi::Function {
 			name: "multi".into(),
 			inputs: vec![

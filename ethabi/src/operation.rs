@@ -65,7 +65,6 @@ impl<'a> Deserialize<'a> for Operation {
 mod tests {
 	use super::Operation;
 	use crate::{Event, EventParam, Function, Param, ParamType, StateMutability};
-	use serde_json;
 
 	#[test]
 	fn deserialize_operation() {
@@ -81,16 +80,15 @@ mod tests {
 
 		let deserialized: Operation = serde_json::from_str(s).unwrap();
 
-		assert_eq!(
-			deserialized,
-			Operation::Function(Function {
-				name: "foo".to_owned(),
-				inputs: vec![Param { name: "a".to_owned(), kind: ParamType::Address }],
-				outputs: vec![],
-				constant: false,
-				state_mutability: StateMutability::NonPayable,
-			})
-		);
+		#[allow(deprecated)]
+		let function = Function {
+			name: "foo".to_owned(),
+			inputs: vec![Param { name: "a".to_owned(), kind: ParamType::Address }],
+			outputs: vec![],
+			constant: false,
+			state_mutability: StateMutability::NonPayable,
+		};
+		assert_eq!(deserialized, Operation::Function(function));
 	}
 
 	#[test]

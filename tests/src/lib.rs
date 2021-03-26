@@ -21,9 +21,9 @@ mod tests {
 
 	struct Wrapper([u8; 20]);
 
-	impl Into<Address> for Wrapper {
-		fn into(self) -> Address {
-			self.0.into()
+	impl From<Wrapper> for Address {
+		fn from(wrapper: Wrapper) -> Self {
+			wrapper.0.into()
 		}
 	}
 
