@@ -33,6 +33,8 @@ mod util;
 #[cfg(test)]
 mod tests;
 
+pub use ethereum_types;
+
 pub use crate::{
 	constructor::Constructor,
 	contract::{Contract, Events, Functions},
