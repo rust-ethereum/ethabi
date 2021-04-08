@@ -52,7 +52,7 @@ impl Mediate {
 	fn head_len(&self) -> u32 {
 		match *self {
 			Mediate::Raw(ref raw) => 32 * raw.len() as u32,
-			Mediate::RawTuple(ref mediates) => 32 * mediates.len() as u32,
+			Mediate::RawTuple(ref mediates) => mediates.iter().map(|mediate| mediate.head_len()).sum(),
 			Mediate::Prefixed(_)
 			| Mediate::PrefixedArray(_)
 			| Mediate::PrefixedArrayWithLength(_)
@@ -807,6 +807,31 @@ mod tests {
 			0000000000000000000000000000000000000000000000000000000000000000
 			0000000000000000000000003333333333333333333333333333333333333333
 			0000000000000000000000004444444444444444444444444444444444444444
+		"
+		)
+		.to_vec();
+		assert_eq!(encoded, expected);
+	}
+
+	#[test]
+	fn encode_dynamic_tuple_with_nested_static_tuples() {
+		let token = {
+			use crate::Token::*;
+			Tuple(vec![
+				Tuple(vec![Tuple(vec![Bool(false), Uint(0x777.into())])]),
+				Array(vec![Uint(0x42.into()), Uint(0x1337.into())]),
+			])
+		};
+		let encoded = encode(&[token]);
+		let expected = hex!(
+			"
+			0000000000000000000000000000000000000000000000000000000000000020
+			0000000000000000000000000000000000000000000000000000000000000000
+			0000000000000000000000000000000000000000000000000000000000000777
+			0000000000000000000000000000000000000000000000000000000000000060
+			0000000000000000000000000000000000000000000000000000000000000002
+			0000000000000000000000000000000000000000000000000000000000000042
+			0000000000000000000000000000000000000000000000000000000000001337
 		"
 		)
 		.to_vec();
