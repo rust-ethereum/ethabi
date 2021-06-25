@@ -9,13 +9,14 @@
 use crate::{errors, operation::Operation, Constructor, Error, Event, Function};
 use serde::{
 	de::{SeqAccess, Visitor},
-	Deserialize, Deserializer,
+	Deserialize, Deserializer, Serialize, Serializer,
 };
 use std::{
 	collections::{hash_map::Values, HashMap},
 	fmt, io,
 	iter::Flatten,
 };
+use serde::ser::SerializeSeq;
 
 /// API building calls to contracts ABI.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -76,6 +77,61 @@ impl<'a> Visitor<'a> for ContractVisitor {
 		}
 
 		Ok(result)
+	}
+}
+
+impl Serialize for Contract {
+	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+	where
+		S: Serializer,
+	{
+		// Serde's FlatMapSerializer is private, so we'll have to improvise...
+		#[derive(Serialize)]
+		#[serde(tag = "type")]
+		enum OperationRef<'a> {
+			#[serde(rename = "constructor")]
+			Constructor(&'a Constructor),
+
+			#[serde(rename = "function")]
+			Function(&'a Function),
+
+			#[serde(rename = "event")]
+			Event(&'a Event),
+
+			#[serde(rename = "fallback")]
+			Fallback,
+
+			#[serde(rename = "receive")]
+			Receive,
+		}
+
+		let mut seq = serializer.serialize_seq(None)?;
+
+		if let Some(constructor) = &self.constructor {
+			seq.serialize_element(&OperationRef::Constructor(constructor))?;
+		}
+
+		for functions in self.functions.values() {
+			for function in functions {
+				seq.serialize_element(&OperationRef::Function(function))?;
+			}
+		}
+
+		for events in self.events.values() {
+			for event in events {
+				seq.serialize_element(&OperationRef::Event(event))?;
+			}
+		}
+
+		if self.receive {
+			seq.serialize_element(&OperationRef::Receive)?;
+		}
+
+		if self.fallback {
+			seq.serialize_element(&OperationRef::Fallback)?;
+		}
+
+		seq.end()
 	}
 }
 

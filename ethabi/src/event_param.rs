@@ -8,10 +8,12 @@
 
 //! Event param specification.
 
+use crate::param_type::Writer;
 use crate::{ParamType, TupleParam};
+use serde::ser::SerializeMap;
 use serde::{
 	de::{Error, MapAccess, Visitor},
-	Deserialize, Deserializer,
+	Deserialize, Deserializer, Serialize, Serializer,
 };
 use std::fmt;
 
@@ -88,6 +90,23 @@ impl<'a> Visitor<'a> for EventParamVisitor {
 		crate::param::set_tuple_components(&mut kind, components)?;
 		let indexed = indexed.unwrap_or(false);
 		Ok(EventParam { name, kind, indexed })
+	}
+}
+
+impl Serialize for EventParam {
+	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+	where
+		S: Serializer,
+	{
+		let mut map = serializer.serialize_map(None)?;
+		map.serialize_entry("name", &self.name)?;
+		map.serialize_entry("type", &Writer::write_for_abi(&self.kind, false))?;
+		map.serialize_entry("indexed", &self.indexed)?;
+		if let Some(inner_tuple) = crate::param::inner_tuple(&self.kind) {
+			map.serialize_key("components")?;
+			map.serialize_value(&crate::param::SerializeableParamVec(inner_tuple))?;
+		}
+		map.end()
 	}
 }
 

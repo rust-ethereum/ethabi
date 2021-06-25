@@ -8,10 +8,10 @@
 
 //! Contract constructor call builder.
 use crate::{encode, Bytes, Error, Param, ParamType, Result, Token};
-use serde::Deserialize;
+use serde::{Serialize, Deserialize};
 
 /// Contract constructor specification.
-#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Constructor {
 	/// Constructor input.
 	pub inputs: Vec<Param>,
