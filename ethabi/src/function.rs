@@ -19,7 +19,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Function {
 	/// Function name.
-	#[serde(deserialize_with = "crate::function::sanitize_name::deserialize")]
+	#[serde(deserialize_with = "crate::util::sanitize_name::deserialize")]
 	pub name: String,
 	/// Function input.
 	pub inputs: Vec<Param>,
@@ -85,26 +85,6 @@ impl Function {
 		match (inputs.len(), outputs.len()) {
 			(_, 0) => format!("{}({})", self.name, inputs),
 			(_, _) => format!("{}({}):({})", self.name, inputs, outputs),
-		}
-	}
-}
-
-// This is a workaround to support non-spec compliant function and event names,
-// see: https://github.com/paritytech/parity/issues/4122
-pub(crate) mod sanitize_name {
-	use serde::{Deserializer, Deserialize};
-
-	pub fn deserialize<'de, D>(deserializer: D) -> Result<String, D::Error>
-		where D: Deserializer<'de>
-	{
-		let mut name = String::deserialize(deserializer)?;
-		sanitize_name(&mut name);
-		Ok(name)
-	}
-
-	fn sanitize_name(name: &mut String) {
-		if let Some(i) = name.find('(') {
-			name.truncate(i);
 		}
 	}
 }

@@ -21,7 +21,7 @@ use crate::{
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Event {
 	/// Event name.
-	#[serde(deserialize_with = "crate::function::sanitize_name::deserialize")]
+	#[serde(deserialize_with = "crate::util::sanitize_name::deserialize")]
 	pub name: String,
 	/// Event input.
 	pub inputs: Vec<EventParam>,
