@@ -113,6 +113,7 @@ impl Serialize for EventParam {
 #[cfg(test)]
 mod tests {
 	use crate::{EventParam, ParamType};
+	use crate::tests::assert_json_eq;
 
 	#[test]
 	fn event_param_deserialization() {
@@ -125,6 +126,8 @@ mod tests {
 		let deserialized: EventParam = serde_json::from_str(s).unwrap();
 
 		assert_eq!(deserialized, EventParam { name: "foo".to_owned(), kind: ParamType::Address, indexed: true });
+
+		assert_json_eq(s, serde_json::to_string(&deserialized).unwrap().as_str());
 	}
 
 	#[test]
@@ -135,15 +138,12 @@ mod tests {
 			"indexed": true,
 			"components": [
 				{
-					"name": "amount",
 					"type": "uint48"
 				},
 				{
-					"name": "things",
 					"type": "tuple",
 					"components": [
 						{
-							"name": "baseTupleParam",
 							"type": "address"
 						}
 					]
@@ -161,6 +161,8 @@ mod tests {
 				indexed: true,
 			}
 		);
+
+		assert_json_eq(s, serde_json::to_string(&deserialized).unwrap().as_str());
 	}
 
 	#[test]
@@ -225,5 +227,7 @@ mod tests {
 				indexed: false,
 			}
 		);
+
+		assert_json_eq(s, serde_json::to_string(&deserialized).unwrap().as_str());
 	}
 }

@@ -35,10 +35,11 @@ pub enum Operation {
 #[cfg(test)]
 mod tests {
 	use super::Operation;
+	use crate::tests::assert_ser_de;
 	use crate::{Event, EventParam, Function, Param, ParamType, StateMutability};
 
 	#[test]
-	fn deserialize_operation() {
+	fn operation() {
 		let s = r#"{
 			"type":"function",
 			"inputs": [{
@@ -60,10 +61,12 @@ mod tests {
 			state_mutability: StateMutability::NonPayable,
 		};
 		assert_eq!(deserialized, Operation::Function(function));
+
+		assert_ser_de(&deserialized);
 	}
 
 	#[test]
-	fn deserialize_event_operation_with_tuple_array_input() {
+	fn event_operation_with_tuple_array_input() {
 		let s = r#"{
 			"type":"event",
 			"inputs": [
@@ -122,31 +125,35 @@ mod tests {
 				anonymous: false,
 			})
 		);
+
+		assert_ser_de(&deserialized);
 	}
 
 	#[test]
-	fn deserialize_sanitize_function_name() {
+	fn sanitize_function_name() {
 		fn test_sanitize_function_name(name: &str, expected: &str) {
 			let s = format!(
 				r#"{{
-				"type":"function",
-				"inputs": [{{
-					"name":"a",
-					"type":"address"
-				}}],
-				"name":"{}",
-				"outputs": []
-			}}"#,
+					"type":"function",
+					"inputs": [{{
+						"name":"a",
+						"type":"address"
+					}}],
+					"name":"{}",
+					"outputs": []
+				}}"#,
 				name
 			);
 
 			let deserialized: Operation = serde_json::from_str(&s).unwrap();
-			let function = match deserialized {
+			let function = match &deserialized {
 				Operation::Function(f) => f,
 				_ => panic!("expected funciton"),
 			};
 
 			assert_eq!(function.name, expected);
+
+			assert_ser_de(&deserialized);
 		}
 
 		test_sanitize_function_name("foo", "foo");
@@ -156,20 +163,20 @@ mod tests {
 	}
 
 	#[test]
-	fn deserialize_sanitize_event_name() {
+	fn sanitize_event_name() {
 		fn test_sanitize_event_name(name: &str, expected: &str) {
 			let s = format!(
 				r#"{{
-				"type":"event",
-					"inputs": [{{
-						"name":"a",
-						"type":"address",
-						"indexed":true
-					}}],
-					"name":"{}",
-					"outputs": [],
-					"anonymous": false
-			}}"#,
+					"type":"event",
+						"inputs": [{{
+							"name":"a",
+							"type":"address",
+							"indexed":true
+						}}],
+						"name":"{}",
+						"outputs": [],
+						"anonymous": false
+				}}"#,
 				name
 			);
 
@@ -180,6 +187,8 @@ mod tests {
 			};
 
 			assert_eq!(event.name, expected);
+
+			assert_ser_de(&Operation::Event(event));
 		}
 
 		test_sanitize_event_name("foo", "foo");
