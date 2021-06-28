@@ -25,8 +25,8 @@ impl Default for StateMutability {
 
 #[cfg(test)]
 mod test {
-	use crate::StateMutability;
 	use crate::tests::assert_json_eq;
+	use crate::StateMutability;
 
 	#[test]
 	fn state_mutability() {
@@ -43,12 +43,7 @@ mod test {
 
 		assert_eq!(
 			deserialized,
-			vec![
-				StateMutability::Pure,
-				StateMutability::View,
-				StateMutability::NonPayable,
-				StateMutability::Payable,
-			]
+			vec![StateMutability::Pure, StateMutability::View, StateMutability::NonPayable, StateMutability::Payable,]
 		);
 
 		assert_json_eq(json, &serde_json::to_string(&deserialized).unwrap());

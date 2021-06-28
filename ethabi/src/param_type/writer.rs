@@ -80,10 +80,13 @@ mod tests {
 		);
 
 		assert_eq!(
-			Writer::write_for_abi(&ParamType::Array(Box::new(ParamType::Tuple(vec![
-				ParamType::Array(Box::new(ParamType::Int(256))),
-				ParamType::FixedBytes(32),
-			]))), false),
+			Writer::write_for_abi(
+				&ParamType::Array(Box::new(ParamType::Tuple(vec![
+					ParamType::Array(Box::new(ParamType::Int(256))),
+					ParamType::FixedBytes(32),
+				]))),
+				false
+			),
 			"tuple[]".to_owned()
 		);
 	}

@@ -21,7 +21,7 @@ pub(crate) fn assert_json_eq(left: &str, right: &str) {
 
 pub(crate) fn assert_ser_de<T>(canon: &T)
 where
-	T: Serialize + for <'a> Deserialize<'a> + PartialEq + Debug,
+	T: Serialize + for<'a> Deserialize<'a> + PartialEq + Debug,
 {
 	let ser = serde_json::to_string(canon).unwrap();
 	let de = serde_json::from_str(&ser).unwrap();

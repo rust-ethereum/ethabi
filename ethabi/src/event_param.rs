@@ -112,8 +112,8 @@ impl Serialize for EventParam {
 
 #[cfg(test)]
 mod tests {
-	use crate::{EventParam, ParamType};
 	use crate::tests::assert_json_eq;
+	use crate::{EventParam, ParamType};
 
 	#[test]
 	fn event_param_deserialization() {

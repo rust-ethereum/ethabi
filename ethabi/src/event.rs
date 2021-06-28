@@ -8,7 +8,7 @@
 
 //! Contract event.
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use sha3::{Digest, Keccak256};
 use std::collections::HashMap;
 

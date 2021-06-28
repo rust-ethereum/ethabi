@@ -167,8 +167,8 @@ impl Serialize for SerializeableParam<'_> {
 
 #[cfg(test)]
 mod tests {
-	use crate::{Param, ParamType};
 	use crate::tests::{assert_json_eq, assert_ser_de};
+	use crate::{Param, ParamType};
 
 	#[test]
 	fn param_simple() {
