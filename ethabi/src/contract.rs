@@ -201,6 +201,7 @@ impl<'a> Iterator for Events<'a> {
 }
 
 #[cfg(test)]
+#[allow(deprecated)]
 mod test {
 	use crate::tests::assert_ser_de;
 	use crate::{Constructor, Contract, Event, EventParam, Function, Param, ParamType};
