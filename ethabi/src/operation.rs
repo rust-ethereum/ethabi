@@ -35,8 +35,7 @@ pub enum Operation {
 #[cfg(test)]
 mod tests {
 	use super::Operation;
-	use crate::tests::assert_ser_de;
-	use crate::{Event, EventParam, Function, Param, ParamType, StateMutability};
+	use crate::{tests::assert_ser_de, Event, EventParam, Function, Param, ParamType, StateMutability};
 
 	#[test]
 	fn operation() {

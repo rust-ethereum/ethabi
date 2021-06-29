@@ -7,9 +7,9 @@
 // except according to those terms.
 
 use crate::{errors, operation::Operation, Constructor, Error, Event, Function};
-use serde::ser::SerializeSeq;
 use serde::{
 	de::{SeqAccess, Visitor},
+	ser::SerializeSeq,
 	Deserialize, Deserializer, Serialize, Serializer,
 };
 use std::{
@@ -203,10 +203,8 @@ impl<'a> Iterator for Events<'a> {
 #[cfg(test)]
 #[allow(deprecated)]
 mod test {
-	use crate::tests::assert_ser_de;
-	use crate::{Constructor, Contract, Event, EventParam, Function, Param, ParamType};
-	use std::collections::HashMap;
-	use std::iter::FromIterator;
+	use crate::{tests::assert_ser_de, Constructor, Contract, Event, EventParam, Function, Param, ParamType};
+	use std::{collections::HashMap, iter::FromIterator};
 
 	#[test]
 	fn empty() {

@@ -14,8 +14,7 @@ use serde::{
 };
 use std::fmt;
 
-use crate::param_type::Writer;
-use crate::{ParamType, TupleParam};
+use crate::{param_type::Writer, ParamType, TupleParam};
 use serde::ser::{SerializeMap, SerializeSeq};
 
 /// Function param.
@@ -167,8 +166,10 @@ impl Serialize for SerializeableParam<'_> {
 
 #[cfg(test)]
 mod tests {
-	use crate::tests::{assert_json_eq, assert_ser_de};
-	use crate::{Param, ParamType};
+	use crate::{
+		tests::{assert_json_eq, assert_ser_de},
+		Param, ParamType,
+	};
 
 	#[test]
 	fn param_simple() {

@@ -8,11 +8,10 @@
 
 //! Tuple param type.
 
-use crate::param_type::Writer;
-use crate::ParamType;
-use serde::ser::SerializeMap;
+use crate::{param_type::Writer, ParamType};
 use serde::{
 	de::{Error, MapAccess, Visitor},
+	ser::SerializeMap,
 	Deserialize, Deserializer, Serialize, Serializer,
 };
 use std::fmt;
@@ -104,8 +103,10 @@ impl Serialize for TupleParam {
 
 #[cfg(test)]
 mod tests {
-	use crate::tests::{assert_json_eq, assert_ser_de};
-	use crate::{ParamType, TupleParam};
+	use crate::{
+		tests::{assert_json_eq, assert_ser_de},
+		ParamType, TupleParam,
+	};
 
 	#[test]
 	fn param_simple() {

@@ -8,11 +8,10 @@
 
 //! Event param specification.
 
-use crate::param_type::Writer;
-use crate::{ParamType, TupleParam};
-use serde::ser::SerializeMap;
+use crate::{param_type::Writer, ParamType, TupleParam};
 use serde::{
 	de::{Error, MapAccess, Visitor},
+	ser::SerializeMap,
 	Deserialize, Deserializer, Serialize, Serializer,
 };
 use std::fmt;
@@ -112,8 +111,7 @@ impl Serialize for EventParam {
 
 #[cfg(test)]
 mod tests {
-	use crate::tests::assert_json_eq;
-	use crate::{EventParam, ParamType};
+	use crate::{tests::assert_json_eq, EventParam, ParamType};
 
 	#[test]
 	fn event_param_deserialization() {

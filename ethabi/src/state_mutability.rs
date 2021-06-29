@@ -25,8 +25,7 @@ impl Default for StateMutability {
 
 #[cfg(test)]
 mod test {
-	use crate::tests::assert_json_eq;
-	use crate::StateMutability;
+	use crate::{tests::assert_json_eq, StateMutability};
 
 	#[test]
 	fn state_mutability() {
