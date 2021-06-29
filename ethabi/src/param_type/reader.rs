@@ -80,11 +80,9 @@ impl Reader {
 								let subtype = Reader::read(inner_tuple)?;
 
 								if nested > 1 {
-									subtuples[(nested - 2) as usize].push(subtype);
-									subtypes.push(ParamType::Tuple(std::mem::replace(
-										&mut subtuples[(nested - 2) as usize],
-										Vec::new(),
-									)));
+									let mut subtuple = std::mem::take(&mut subtuples[(nested - 2) as usize]);
+									subtuple.push(subtype);
+									subtypes.push(ParamType::Tuple(subtuple));
 								} else {
 									subtypes.push(subtype);
 								}

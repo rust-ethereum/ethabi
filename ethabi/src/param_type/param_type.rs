@@ -89,16 +89,16 @@ mod tests {
 
 	#[test]
 	fn test_is_dynamic() {
-		assert_eq!(ParamType::Address.is_dynamic(), false);
-		assert_eq!(ParamType::Bytes.is_dynamic(), true);
-		assert_eq!(ParamType::FixedBytes(32).is_dynamic(), false);
-		assert_eq!(ParamType::Uint(256).is_dynamic(), false);
-		assert_eq!(ParamType::Int(64).is_dynamic(), false);
-		assert_eq!(ParamType::Bool.is_dynamic(), false);
-		assert_eq!(ParamType::String.is_dynamic(), true);
-		assert_eq!(ParamType::Array(Box::new(ParamType::Bool)).is_dynamic(), true);
-		assert_eq!(ParamType::FixedArray(Box::new(ParamType::Uint(256)), 2).is_dynamic(), false);
-		assert_eq!(ParamType::FixedArray(Box::new(ParamType::String), 2).is_dynamic(), true);
-		assert_eq!(ParamType::FixedArray(Box::new(ParamType::Array(Box::new(ParamType::Bool))), 2).is_dynamic(), true);
+		assert!(!ParamType::Address.is_dynamic());
+		assert!(ParamType::Bytes.is_dynamic());
+		assert!(!ParamType::FixedBytes(32).is_dynamic());
+		assert!(!ParamType::Uint(256).is_dynamic());
+		assert!(!ParamType::Int(64).is_dynamic());
+		assert!(!ParamType::Bool.is_dynamic());
+		assert!(ParamType::String.is_dynamic());
+		assert!(ParamType::Array(Box::new(ParamType::Bool)).is_dynamic());
+		assert!(!ParamType::FixedArray(Box::new(ParamType::Uint(256)), 2).is_dynamic());
+		assert!(ParamType::FixedArray(Box::new(ParamType::String), 2).is_dynamic());
+		assert!(ParamType::FixedArray(Box::new(ParamType::Array(Box::new(ParamType::Bool))), 2).is_dynamic());
 	}
 }
