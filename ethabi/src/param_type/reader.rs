@@ -131,7 +131,7 @@ impl Reader {
 					Ok(ParamType::Array(Box::new(subtype)))
 				} else {
 					// it's a fixed array.
-					let len = usize::from_str_radix(&num, 10)?;
+					let len = num.parse()?;
 					let subtype = Reader::read(&name[..count - num.len() - 2])?;
 					Ok(ParamType::FixedArray(Box::new(subtype), len))
 				};
@@ -148,15 +148,15 @@ impl Reader {
 			"tuple" => ParamType::Tuple(vec![]),
 			"uint" => ParamType::Uint(256),
 			s if s.starts_with("int") => {
-				let len = usize::from_str_radix(&s[3..], 10)?;
+				let len = s[3..].parse()?;
 				ParamType::Int(len)
 			}
 			s if s.starts_with("uint") => {
-				let len = usize::from_str_radix(&s[4..], 10)?;
+				let len = s[4..].parse()?;
 				ParamType::Uint(len)
 			}
 			s if s.starts_with("bytes") => {
-				let len = usize::from_str_radix(&s[5..], 10)?;
+				let len = s[5..].parse()?;
 				ParamType::FixedBytes(len)
 			}
 			_ => {
