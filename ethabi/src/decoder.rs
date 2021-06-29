@@ -97,12 +97,12 @@ fn decode_param(param: &ParamType, data: &[u8], offset: usize) -> Result<DecodeR
 		}
 		ParamType::Int(_) => {
 			let slice = peek_32_bytes(data, offset)?;
-			let result = DecodeResult { token: Token::Int(slice.clone().into()), new_offset: offset + 32 };
+			let result = DecodeResult { token: Token::Int(slice.into()), new_offset: offset + 32 };
 			Ok(result)
 		}
 		ParamType::Uint(_) => {
 			let slice = peek_32_bytes(data, offset)?;
-			let result = DecodeResult { token: Token::Uint(slice.clone().into()), new_offset: offset + 32 };
+			let result = DecodeResult { token: Token::Uint(slice.into()), new_offset: offset + 32 };
 			Ok(result)
 		}
 		ParamType::Bool => {
