@@ -4,6 +4,14 @@ The format is based on [Keep a Changelog].
 
 [Keep a Changelog]: http://keepachangelog.com/en/1.0.0/
 
+## [14.1.0] - 2021-07-08
+### Added
+- `Serialize` support for contracts.
+
+### Fixed
+- Fix encoding of nested static tuples in dynamic tuple.
+- Fix running out of memory when decoding corrupted array encodings.
+
 ## [14.0.0] - 2021-03-31
 ### Added
 - Re-export of ethereum-types.
