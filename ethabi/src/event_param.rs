@@ -8,10 +8,11 @@
 
 //! Event param specification.
 
-use crate::{ParamType, TupleParam};
+use crate::{param_type::Writer, ParamType, TupleParam};
 use serde::{
 	de::{Error, MapAccess, Visitor},
-	Deserialize, Deserializer,
+	ser::SerializeMap,
+	Deserialize, Deserializer, Serialize, Serializer,
 };
 use std::fmt;
 
@@ -91,9 +92,26 @@ impl<'a> Visitor<'a> for EventParamVisitor {
 	}
 }
 
+impl Serialize for EventParam {
+	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+	where
+		S: Serializer,
+	{
+		let mut map = serializer.serialize_map(None)?;
+		map.serialize_entry("name", &self.name)?;
+		map.serialize_entry("type", &Writer::write_for_abi(&self.kind, false))?;
+		map.serialize_entry("indexed", &self.indexed)?;
+		if let Some(inner_tuple) = crate::param::inner_tuple(&self.kind) {
+			map.serialize_key("components")?;
+			map.serialize_value(&crate::param::SerializeableParamVec(inner_tuple))?;
+		}
+		map.end()
+	}
+}
+
 #[cfg(test)]
 mod tests {
-	use crate::{EventParam, ParamType};
+	use crate::{tests::assert_json_eq, EventParam, ParamType};
 
 	#[test]
 	fn event_param_deserialization() {
@@ -106,6 +124,8 @@ mod tests {
 		let deserialized: EventParam = serde_json::from_str(s).unwrap();
 
 		assert_eq!(deserialized, EventParam { name: "foo".to_owned(), kind: ParamType::Address, indexed: true });
+
+		assert_json_eq(s, serde_json::to_string(&deserialized).unwrap().as_str());
 	}
 
 	#[test]
@@ -116,15 +136,12 @@ mod tests {
 			"indexed": true,
 			"components": [
 				{
-					"name": "amount",
 					"type": "uint48"
 				},
 				{
-					"name": "things",
 					"type": "tuple",
 					"components": [
 						{
-							"name": "baseTupleParam",
 							"type": "address"
 						}
 					]
@@ -142,6 +159,8 @@ mod tests {
 				indexed: true,
 			}
 		);
+
+		assert_json_eq(s, serde_json::to_string(&deserialized).unwrap().as_str());
 	}
 
 	#[test]
@@ -206,5 +225,7 @@ mod tests {
 				indexed: false,
 			}
 		);
+
+		assert_json_eq(s, serde_json::to_string(&deserialized).unwrap().as_str());
 	}
 }

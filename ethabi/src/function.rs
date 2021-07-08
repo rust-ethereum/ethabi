@@ -13,12 +13,13 @@ use std::string::ToString;
 use crate::{
 	decode, encode, signature::short_signature, Bytes, Error, Param, ParamType, Result, StateMutability, Token,
 };
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 /// Contract function specification.
-#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Function {
 	/// Function name.
+	#[serde(deserialize_with = "crate::util::sanitize_name::deserialize")]
 	pub name: String,
 	/// Function input.
 	pub inputs: Vec<Param>,

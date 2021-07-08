@@ -9,6 +9,25 @@
 use crate::{decode, encode, ParamType, Token};
 use hex_literal::hex;
 
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use std::fmt::Debug;
+
+pub(crate) fn assert_json_eq(left: &str, right: &str) {
+	let left: Value = serde_json::from_str(left).unwrap();
+	let right: Value = serde_json::from_str(right).unwrap();
+	assert_eq!(left, right);
+}
+
+pub(crate) fn assert_ser_de<T>(canon: &T)
+where
+	T: Serialize + for<'a> Deserialize<'a> + PartialEq + Debug,
+{
+	let ser = serde_json::to_string(canon).unwrap();
+	let de = serde_json::from_str(&ser).unwrap();
+	assert_eq!(canon, &de);
+}
+
 macro_rules! test_encode_decode {
 	(name: $name:tt, types: $types:expr, tokens: $tokens:expr, data: $data:tt) => {
 		paste::item! {

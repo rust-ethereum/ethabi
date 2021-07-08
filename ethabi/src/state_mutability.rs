@@ -1,19 +1,19 @@
-use serde::{
-	de::{Error, Visitor},
-	Deserialize, Deserializer,
-};
-use std::fmt;
+use serde::{Deserialize, Serialize};
 
 /// Whether a function modifies or reads blockchain state
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum StateMutability {
 	/// Specified not to read blockchain state
+	#[serde(rename = "pure")]
 	Pure,
 	/// Specified to not modify the blockchain state
+	#[serde(rename = "view")]
 	View,
 	/// Function does not accept Ether - the default
+	#[serde(rename = "nonpayable")]
 	NonPayable,
 	/// Function accepts Ether
+	#[serde(rename = "payable")]
 	Payable,
 }
 
@@ -23,35 +23,28 @@ impl Default for StateMutability {
 	}
 }
 
-impl<'a> Deserialize<'a> for StateMutability {
-	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-	where
-		D: Deserializer<'a>,
-	{
-		deserializer.deserialize_any(StateMutabilityVisitor)
-	}
-}
+#[cfg(test)]
+mod test {
+	use crate::{tests::assert_json_eq, StateMutability};
 
-struct StateMutabilityVisitor;
+	#[test]
+	fn state_mutability() {
+		let json = r#"
+			[
+				"pure",
+				"view",
+				"nonpayable",
+				"payable"
+			]
+		"#;
 
-impl<'a> Visitor<'a> for StateMutabilityVisitor {
-	type Value = StateMutability;
+		let deserialized: Vec<StateMutability> = serde_json::from_str(json).unwrap();
 
-	fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-		write!(formatter, "the string 'pure', 'view', 'payable', or 'nonpayable'")
-	}
+		assert_eq!(
+			deserialized,
+			vec![StateMutability::Pure, StateMutability::View, StateMutability::NonPayable, StateMutability::Payable,]
+		);
 
-	fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
-	where
-		E: Error,
-	{
-		use StateMutability::*;
-		Ok(match v {
-			"pure" => Pure,
-			"view" => View,
-			"payable" => Payable,
-			"nonpayable" => NonPayable,
-			_ => return Err(Error::unknown_variant(v, &["pure", "view", "payable", "nonpayable"])),
-		})
+		assert_json_eq(json, &serde_json::to_string(&deserialized).unwrap());
 	}
 }

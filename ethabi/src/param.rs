@@ -10,11 +10,12 @@
 
 use serde::{
 	de::{Error, MapAccess, Visitor},
-	Deserialize, Deserializer,
+	Deserialize, Deserializer, Serialize, Serializer,
 };
 use std::fmt;
 
-use crate::{ParamType, TupleParam};
+use crate::{param_type::Writer, ParamType, TupleParam};
+use serde::ser::{SerializeMap, SerializeSeq};
 
 /// Function param.
 #[derive(Debug, Clone, PartialEq)]
@@ -82,7 +83,23 @@ impl<'a> Visitor<'a> for ParamVisitor {
 	}
 }
 
-fn inner_tuple(mut param: &mut ParamType) -> Option<&mut Vec<ParamType>> {
+impl Serialize for Param {
+	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+	where
+		S: Serializer,
+	{
+		let mut map = serializer.serialize_map(None)?;
+		map.serialize_entry("name", &self.name)?;
+		map.serialize_entry("type", &Writer::write_for_abi(&self.kind, false))?;
+		if let Some(inner_tuple) = inner_tuple(&self.kind) {
+			map.serialize_key("components")?;
+			map.serialize_value(&SerializeableParamVec(inner_tuple))?;
+		}
+		map.end()
+	}
+}
+
+pub(crate) fn inner_tuple_mut(mut param: &mut ParamType) -> Option<&mut Vec<ParamType>> {
 	loop {
 		match param {
 			ParamType::Array(inner) => param = inner.as_mut(),
@@ -93,23 +110,69 @@ fn inner_tuple(mut param: &mut ParamType) -> Option<&mut Vec<ParamType>> {
 	}
 }
 
-pub fn set_tuple_components<Error: serde::de::Error>(
+pub(crate) fn inner_tuple(mut param: &ParamType) -> Option<&Vec<ParamType>> {
+	loop {
+		match param {
+			ParamType::Array(inner) => param = inner.as_ref(),
+			ParamType::FixedArray(inner, _) => param = inner.as_ref(),
+			ParamType::Tuple(inner) => return Some(inner),
+			_ => return None,
+		}
+	}
+}
+
+pub(crate) fn set_tuple_components<Error: serde::de::Error>(
 	kind: &mut ParamType,
 	components: Option<Vec<TupleParam>>,
 ) -> Result<(), Error> {
-	if let Some(inner_tuple) = inner_tuple(kind) {
+	if let Some(inner_tuple_mut) = inner_tuple_mut(kind) {
 		let tuple_params = components.ok_or_else(|| Error::missing_field("components"))?;
-		inner_tuple.extend(tuple_params.into_iter().map(|param| param.kind))
+		inner_tuple_mut.extend(tuple_params.into_iter().map(|param| param.kind))
 	}
 	Ok(())
 }
 
+pub(crate) struct SerializeableParamVec<'a>(pub(crate) &'a [ParamType]);
+
+impl Serialize for SerializeableParamVec<'_> {
+	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+	where
+		S: Serializer,
+	{
+		let mut seq = serializer.serialize_seq(None)?;
+		for param in self.0 {
+			seq.serialize_element(&SerializeableParam(param))?;
+		}
+		seq.end()
+	}
+}
+
+pub(crate) struct SerializeableParam<'a>(pub(crate) &'a ParamType);
+
+impl Serialize for SerializeableParam<'_> {
+	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+	where
+		S: Serializer,
+	{
+		let mut map = serializer.serialize_map(None)?;
+		map.serialize_entry("type", &Writer::write_for_abi(self.0, false))?;
+		if let Some(inner_tuple) = inner_tuple(self.0) {
+			map.serialize_key("components")?;
+			map.serialize_value(&SerializeableParamVec(inner_tuple))?;
+		}
+		map.end()
+	}
+}
+
 #[cfg(test)]
 mod tests {
-	use crate::{Param, ParamType};
+	use crate::{
+		tests::{assert_json_eq, assert_ser_de},
+		Param, ParamType,
+	};
 
 	#[test]
-	fn param_deserialization() {
+	fn param_simple() {
 		let s = r#"{
 			"name": "foo",
 			"type": "address"
@@ -118,10 +181,45 @@ mod tests {
 		let deserialized: Param = serde_json::from_str(s).unwrap();
 
 		assert_eq!(deserialized, Param { name: "foo".to_owned(), kind: ParamType::Address });
+
+		assert_json_eq(s, serde_json::to_string(&deserialized).unwrap().as_str());
 	}
 
 	#[test]
-	fn param_tuple_deserialization() {
+	fn param_tuple() {
+		let s = r#"{
+			"name": "foo",
+			"type": "tuple",
+			"components": [
+				{
+					"type": "uint48"
+				},
+				{
+					"type": "tuple",
+					"components": [
+						{
+							"type": "address"
+						}
+					]
+				}
+			]
+		}"#;
+
+		let deserialized: Param = serde_json::from_str(s).unwrap();
+
+		assert_eq!(
+			deserialized,
+			Param {
+				name: "foo".to_owned(),
+				kind: ParamType::Tuple(vec![ParamType::Uint(48), ParamType::Tuple(vec![ParamType::Address])]),
+			}
+		);
+
+		assert_json_eq(s, serde_json::to_string(&deserialized).unwrap().as_str());
+	}
+
+	#[test]
+	fn param_tuple_named() {
 		let s = r#"{
 			"name": "foo",
 			"type": "tuple",
@@ -152,24 +250,23 @@ mod tests {
 				kind: ParamType::Tuple(vec![ParamType::Uint(48), ParamType::Tuple(vec![ParamType::Address])]),
 			}
 		);
+
+		assert_ser_de(&deserialized);
 	}
 
 	#[test]
-	fn param_tuple_array_deserialization() {
+	fn param_tuple_array() {
 		let s = r#"{
 			"name": "foo",
 			"type": "tuple[]",
 			"components": [
 				{
-					"name": "amount",
 					"type": "uint48"
 				},
 				{
-					"name": "to",
 					"type": "address"
 				},
 				{
-					"name": "from",
 					"type": "address"
 				}
 			]
@@ -188,20 +285,20 @@ mod tests {
 				]))),
 			}
 		);
+
+		assert_json_eq(s, serde_json::to_string(&deserialized).unwrap().as_str());
 	}
 
 	#[test]
-	fn param_array_of_array_of_tuple_deserialization() {
+	fn param_array_of_array_of_tuple() {
 		let s = r#"{
 			"name": "foo",
 			"type": "tuple[][]",
 			"components": [
 				{
-					"name": "u0",
 					"type": "uint8"
 				},
 				{
-					"name": "u1",
 					"type": "uint16"
 				}
 			]
@@ -218,24 +315,23 @@ mod tests {
 				]))))),
 			}
 		);
+
+		assert_json_eq(s, serde_json::to_string(&deserialized).unwrap().as_str());
 	}
 
 	#[test]
-	fn param_tuple_fixed_array_deserialization() {
+	fn param_tuple_fixed_array() {
 		let s = r#"{
 			"name": "foo",
 			"type": "tuple[2]",
 			"components": [
 				{
-					"name": "amount",
 					"type": "uint48"
 				},
 				{
-					"name": "to",
 					"type": "address"
 				},
 				{
-					"name": "from",
 					"type": "address"
 				}
 			]
@@ -253,30 +349,28 @@ mod tests {
 				),
 			}
 		);
+
+		assert_json_eq(s, serde_json::to_string(&deserialized).unwrap().as_str());
 	}
 
 	#[test]
-	fn param_tuple_with_nested_tuple_arrays_deserialization() {
+	fn param_tuple_with_nested_tuple_arrays() {
 		let s = r#"{
 			"name": "foo",
 			"type": "tuple",
 			"components": [
 				{
-					"name": "bar",
 					"type": "tuple[]",
 					"components": [
 						{
-							"name": "a",
 							"type": "address"
 						}
 					]
 				},
 				{
-					"name": "baz",
 					"type": "tuple[42]",
 					"components": [
 						{
-							"name": "b",
 							"type": "address"
 						}
 					]
@@ -296,5 +390,7 @@ mod tests {
 				]),
 			}
 		);
+
+		assert_json_eq(s, serde_json::to_string(&deserialized).unwrap().as_str());
 	}
 }

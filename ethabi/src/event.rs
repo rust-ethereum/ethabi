@@ -8,7 +8,7 @@
 
 //! Contract event.
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use sha3::{Digest, Keccak256};
 use std::collections::HashMap;
 
@@ -18,9 +18,10 @@ use crate::{
 };
 
 /// Contract event.
-#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Event {
 	/// Event name.
+	#[serde(deserialize_with = "crate::util::sanitize_name::deserialize")]
 	pub name: String,
 	/// Event input.
 	pub inputs: Vec<EventParam>,

@@ -17,6 +17,27 @@ pub fn pad_u32(value: u32) -> Word {
 	padded
 }
 
+// This is a workaround to support non-spec compliant function and event names,
+// see: https://github.com/paritytech/parity/issues/4122
+pub(crate) mod sanitize_name {
+	use serde::{Deserialize, Deserializer};
+
+	pub fn deserialize<'de, D>(deserializer: D) -> Result<String, D::Error>
+	where
+		D: Deserializer<'de>,
+	{
+		let mut name = String::deserialize(deserializer)?;
+		sanitize_name(&mut name);
+		Ok(name)
+	}
+
+	fn sanitize_name(name: &mut String) {
+		if let Some(i) = name.find('(') {
+			name.truncate(i);
+		}
+	}
+}
+
 #[cfg(test)]
 mod tests {
 	use super::pad_u32;

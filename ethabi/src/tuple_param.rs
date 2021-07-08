@@ -8,10 +8,11 @@
 
 //! Tuple param type.
 
-use crate::ParamType;
+use crate::{param_type::Writer, ParamType};
 use serde::{
 	de::{Error, MapAccess, Visitor},
-	Deserialize, Deserializer,
+	ser::SerializeMap,
+	Deserialize, Deserializer, Serialize, Serializer,
 };
 use std::fmt;
 
@@ -82,36 +83,258 @@ impl<'a> Visitor<'a> for TupleParamVisitor {
 	}
 }
 
+impl Serialize for TupleParam {
+	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+	where
+		S: Serializer,
+	{
+		let mut map = serializer.serialize_map(None)?;
+		if let Some(name) = &self.name {
+			map.serialize_entry("name", name)?;
+		}
+		map.serialize_entry("type", &Writer::write_for_abi(&self.kind, false))?;
+		if let Some(inner_tuple) = crate::param::inner_tuple(&self.kind) {
+			map.serialize_key("components")?;
+			map.serialize_value(&crate::param::SerializeableParamVec(inner_tuple))?;
+		}
+		map.end()
+	}
+}
+
 #[cfg(test)]
 mod tests {
-	use crate::{ParamType, TupleParam};
+	use crate::{
+		tests::{assert_json_eq, assert_ser_de},
+		ParamType, TupleParam,
+	};
 
 	#[test]
-	fn tuple_param_deserialization() {
-		let s = r#"[{
+	fn param_simple() {
+		let s = r#"{
 			"name": "foo",
 			"type": "address"
-			},{
-			"name": "bar",
-			"type": "address"
-			},{
-			"name": "baz",
-			"type": "address"
-			},{
-			"type": "bool"
-			}
-		]"#;
+		}"#;
 
-		let deserialized: Vec<TupleParam> = serde_json::from_str(s).unwrap();
+		let deserialized: TupleParam = serde_json::from_str(s).unwrap();
+
+		assert_eq!(deserialized, TupleParam { name: Some("foo".to_owned()), kind: ParamType::Address });
+
+		assert_json_eq(s, serde_json::to_string(&deserialized).unwrap().as_str());
+	}
+
+	#[test]
+	fn param_unnamed() {
+		let s = r#"{
+			"type": "address"
+		}"#;
+
+		let deserialized: TupleParam = serde_json::from_str(s).unwrap();
+
+		assert_eq!(deserialized, TupleParam { name: None, kind: ParamType::Address });
+
+		assert_json_eq(s, serde_json::to_string(&deserialized).unwrap().as_str());
+	}
+
+	#[test]
+	fn param_tuple() {
+		let s = r#"{
+			"type": "tuple",
+			"components": [
+				{
+					"type": "uint48"
+				},
+				{
+					"type": "tuple",
+					"components": [
+						{
+							"type": "address"
+						}
+					]
+				}
+			]
+		}"#;
+
+		let deserialized: TupleParam = serde_json::from_str(s).unwrap();
 
 		assert_eq!(
 			deserialized,
-			vec![
-				TupleParam { name: Some(String::from("foo")), kind: ParamType::Address },
-				TupleParam { name: Some(String::from("bar")), kind: ParamType::Address },
-				TupleParam { name: Some(String::from("baz")), kind: ParamType::Address },
-				TupleParam { name: None, kind: ParamType::Bool },
-			]
+			TupleParam {
+				name: None,
+				kind: ParamType::Tuple(vec![ParamType::Uint(48), ParamType::Tuple(vec![ParamType::Address])]),
+			}
 		);
+
+		assert_json_eq(s, serde_json::to_string(&deserialized).unwrap().as_str());
+	}
+
+	#[test]
+	fn param_tuple_named() {
+		let s = r#"{
+			"type": "tuple",
+			"components": [
+				{
+					"name": "amount",
+					"type": "uint48"
+				},
+				{
+					"name": "things",
+					"type": "tuple",
+					"components": [
+						{
+							"name": "baseTupleParam",
+							"type": "address"
+						}
+					]
+				}
+			]
+		}"#;
+
+		let deserialized: TupleParam = serde_json::from_str(s).unwrap();
+
+		assert_eq!(
+			deserialized,
+			TupleParam {
+				name: None,
+				kind: ParamType::Tuple(vec![ParamType::Uint(48), ParamType::Tuple(vec![ParamType::Address])]),
+			}
+		);
+
+		assert_ser_de(&deserialized);
+	}
+
+	#[test]
+	fn param_tuple_array() {
+		let s = r#"{
+			"type": "tuple[]",
+			"components": [
+				{
+					"type": "uint48"
+				},
+				{
+					"type": "address"
+				},
+				{
+					"type": "address"
+				}
+			]
+		}"#;
+
+		let deserialized: TupleParam = serde_json::from_str(s).unwrap();
+
+		assert_eq!(
+			deserialized,
+			TupleParam {
+				name: None,
+				kind: ParamType::Array(Box::new(ParamType::Tuple(vec![
+					ParamType::Uint(48),
+					ParamType::Address,
+					ParamType::Address
+				]))),
+			}
+		);
+
+		assert_json_eq(s, serde_json::to_string(&deserialized).unwrap().as_str());
+	}
+
+	#[test]
+	fn param_array_of_array_of_tuple() {
+		let s = r#"{
+			"type": "tuple[][]",
+			"components": [
+				{
+					"type": "uint8"
+				},
+				{
+					"type": "uint16"
+				}
+			]
+		}"#;
+
+		let deserialized: TupleParam = serde_json::from_str(s).unwrap();
+		assert_eq!(
+			deserialized,
+			TupleParam {
+				name: None,
+				kind: ParamType::Array(Box::new(ParamType::Array(Box::new(ParamType::Tuple(vec![
+					ParamType::Uint(8),
+					ParamType::Uint(16),
+				]))))),
+			}
+		);
+
+		assert_json_eq(s, serde_json::to_string(&deserialized).unwrap().as_str());
+	}
+
+	#[test]
+	fn param_tuple_fixed_array() {
+		let s = r#"{
+			"type": "tuple[2]",
+			"components": [
+				{
+					"type": "uint48"
+				},
+				{
+					"type": "address"
+				},
+				{
+					"type": "address"
+				}
+			]
+		}"#;
+
+		let deserialized: TupleParam = serde_json::from_str(s).unwrap();
+
+		assert_eq!(
+			deserialized,
+			TupleParam {
+				name: None,
+				kind: ParamType::FixedArray(
+					Box::new(ParamType::Tuple(vec![ParamType::Uint(48), ParamType::Address, ParamType::Address])),
+					2
+				),
+			}
+		);
+
+		assert_json_eq(s, serde_json::to_string(&deserialized).unwrap().as_str());
+	}
+
+	#[test]
+	fn param_tuple_with_nested_tuple_arrays() {
+		let s = r#"{
+			"type": "tuple",
+			"components": [
+				{
+					"type": "tuple[]",
+					"components": [
+						{
+							"type": "address"
+						}
+					]
+				},
+				{
+					"type": "tuple[42]",
+					"components": [
+						{
+							"type": "address"
+						}
+					]
+				}
+			]
+		}"#;
+
+		let deserialized: TupleParam = serde_json::from_str(s).unwrap();
+
+		assert_eq!(
+			deserialized,
+			TupleParam {
+				name: None,
+				kind: ParamType::Tuple(vec![
+					ParamType::Array(Box::new(ParamType::Tuple(vec![ParamType::Address]))),
+					ParamType::FixedArray(Box::new(ParamType::Tuple(vec![ParamType::Address])), 42,)
+				]),
+			}
+		);
+
+		assert_json_eq(s, serde_json::to_string(&deserialized).unwrap().as_str());
 	}
 }
