@@ -60,8 +60,13 @@ pub struct Function {
 	inputs: Inputs,
 	/// Function output params.
 	outputs: Outputs,
+	#[deprecated(note = "The constant attribute was removed in Solidity 0.5.0 and has been \
+				replaced with stateMutability. If parsing a JSON AST created with \
+				this version or later this value will always be false, which may be wrong.")]
 	/// Constant function.
 	constant: bool,
+	/// Whether the function reads or modifies blockchain state
+	state_mutability: ethabi::StateMutability,
 }
 
 impl<'a> From<&'a ethabi::Function> for Function {
@@ -122,6 +127,10 @@ impl<'a> From<&'a ethabi::Function> for Function {
 			}
 		};
 
+		// The allow deprecated only applies to the field 'constant', but
+		// due to this issue: https://github.com/rust-lang/rust/issues/60681
+		// it must go on the entire struct
+		#[allow(deprecated)]
 		Function {
 			name: f.name.clone(),
 			inputs: Inputs { tokenize, template_params, recreate_quote: to_ethabi_param_vec(&f.inputs) },
@@ -131,6 +140,7 @@ impl<'a> From<&'a ethabi::Function> for Function {
 				recreate_quote: to_ethabi_param_vec(&f.outputs),
 			},
 			constant: f.constant,
+			state_mutability: f.state_mutability,
 		}
 	}
 }
@@ -145,7 +155,14 @@ impl Function {
 		let definitions: &Vec<_> = &self.inputs.template_params.iter().map(|i| &i.definition).collect();
 		let recreate_inputs = &self.inputs.recreate_quote;
 		let recreate_outputs = &self.outputs.recreate_quote;
-		let constant = &self.constant;
+		#[allow(deprecated)]
+		let constant = self.constant;
+		let state_mutability = match self.state_mutability {
+			ethabi::StateMutability::Pure => quote! { ::ethabi::StateMutability::Pure },
+			ethabi::StateMutability::Payable => quote! { ::ethabi::StateMutability::Payable },
+			ethabi::StateMutability::NonPayable => quote! { ::ethabi::StateMutability::NonPayable },
+			ethabi::StateMutability::View => quote! { ::ethabi::StateMutability::View },
+		};
 		let outputs_result = &self.outputs.result;
 		let outputs_implementation = &self.outputs.implementation;
 
@@ -160,6 +177,7 @@ impl Function {
 						inputs: #recreate_inputs,
 						outputs: #recreate_outputs,
 						constant: #constant,
+						state_mutability: #state_mutability
 					}
 				}
 
@@ -204,8 +222,14 @@ mod tests {
 
 	#[test]
 	fn test_no_params() {
-		let ethabi_function =
-			ethabi::Function { name: "empty".into(), inputs: vec![], outputs: vec![], constant: false };
+		#[allow(deprecated)]
+		let ethabi_function = ethabi::Function {
+			name: "empty".into(),
+			inputs: vec![],
+			outputs: vec![],
+			constant: false,
+			state_mutability: ethabi::StateMutability::Payable,
+		};
 
 		let f = Function::from(&ethabi_function);
 
@@ -220,6 +244,7 @@ mod tests {
 						inputs: vec![],
 						outputs: vec![],
 						constant: false,
+						state_mutability: ::ethabi::StateMutability::Payable
 					}
 				}
 
@@ -261,11 +286,13 @@ mod tests {
 
 	#[test]
 	fn test_one_param() {
+		#[allow(deprecated)]
 		let ethabi_function = ethabi::Function {
 			name: "hello".into(),
 			inputs: vec![ethabi::Param { name: "foo".into(), kind: ethabi::ParamType::Address }],
 			outputs: vec![ethabi::Param { name: "bar".into(), kind: ethabi::ParamType::Uint(256) }],
 			constant: false,
+			state_mutability: ethabi::StateMutability::Payable,
 		};
 
 		let f = Function::from(&ethabi_function);
@@ -287,6 +314,7 @@ mod tests {
 							kind: ethabi::ParamType::Uint(256usize)
 						}],
 						constant: false,
+						state_mutability: ::ethabi::StateMutability::Payable
 					}
 				}
 
@@ -328,6 +356,7 @@ mod tests {
 
 	#[test]
 	fn test_multiple_params() {
+		#[allow(deprecated)]
 		let ethabi_function = ethabi::Function {
 			name: "multi".into(),
 			inputs: vec![
@@ -345,6 +374,7 @@ mod tests {
 				ethabi::Param { name: "".into(), kind: ethabi::ParamType::String },
 			],
 			constant: false,
+			state_mutability: ethabi::StateMutability::Payable,
 		};
 
 		let f = Function::from(&ethabi_function);
@@ -372,6 +402,7 @@ mod tests {
 							kind: ethabi::ParamType::String
 						}],
 						constant: false,
+						state_mutability: ::ethabi::StateMutability::Payable
 					}
 				}
 

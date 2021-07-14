@@ -26,12 +26,15 @@ impl Reader {
 				let mut subtypes = Vec::new();
 				let mut subtuples = Vec::new();
 				let mut nested = 0isize;
+				let mut top_level_paren_open = 0usize;
 				let mut last_item = 1;
+				let mut chars = name.chars().enumerate();
 
 				// Iterate over name and build the nested tuple structure
-				for (pos, c) in name.chars().enumerate() {
+				while let Some((mut pos, c)) = chars.next() {
 					match c {
 						'(' => {
+							top_level_paren_open = pos;
 							nested += 1;
 							// If an '(' is encountered within the tuple
 							// insert an empty subtuples vector to be filled
@@ -42,6 +45,7 @@ impl Reader {
 						}
 						')' => {
 							nested -= 1;
+
 							// End parsing and return an error if parentheses aren't symmetrical
 							if nested < 0 {
 								return Err(Error::InvalidName(name.to_owned()));
@@ -53,29 +57,37 @@ impl Reader {
 							}
 							// If the item is in the top level of the tuple insert it into subtypes
 							else if nested == 0 {
+								// check for trailing brackets that indicate array of tuples
 								let sub = &name[last_item..pos];
 								let subtype = Reader::read(sub)?;
 								subtypes.push(subtype);
 								last_item = pos + 1;
 							}
-							// If the item is in a sublevel of the tuple:
-							// insert it into the subtuple vector for the current depth level
-							// process all the subtuple vectors created into sub tuples and insert
-							// them into subtypes
+							// If the item is in a sublevel of the tuple
 							else if nested > 0 {
-								let sub = &name[last_item..pos];
-								let subtype = Reader::read(sub)?;
-								subtuples[(nested - 1) as usize].push(subtype);
-								let initial_tuple_params = subtuples.remove(0);
-								let tuple_params = subtuples.into_iter().fold(
-									initial_tuple_params,
-									|mut tuple_params, nested_param_set| {
-										tuple_params.push(ParamType::Tuple(nested_param_set));
-										tuple_params
-									},
-								);
-								subtypes.push(ParamType::Tuple(tuple_params));
-								subtuples = Vec::new();
+								// this makes sure trailing brackets are included for the next step
+								loop {
+									match chars.clone().next() {
+										Some((_, ',')) | Some((_, ')')) | None => break,
+										_ => {
+											// consume the char and shift position
+											chars.next();
+											pos += 1;
+										}
+									}
+								}
+
+								// parse the nested tuple
+								let inner_tuple = &name[top_level_paren_open..=pos];
+								let subtype = Reader::read(inner_tuple)?;
+
+								if nested > 1 {
+									let mut subtuple = core::mem::take(&mut subtuples[(nested - 2) as usize]);
+									subtuple.push(subtype);
+									subtypes.push(ParamType::Tuple(subtuple));
+								} else {
+									subtypes.push(subtype);
+								}
 								last_item = pos + 1;
 							}
 						}
@@ -113,16 +125,16 @@ impl Reader {
 					name.chars().rev().skip(1).take_while(|c| *c != '[').collect::<String>().chars().rev().collect();
 
 				let count = name.chars().count();
-				if num.is_empty() {
+				return if num.is_empty() {
 					// we already know it's a dynamic array!
 					let subtype = Reader::read(&name[..count - 2])?;
-					return Ok(ParamType::Array(Box::new(subtype)));
+					Ok(ParamType::Array(Box::new(subtype)))
 				} else {
 					// it's a fixed array.
-					let len = usize::from_str_radix(&num, 10)?;
+					let len = num.parse()?;
 					let subtype = Reader::read(&name[..count - num.len() - 2])?;
-					return Ok(ParamType::FixedArray(Box::new(subtype), len));
-				}
+					Ok(ParamType::FixedArray(Box::new(subtype), len))
+				};
 			}
 			_ => (),
 		}
@@ -136,15 +148,15 @@ impl Reader {
 			"tuple" => ParamType::Tuple(vec![]),
 			"uint" => ParamType::Uint(256),
 			s if s.starts_with("int") => {
-				let len = usize::from_str_radix(&s[3..], 10)?;
+				let len = s[3..].parse()?;
 				ParamType::Int(len)
 			}
 			s if s.starts_with("uint") => {
-				let len = usize::from_str_radix(&s[4..], 10)?;
+				let len = s[4..].parse()?;
 				ParamType::Uint(len)
 			}
 			s if s.starts_with("bytes") => {
-				let len = usize::from_str_radix(&s[5..], 10)?;
+				let len = s[5..].parse()?;
 				ParamType::FixedBytes(len)
 			}
 			_ => {
@@ -248,5 +260,29 @@ mod tests {
 				ParamType::Tuple(vec![ParamType::Bool, ParamType::Uint(256)])
 			])
 		);
+	}
+
+	#[test]
+	fn test_read_nested_tuple_array_param() {
+		assert_eq!(
+			Reader::read("(uint256,bytes32)[]").unwrap(),
+			ParamType::Array(Box::new(ParamType::Tuple(vec![ParamType::Uint(256), ParamType::FixedBytes(32)])))
+		)
+	}
+
+	#[test]
+	fn test_read_inner_tuple_array_param() {
+		use crate::param_type::Writer;
+		let abi = "((uint256,bytes32)[],address)";
+		let read = Reader::read(abi).unwrap();
+
+		let param = ParamType::Tuple(vec![
+			ParamType::Array(Box::new(ParamType::Tuple(vec![ParamType::Uint(256), ParamType::FixedBytes(32)]))),
+			ParamType::Address,
+		]);
+
+		assert_eq!(read, param);
+
+		assert_eq!(abi, Writer::write(&param));
 	}
 }

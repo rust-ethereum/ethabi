@@ -1,40 +1,40 @@
 [package]
-name = "ethabi"
-version = "13.0.0"
 authors = [
-    "Parity Technologies <admin@parity.io>",
-    "Artem Vorotnikov <artem@vorotnikov.me>",
-    "Nicholas Rodrigues Lordello <nlordell@gmail.com>",
+	"Parity Technologies <admin@parity.io>",
+	"Artem Vorotnikov <artem@vorotnikov.me>",
+	"Nicholas Rodrigues Lordello <nlordell@gmail.com>",
 ]
-homepage = "https://github.com/rust-ethereum/ethabi"
-license = "Apache-2.0"
-keywords = ["ethereum", "eth", "abi", "solidity"]
 description = "Easy to use conversion of ethereum contract calls to bytecode."
 edition = "2018"
+homepage = "https://github.com/rust-ethereum/ethabi"
+keywords = ["ethereum", "eth", "abi", "solidity"]
+license = "Apache-2.0"
+name = "ethabi"
+version = "14.1.0"
 
 [features]
 default = ["std"]
 
 std = [
-    "anyhow/std",
-    "hex/std",
-    "serde",
-    "serde_json",
-    "sha3/std",
-    "ethereum-types/std",
-    "thiserror",
+	"anyhow/std",
+	"hex/std",
+	"serde",
+	"serde_json",
+	"sha3/std",
+	"ethereum-types/std",
+	"thiserror",
 ]
 
 [dependencies]
-anyhow = { version = "1", default-features = false }
-hex = { version = "0.4", default-features = false, features = ["alloc"] }
-serde = { version = "1.0", features = ["derive"], optional = true }
-serde_json = { version = "1.0", optional = true }
-sha3 = { version = "0.9", default-features = false }
-ethereum-types = { version = "0.11.0", default-features = false }
-thiserror = { version = "1", optional = true }
-uint = { version = "0.9.0", default-features = false }
+anyhow         = { version = "1.0.42", default-features = false }
+ethereum-types = { version = "0.12.0", default-features = false }
+hex            = { version = "0.4.3", default-features = false, features = ["alloc"] }
+serde          = { version = "1.0.126", features = ["derive"], optional = true }
+serde_json     = { version = "1.0.64", optional = true }
+sha3           = { version = "0.9.1", default-features = false }
+thiserror      = { version = "1.0.26", optional = true }
+uint           = { version = "0.9.1", default-features = false }
 
 [dev-dependencies]
-hex-literal = "0.3"
-paste = "1"
+hex-literal = "0.3.2"
+paste       = "1.0.5"

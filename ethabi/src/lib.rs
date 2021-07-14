@@ -28,16 +28,20 @@ mod event_param;
 mod filter;
 mod function;
 mod log;
+#[cfg(feature = "std")]
 mod operation;
 mod param;
 pub mod param_type;
 mod signature;
+mod state_mutability;
 pub mod token;
 mod tuple_param;
 mod util;
 
 #[cfg(test)]
 mod tests;
+
+pub use ethereum_types;
 
 pub use crate::{
 	constructor::Constructor,
@@ -52,6 +56,7 @@ pub use crate::{
 	log::{Log, LogFilter, LogParam, ParseLog, RawLog},
 	param::Param,
 	param_type::ParamType,
+	state_mutability::StateMutability,
 	token::Token,
 	tuple_param::TupleParam,
 };

@@ -11,10 +11,10 @@ use crate::{encode, Bytes, Error, Param, ParamType, Result, Token};
 #[cfg(not(feature = "std"))]
 use alloc::vec::Vec;
 #[cfg(feature = "std")]
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 /// Contract constructor specification.
-#[cfg_attr(feature = "std", derive(Deserialize))]
+#[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
 #[derive(Debug, Clone, PartialEq)]
 pub struct Constructor {
 	/// Constructor input.

@@ -52,8 +52,7 @@ mod tests {
 
 	#[test]
 	fn param_type_deserialization() {
-		let s =
-			r#"["address", "bytes", "bytes32", "bool", "string", "int", "uint", "address[]", "uint[3]", "bool[][5]"]"#;
+		let s = r#"["address", "bytes", "bytes32", "bool", "string", "int", "uint", "address[]", "uint[3]", "bool[][5]", "tuple[]"]"#;
 		let deserialized: Vec<ParamType> = serde_json::from_str(s).unwrap();
 		assert_eq!(
 			deserialized,
@@ -67,7 +66,8 @@ mod tests {
 				ParamType::Uint(256),
 				ParamType::Array(Box::new(ParamType::Address)),
 				ParamType::FixedArray(Box::new(ParamType::Uint(256)), 3),
-				ParamType::FixedArray(Box::new(ParamType::Array(Box::new(ParamType::Bool))), 5)
+				ParamType::FixedArray(Box::new(ParamType::Array(Box::new(ParamType::Bool))), 5),
+				ParamType::Array(Box::new(ParamType::Tuple(vec![]))),
 			]
 		);
 	}

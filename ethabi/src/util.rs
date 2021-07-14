@@ -8,32 +8,35 @@
 
 //! Utils used by different modules.
 
-use crate::{Error, Word};
-#[cfg(not(feature = "std"))]
-use alloc::vec::Vec;
-
-/// Converts a vector of bytes with len equal n * 32, to a vector of slices.
-pub fn slice_data(data: &[u8]) -> Result<Vec<Word>, Error> {
-	if data.len() % 32 != 0 {
-		return Err(Error::InvalidData);
-	}
-
-	let times = data.len() / 32;
-	let mut result = Vec::with_capacity(times);
-	for i in 0..times {
-		let mut slice = [0u8; 32];
-		let offset = 32 * i;
-		slice.copy_from_slice(&data[offset..offset + 32]);
-		result.push(slice);
-	}
-	Ok(result)
-}
+use crate::Word;
 
 /// Converts a u32 to a right aligned array of 32 bytes.
 pub fn pad_u32(value: u32) -> Word {
 	let mut padded = [0u8; 32];
 	padded[28..32].copy_from_slice(&value.to_be_bytes());
 	padded
+}
+
+// This is a workaround to support non-spec compliant function and event names,
+// see: https://github.com/paritytech/parity/issues/4122
+#[cfg(feature = "std")]
+pub(crate) mod sanitize_name {
+	use serde::{Deserialize, Deserializer};
+
+	pub fn deserialize<'de, D>(deserializer: D) -> Result<String, D::Error>
+	where
+		D: Deserializer<'de>,
+	{
+		let mut name = String::deserialize(deserializer)?;
+		sanitize_name(&mut name);
+		Ok(name)
+	}
+
+	fn sanitize_name(name: &mut String) {
+		if let Some(i) = name.find('(') {
+			name.truncate(i);
+		}
+	}
 }
 
 #[cfg(test)]

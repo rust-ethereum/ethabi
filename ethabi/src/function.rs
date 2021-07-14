@@ -8,28 +8,37 @@
 
 //! Contract function call builder.
 
-use crate::{decode, encode, signature::short_signature, Bytes, Error, Param, ParamType, Result, Token};
+use crate::{
+	decode, encode, signature::short_signature, Bytes, Error, Param, ParamType, Result, StateMutability, Token,
+};
 #[cfg(not(feature = "std"))]
 use alloc::{
 	string::{String, ToString},
 	vec::Vec,
 };
 #[cfg(feature = "std")]
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 /// Contract function specification.
-#[cfg_attr(feature = "std", derive(Deserialize))]
+#[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
 #[derive(Debug, Clone, PartialEq)]
 pub struct Function {
 	/// Function name.
+	#[cfg_attr(feature = "std", serde(deserialize_with = "crate::util::sanitize_name::deserialize"))]
 	pub name: String,
 	/// Function input.
 	pub inputs: Vec<Param>,
 	/// Function output.
 	pub outputs: Vec<Param>,
+	#[deprecated(note = "The constant attribute was removed in Solidity 0.5.0 and has been \
+				replaced with stateMutability. If parsing a JSON AST created with \
+				this version or later this value will always be false, which may be wrong.")]
 	/// Constant function.
 	#[cfg_attr(feature = "std", serde(default))]
 	pub constant: bool,
+	/// Whether the function reads or modifies blockchain state
+	#[cfg_attr(feature = "std", serde(rename = "stateMutability", default))]
+	pub state_mutability: StateMutability,
 }
 
 impl Function {
@@ -87,13 +96,14 @@ impl Function {
 
 #[cfg(test)]
 mod tests {
-	use crate::{Function, Param, ParamType, Token};
+	use crate::{Function, Param, ParamType, StateMutability, Token};
 	#[cfg(not(feature = "std"))]
 	use alloc::borrow::ToOwned;
 	use hex_literal::hex;
 
 	#[test]
 	fn test_function_encode_call() {
+		#[allow(deprecated)]
 		let func = Function {
 			name: "baz".to_owned(),
 			inputs: vec![
@@ -102,6 +112,7 @@ mod tests {
 			],
 			outputs: vec![],
 			constant: false,
+			state_mutability: StateMutability::Payable,
 		};
 
 		let mut uint = [0u8; 32];

@@ -7,7 +7,7 @@
 // except according to those terms.
 
 //! Ethereum ABI params.
-use crate::{Address, Bytes, FixedBytes, ParamType, Uint};
+use crate::{Address, Bytes, FixedBytes, Int, ParamType, Uint};
 #[cfg(not(feature = "std"))]
 use alloc::{string::String, vec::Vec};
 use core::fmt;
@@ -35,7 +35,7 @@ pub enum Token {
 	/// Signed integer.
 	///
 	/// solidity name: int
-	Int(Uint),
+	Int(Int),
 	/// Unisnged integer.
 	///
 	/// solidity name: uint
@@ -160,7 +160,7 @@ impl Token {
 	}
 
 	/// Converts token to...
-	pub fn into_int(self) -> Option<Uint> {
+	pub fn into_int(self) -> Option<Int> {
 		match self {
 			Token::Int(int) => Some(int),
 			_ => None,
@@ -288,16 +288,16 @@ mod tests {
 
 	#[test]
 	fn test_is_dynamic() {
-		assert_eq!(Token::Address("0000000000000000000000000000000000000000".parse().unwrap()).is_dynamic(), false);
-		assert_eq!(Token::Bytes(vec![0, 0, 0, 0]).is_dynamic(), true);
-		assert_eq!(Token::FixedBytes(vec![0, 0, 0, 0]).is_dynamic(), false);
-		assert_eq!(Token::Uint(0.into()).is_dynamic(), false);
-		assert_eq!(Token::Int(0.into()).is_dynamic(), false);
-		assert_eq!(Token::Bool(false).is_dynamic(), false);
-		assert_eq!(Token::String("".into()).is_dynamic(), true);
-		assert_eq!(Token::Array(vec![Token::Bool(false)]).is_dynamic(), true);
-		assert_eq!(Token::FixedArray(vec![Token::Uint(0.into())]).is_dynamic(), false);
-		assert_eq!(Token::FixedArray(vec![Token::String("".into())]).is_dynamic(), true);
-		assert_eq!(Token::FixedArray(vec![Token::Array(vec![Token::Bool(false)])]).is_dynamic(), true);
+		assert!(!Token::Address("0000000000000000000000000000000000000000".parse().unwrap()).is_dynamic());
+		assert!(Token::Bytes(vec![0, 0, 0, 0]).is_dynamic());
+		assert!(!Token::FixedBytes(vec![0, 0, 0, 0]).is_dynamic());
+		assert!(!Token::Uint(0.into()).is_dynamic());
+		assert!(!Token::Int(0.into()).is_dynamic());
+		assert!(!Token::Bool(false).is_dynamic());
+		assert!(Token::String("".into()).is_dynamic());
+		assert!(Token::Array(vec![Token::Bool(false)]).is_dynamic());
+		assert!(!Token::FixedArray(vec![Token::Uint(0.into())]).is_dynamic());
+		assert!(Token::FixedArray(vec![Token::String("".into())]).is_dynamic());
+		assert!(Token::FixedArray(vec![Token::Array(vec![Token::Bool(false)])]).is_dynamic());
 	}
 }

@@ -11,7 +11,7 @@
 #[cfg(not(feature = "std"))]
 use alloc::{collections::BTreeMap, string::String, vec::Vec};
 #[cfg(feature = "std")]
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use sha3::{Digest, Keccak256};
 #[cfg(feature = "std")]
 use std::collections::BTreeMap;
@@ -22,10 +22,11 @@ use crate::{
 };
 
 /// Contract event.
-#[cfg_attr(feature = "std", derive(Deserialize))]
+#[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
 #[derive(Clone, Debug, PartialEq)]
 pub struct Event {
 	/// Event name.
+	#[cfg_attr(feature = "std", serde(deserialize_with = "crate::util::sanitize_name::deserialize"))]
 	pub name: String,
 	/// Event input.
 	pub inputs: Vec<EventParam>,

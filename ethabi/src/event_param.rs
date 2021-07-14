@@ -10,13 +10,14 @@
 
 use crate::ParamType;
 #[cfg(feature = "std")]
-use crate::TupleParam;
+use crate::{param_type::Writer, TupleParam};
 #[cfg(not(feature = "std"))]
 use alloc::string::String;
 #[cfg(feature = "std")]
 use serde::{
 	de::{Error, MapAccess, Visitor},
-	Deserialize, Deserializer,
+	ser::SerializeMap,
+	Deserialize, Deserializer, Serialize, Serializer,
 };
 #[cfg(feature = "std")]
 use std::fmt;
@@ -93,22 +94,34 @@ impl<'a> Visitor<'a> for EventParamVisitor {
 			}
 		}
 		let name = name.ok_or_else(|| Error::missing_field("name"))?;
-		let kind = kind.ok_or_else(|| Error::missing_field("kind")).and_then(|param_type| {
-			if let ParamType::Tuple(_) = param_type {
-				let tuple_params = components.ok_or_else(|| Error::missing_field("components"))?;
-				Ok(ParamType::Tuple(tuple_params.into_iter().map(|param| param.kind).collect()))
-			} else {
-				Ok(param_type)
-			}
-		})?;
+		let mut kind = kind.ok_or_else(|| Error::missing_field("kind"))?;
+		crate::param::set_tuple_components(&mut kind, components)?;
 		let indexed = indexed.unwrap_or(false);
 		Ok(EventParam { name, kind, indexed })
 	}
 }
 
+#[cfg(feature = "std")]
+impl Serialize for EventParam {
+	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+	where
+		S: Serializer,
+	{
+		let mut map = serializer.serialize_map(None)?;
+		map.serialize_entry("name", &self.name)?;
+		map.serialize_entry("type", &Writer::write_for_abi(&self.kind, false))?;
+		map.serialize_entry("indexed", &self.indexed)?;
+		if let Some(inner_tuple) = crate::param::inner_tuple(&self.kind) {
+			map.serialize_key("components")?;
+			map.serialize_value(&crate::param::SerializeableParamVec(inner_tuple))?;
+		}
+		map.end()
+	}
+}
+
 #[cfg(all(test, feature = "std"))]
 mod tests {
-	use crate::{EventParam, ParamType};
+	use crate::{tests::assert_json_eq, EventParam, ParamType};
 
 	#[test]
 	fn event_param_deserialization() {
@@ -121,7 +134,10 @@ mod tests {
 		let deserialized: EventParam = serde_json::from_str(s).unwrap();
 
 		assert_eq!(deserialized, EventParam { name: "foo".to_owned(), kind: ParamType::Address, indexed: true });
+
+		assert_json_eq(s, serde_json::to_string(&deserialized).unwrap().as_str());
 	}
+
 	#[test]
 	fn event_param_tuple_deserialization() {
 		let s = r#"{
@@ -130,15 +146,12 @@ mod tests {
 			"indexed": true,
 			"components": [
 				{
-					"name": "amount",
 					"type": "uint48"
 				},
 				{
-					"name": "things",
 					"type": "tuple",
 					"components": [
 						{
-							"name": "baseTupleParam",
 							"type": "address"
 						}
 					]
@@ -156,5 +169,73 @@ mod tests {
 				indexed: true,
 			}
 		);
+
+		assert_json_eq(s, serde_json::to_string(&deserialized).unwrap().as_str());
+	}
+
+	#[test]
+	fn event_param_tuple_array_deserialization() {
+		let s = r#"{
+			"components": [
+				{ "type": "uint256" },
+				{ "type": "address" },
+				{
+					"components": [
+						{ "type": "address" },
+						{ "type": "address" }
+					],
+					"type": "tuple"
+				},
+				{ "type": "uint256" },
+				{
+					"components": [
+						{
+							"components": [
+								{ "type": "address" },
+								{ "type": "bytes" }
+							],
+							"type": "tuple[]"
+						},
+						{
+							"components": [
+								{ "type": "address" },
+								{ "type": "uint256" }
+							],
+							"type": "tuple[]"
+						},
+						{ "type": "uint256" }
+					],
+					"type": "tuple[]"
+				},
+				{ "type": "uint256" }
+			],
+			"indexed": false,
+			"name": "LogTaskSubmitted",
+			"type": "tuple"
+        }"#;
+
+		let deserialized: EventParam = serde_json::from_str(s).unwrap();
+
+		assert_eq!(
+			deserialized,
+			EventParam {
+				name: "LogTaskSubmitted".to_owned(),
+				kind: ParamType::Tuple(vec![
+					ParamType::Uint(256),
+					ParamType::Address,
+					ParamType::Tuple(vec![ParamType::Address, ParamType::Address]),
+					ParamType::Uint(256),
+					ParamType::Array(Box::new(ParamType::Tuple(vec![
+						ParamType::Array(Box::new(ParamType::Tuple(vec![ParamType::Address, ParamType::Bytes,]))),
+						ParamType::Array(Box::new(ParamType::Tuple(vec![ParamType::Address, ParamType::Uint(256)]))),
+						ParamType::Uint(256),
+					]))),
+					ParamType::Uint(256),
+				]),
+				indexed: false,
+			}
+		);
+
+		assert_json_eq(s, serde_json::to_string(&deserialized).unwrap().as_str());
 	}
 }

@@ -11,6 +11,25 @@ use crate::{decode, encode, ParamType, Token};
 use alloc::{borrow::ToOwned, boxed::Box};
 use hex_literal::hex;
 
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use std::fmt::Debug;
+
+pub(crate) fn assert_json_eq(left: &str, right: &str) {
+	let left: Value = serde_json::from_str(left).unwrap();
+	let right: Value = serde_json::from_str(right).unwrap();
+	assert_eq!(left, right);
+}
+
+pub(crate) fn assert_ser_de<T>(canon: &T)
+where
+	T: Serialize + for<'a> Deserialize<'a> + PartialEq + Debug,
+{
+	let ser = serde_json::to_string(canon).unwrap();
+	let de = serde_json::from_str(&ser).unwrap();
+	assert_eq!(canon, &de);
+}
+
 macro_rules! test_encode_decode {
 	(name: $name:tt, types: $types:expr, tokens: $tokens:expr, data: $data:tt) => {
 		paste::item! {
@@ -447,6 +466,31 @@ test_encode_decode! {
 		0000000000000000000000002222222222222222222222222222222222222222"
 }
 test_encode_decode! {
+	name: fixed_array_of_strings,
+	types: [ParamType::FixedArray(Box::new(ParamType::String), 2)],
+	tokens: {
+		let s1 = Token::String("foo".into());
+		let s2 = Token::String("bar".into());
+		[Token::FixedArray(vec![s1, s2])]
+	},
+	data: "
+		0000000000000000000000000000000000000000000000000000000000000020
+		0000000000000000000000000000000000000000000000000000000000000040
+		0000000000000000000000000000000000000000000000000000000000000080
+		0000000000000000000000000000000000000000000000000000000000000003
+		666f6f0000000000000000000000000000000000000000000000000000000000
+		0000000000000000000000000000000000000000000000000000000000000003
+		6261720000000000000000000000000000000000000000000000000000000000"
+	// `data` explained:
+	// line 1 at 0x00 =   0: tail offset for the array
+	// line 2 at 0x20 =  32: offset of string 1
+	// line 3 at 0x40 =  64: offset of string 2
+	// line 4 at 0x60 =  96: length of string 1
+	// line 5 at 0x80 = 128: value  of string 1
+	// line 6 at 0xa0 = 160: length of string 2
+	// line 7 at 0xc0 = 192: value  of string 2
+}
+test_encode_decode! {
 	name: fixed_array_of_fixed_arrays,
 	types: [
 		ParamType::FixedArray(
@@ -505,6 +549,55 @@ test_encode_decode! {
 	types: [ParamType::FixedBytes(2)],
 	tokens: [Token::FixedBytes(vec![0x12, 0x34])],
 	data: "1234000000000000000000000000000000000000000000000000000000000000"
+
+}
+
+// test tuple with tuple array member
+test_encode_decode! {
+	name: tuple_with_tuple_array_test,
+	types: [
+		ParamType::Tuple(vec![
+			ParamType::Array(Box::new(ParamType::Tuple(
+				vec![
+					ParamType::Address,
+					ParamType::Uint(256)
+				]
+			)))
+		])
+	],
+	tokens: {
+		[
+			Token::Tuple(
+				vec![
+					Token::Array(vec![
+						Token::Tuple(vec![
+							Token::Address([0x11u8; 20].into()),
+							Token::Uint([0x11u8; 32].into()),
+						]),
+						Token::Tuple(vec![
+							Token::Address([0x22u8; 20].into()),
+							Token::Uint([0x22u8; 32].into()),
+						]),
+						Token::Tuple(vec![
+							Token::Address([0x33u8; 20].into()),
+							Token::Uint([0x44u8; 32].into()),
+						])
+					])
+				]
+			)
+		]
+	},
+	data: "
+		0000000000000000000000000000000000000000000000000000000000000020
+		0000000000000000000000000000000000000000000000000000000000000020
+		0000000000000000000000000000000000000000000000000000000000000003
+		0000000000000000000000001111111111111111111111111111111111111111
+		1111111111111111111111111111111111111111111111111111111111111111
+		0000000000000000000000002222222222222222222222222222222222222222
+		2222222222222222222222222222222222222222222222222222222222222222
+		0000000000000000000000003333333333333333333333333333333333333333
+		4444444444444444444444444444444444444444444444444444444444444444
+	"
 }
 
 // comprehensive test
