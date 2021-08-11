@@ -289,8 +289,12 @@ mod tests {
 		#[allow(deprecated)]
 		let ethabi_function = ethabi::Function {
 			name: "hello".into(),
-			inputs: vec![ethabi::Param { name: "foo".into(), kind: ethabi::ParamType::Address, internal_type :None }],
-			outputs: vec![ethabi::Param { name: "bar".into(), kind: ethabi::ParamType::Uint(256), internal_type :None }],
+			inputs: vec![ethabi::Param { name: "foo".into(), kind: ethabi::ParamType::Address, internal_type: None }],
+			outputs: vec![ethabi::Param {
+				name: "bar".into(),
+				kind: ethabi::ParamType::Uint(256),
+				internal_type: None,
+			}],
 			constant: false,
 			state_mutability: ethabi::StateMutability::Payable,
 		};
@@ -365,17 +369,17 @@ mod tests {
 				ethabi::Param {
 					name: "foo".into(),
 					kind: ethabi::ParamType::FixedArray(Box::new(ethabi::ParamType::Address), 2),
-					internal_type :None,
+					internal_type: None,
 				},
 				ethabi::Param {
 					name: "bar".into(),
 					kind: ethabi::ParamType::Array(Box::new(ethabi::ParamType::Uint(256))),
-					internal_type :None
+					internal_type: None,
 				},
 			],
 			outputs: vec![
-				ethabi::Param { name: "".into(), kind: ethabi::ParamType::Uint(256), internal_type :None },
-				ethabi::Param { name: "".into(), kind: ethabi::ParamType::String, internal_type :None },
+				ethabi::Param { name: "".into(), kind: ethabi::ParamType::Uint(256), internal_type: None },
+				ethabi::Param { name: "".into(), kind: ethabi::ParamType::String, internal_type: None },
 			],
 			constant: false,
 			state_mutability: ethabi::StateMutability::Payable,

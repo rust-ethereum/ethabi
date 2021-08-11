@@ -100,8 +100,8 @@ mod tests {
 		let func = Function {
 			name: "baz".to_owned(),
 			inputs: vec![
-				Param { name: "a".to_owned(), kind: ParamType::Uint(32), internal_type :None },
-				Param { name: "b".to_owned(), kind: ParamType::Bool, internal_type :None },
+				Param { name: "a".to_owned(), kind: ParamType::Uint(32), internal_type: None },
+				Param { name: "b".to_owned(), kind: ParamType::Bool, internal_type: None },
 			],
 			outputs: vec![],
 			constant: false,

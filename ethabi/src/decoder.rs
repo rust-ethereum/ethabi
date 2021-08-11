@@ -606,14 +606,18 @@ ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 			Function {
 				name: "f_tuple".to_string(),
 				inputs: vec![
-					Param { name: "c".to_string(), kind: Array(Box::new(Tuple(vec![Uint(256), Uint(256)]))), internal_type :None },
+					Param {
+						name: "c".to_string(),
+						kind: Array(Box::new(Tuple(vec![Uint(256), Uint(256)]))),
+						internal_type: None,
+					},
 					Param {
 						name: "d".to_string(),
 						kind: Array(Box::new(Tuple(vec![
 							Uint(256),
 							Array(Box::new(Tuple(vec![Uint(256), Array(Box::new(ParamType::String))]))),
 						]))),
-						internal_type :None
+						internal_type: None,
 					},
 				],
 				outputs: vec![],

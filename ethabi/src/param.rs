@@ -25,7 +25,7 @@ pub struct Param {
 	/// Param type.
 	pub kind: ParamType,
 	/// Additional Internal type.
-	pub internal_type : Option<String>
+	pub internal_type: Option<String>,
 }
 
 impl<'a> Deserialize<'a> for Param {
@@ -98,7 +98,7 @@ impl Serialize for Param {
 		S: Serializer,
 	{
 		let mut map = serializer.serialize_map(None)?;
-		if let Some(ref internal_type) =self.internal_type {
+		if let Some(ref internal_type) = self.internal_type {
 			map.serialize_entry("internalType", internal_type)?;
 		}
 		map.serialize_entry("name", &self.name)?;
@@ -192,7 +192,7 @@ mod tests {
 
 		let deserialized: Param = serde_json::from_str(s).unwrap();
 
-		assert_eq!(deserialized, Param { name: "foo".to_owned(), kind: ParamType::Address, internal_type :None });
+		assert_eq!(deserialized, Param { name: "foo".to_owned(), kind: ParamType::Address, internal_type: None });
 
 		assert_json_eq(s, serde_json::to_string(&deserialized).unwrap().as_str());
 	}
@@ -224,7 +224,7 @@ mod tests {
 			Param {
 				name: "foo".to_owned(),
 				kind: ParamType::Tuple(vec![ParamType::Uint(48), ParamType::Tuple(vec![ParamType::Address])]),
-				internal_type :None
+				internal_type: None
 			}
 		);
 
@@ -261,7 +261,7 @@ mod tests {
 			Param {
 				name: "foo".to_owned(),
 				kind: ParamType::Tuple(vec![ParamType::Uint(48), ParamType::Tuple(vec![ParamType::Address])]),
-				internal_type :None
+				internal_type: None
 			}
 		);
 
@@ -297,7 +297,7 @@ mod tests {
 					ParamType::Address,
 					ParamType::Address
 				]))),
-				internal_type :None
+				internal_type: None
 			}
 		);
 
@@ -328,7 +328,7 @@ mod tests {
 					ParamType::Uint(8),
 					ParamType::Uint(16),
 				]))))),
-				internal_type :None
+				internal_type: None
 			}
 		);
 
@@ -363,7 +363,7 @@ mod tests {
 					Box::new(ParamType::Tuple(vec![ParamType::Uint(48), ParamType::Address, ParamType::Address])),
 					2
 				),
-				internal_type :None
+				internal_type: None
 			}
 		);
 
@@ -405,7 +405,7 @@ mod tests {
 					ParamType::Array(Box::new(ParamType::Tuple(vec![ParamType::Address]))),
 					ParamType::FixedArray(Box::new(ParamType::Tuple(vec![ParamType::Address])), 42,)
 				]),
-				internal_type :None
+				internal_type: None
 			}
 		);
 
