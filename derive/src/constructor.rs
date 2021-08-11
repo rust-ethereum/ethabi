@@ -48,7 +48,7 @@ impl<'a> From<&'a ethabi::Constructor> for Constructor {
 		let tokenize: Vec<_> = input_names
 			.iter()
 			.zip(c.inputs.iter())
-			.map(|(param_name, param)| to_token(&from_template_param(&param.kind, &param_name), &param.kind))
+			.map(|(param_name, param)| to_token(&from_template_param(&param.kind, param_name), &param.kind))
 			.collect();
 
 		Constructor {

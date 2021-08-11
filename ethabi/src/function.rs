@@ -62,12 +62,12 @@ impl Function {
 
 	/// Parses the ABI function output to list of tokens.
 	pub fn decode_output(&self, data: &[u8]) -> Result<Vec<Token>> {
-		decode(&self.output_param_types(), &data)
+		decode(&self.output_param_types(), data)
 	}
 
 	/// Parses the ABI function input to a list of tokens.
 	pub fn decode_input(&self, data: &[u8]) -> Result<Vec<Token>> {
-		decode(&self.input_param_types(), &data)
+		decode(&self.input_param_types(), data)
 	}
 
 	/// Returns a signature that uniquely identifies this function.

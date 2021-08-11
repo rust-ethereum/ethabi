@@ -98,7 +98,7 @@ impl<'a> From<&'a ethabi::Function> for Function {
 		let tokenize: Vec<_> = input_names
 			.iter()
 			.zip(f.inputs.iter())
-			.map(|(param_name, param)| to_token(&from_template_param(&param.kind, &param_name), &param.kind))
+			.map(|(param_name, param)| to_token(&from_template_param(&param.kind, param_name), &param.kind))
 			.collect();
 
 		let output_result = get_output_kinds(&f.outputs);
