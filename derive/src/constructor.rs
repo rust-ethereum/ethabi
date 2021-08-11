@@ -109,7 +109,7 @@ mod tests {
 	#[test]
 	fn test_one_param() {
 		let ethabi_constructor = ethabi::Constructor {
-			inputs: vec![ethabi::Param { name: "foo".into(), kind: ethabi::ParamType::Uint(256) }],
+			inputs: vec![ethabi::Param { name: "foo".into(), kind: ethabi::ParamType::Uint(256), internal_type :None }],
 		};
 
 		let c = Constructor::from(&ethabi_constructor);
@@ -120,7 +120,8 @@ mod tests {
 				let c = ethabi::Constructor {
 					inputs: vec![ethabi::Param {
 						name: "foo".to_owned(),
-						kind: ethabi::ParamType::Uint(256usize)
+						kind: ethabi::ParamType::Uint(256usize),
+						internal_type: None
 					}],
 				};
 				let tokens = vec![ethabi::Token::Uint(foo.into())];
