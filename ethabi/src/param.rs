@@ -198,6 +198,28 @@ mod tests {
 	}
 
 	#[test]
+	fn param_simple_internal_type() {
+		let s = r#"{
+			"name": "foo",
+			"type": "address",
+			"internalType": "struct Verifier.Proof"
+		}"#;
+
+		let deserialized: Param = serde_json::from_str(s).unwrap();
+
+		assert_eq!(
+			deserialized,
+			Param {
+				name: "foo".to_owned(),
+				kind: ParamType::Address,
+				internal_type: Some("struct Verifier.Proof".to_string())
+			}
+		);
+
+		assert_json_eq(s, serde_json::to_string(&deserialized).unwrap().as_str());
+	}
+
+	#[test]
 	fn param_tuple() {
 		let s = r#"{
 			"name": "foo",
@@ -225,6 +247,41 @@ mod tests {
 				name: "foo".to_owned(),
 				kind: ParamType::Tuple(vec![ParamType::Uint(48), ParamType::Tuple(vec![ParamType::Address])]),
 				internal_type: None
+			}
+		);
+
+		assert_json_eq(s, serde_json::to_string(&deserialized).unwrap().as_str());
+	}
+
+	#[test]
+	fn param_tuple_internal_type() {
+		let s = r#"{
+			"name": "foo",
+			"type": "tuple",
+			"internalType": "struct Pairing.G1Point[]",
+			"components": [
+				{
+					"type": "uint48"
+				},
+				{
+					"type": "tuple",
+					"components": [
+						{
+							"type": "address"
+						}
+					]
+				}
+			]
+		}"#;
+
+		let deserialized: Param = serde_json::from_str(s).unwrap();
+
+		assert_eq!(
+			deserialized,
+			Param {
+				name: "foo".to_owned(),
+				kind: ParamType::Tuple(vec![ParamType::Uint(48), ParamType::Tuple(vec![ParamType::Address])]),
+				internal_type: Some("struct Pairing.G1Point[]".to_string())
 			}
 		);
 

@@ -139,6 +139,28 @@ mod tests {
 	}
 
 	#[test]
+	fn param_internal_type() {
+		let s = r#"{
+		 	"internalType": "struct Verifier.Proof",
+			"name": "foo",
+			"type": "address"
+		}"#;
+
+		let deserialized: TupleParam = serde_json::from_str(s).unwrap();
+
+		assert_eq!(
+			deserialized,
+			TupleParam {
+				name: Some("foo".to_owned()),
+				kind: ParamType::Address,
+				internal_type: Some("struct Verifier.Proof".to_string())
+			}
+		);
+
+		assert_json_eq(s, serde_json::to_string(&deserialized).unwrap().as_str());
+	}
+
+	#[test]
 	fn param_unnamed() {
 		let s = r#"{
 			"type": "address"
