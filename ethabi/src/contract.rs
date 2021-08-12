@@ -14,9 +14,11 @@ use serde::{
 };
 use std::{
 	collections::{hash_map::Values, HashMap},
-	fmt, io,
+	fmt,
 	iter::Flatten,
 };
+#[cfg(feature = "std")]
+use std::io;
 
 /// API building calls to contracts ABI.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -137,6 +139,7 @@ impl Serialize for Contract {
 
 impl Contract {
 	/// Loads contract from json.
+	#[cfg(feature = "std")]
 	pub fn load<T: io::Read>(reader: T) -> errors::Result<Self> {
 		serde_json::from_reader(reader).map_err(From::from)
 	}
