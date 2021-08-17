@@ -54,7 +54,7 @@ mod tests {
 		#[allow(deprecated)]
 		let function = Function {
 			name: "foo".to_owned(),
-			inputs: vec![Param { name: "a".to_owned(), kind: ParamType::Address }],
+			inputs: vec![Param { name: "a".to_owned(), kind: ParamType::Address, internal_type: None }],
 			outputs: vec![],
 			constant: false,
 			state_mutability: StateMutability::NonPayable,

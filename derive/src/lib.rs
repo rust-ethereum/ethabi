@@ -117,7 +117,8 @@ where
 			quote! {
 				ethabi::Param {
 					name: #name.to_owned(),
-					kind: #kind
+					kind: #kind,
+					internal_type: None
 				}
 			}
 		})

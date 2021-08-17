@@ -48,7 +48,7 @@ impl<'a> From<&'a ethabi::Constructor> for Constructor {
 		let tokenize: Vec<_> = input_names
 			.iter()
 			.zip(c.inputs.iter())
-			.map(|(param_name, param)| to_token(&from_template_param(&param.kind, &param_name), &param.kind))
+			.map(|(param_name, param)| to_token(&from_template_param(&param.kind, param_name), &param.kind))
 			.collect();
 
 		Constructor {
@@ -109,7 +109,7 @@ mod tests {
 	#[test]
 	fn test_one_param() {
 		let ethabi_constructor = ethabi::Constructor {
-			inputs: vec![ethabi::Param { name: "foo".into(), kind: ethabi::ParamType::Uint(256) }],
+			inputs: vec![ethabi::Param { name: "foo".into(), kind: ethabi::ParamType::Uint(256), internal_type: None }],
 		};
 
 		let c = Constructor::from(&ethabi_constructor);
@@ -120,7 +120,8 @@ mod tests {
 				let c = ethabi::Constructor {
 					inputs: vec![ethabi::Param {
 						name: "foo".to_owned(),
-						kind: ethabi::ParamType::Uint(256usize)
+						kind: ethabi::ParamType::Uint(256usize),
+						internal_type: None
 					}],
 				};
 				let tokens = vec![ethabi::Token::Uint(foo.into())];

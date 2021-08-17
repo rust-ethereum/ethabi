@@ -24,6 +24,9 @@ pub struct TupleParam {
 
 	/// Param type.
 	pub kind: ParamType,
+
+	/// Additional Internal type.
+	pub internal_type: Option<String>,
 }
 
 impl<'a> Deserialize<'a> for TupleParam {
@@ -51,6 +54,7 @@ impl<'a> Visitor<'a> for TupleParamVisitor {
 		let mut name = None;
 		let mut kind = None;
 		let mut components = None;
+		let mut internal_type = None;
 
 		while let Some(ref key) = map.next_key::<String>()? {
 			match key.as_ref() {
@@ -66,6 +70,12 @@ impl<'a> Visitor<'a> for TupleParamVisitor {
 					}
 					kind = Some(map.next_value()?);
 				}
+				"internalType" => {
+					if internal_type.is_some() {
+						return Err(Error::duplicate_field("internalType"));
+					}
+					internal_type = Some(map.next_value()?);
+				}
 				"components" => {
 					if components.is_some() {
 						return Err(Error::duplicate_field("components"));
@@ -79,7 +89,7 @@ impl<'a> Visitor<'a> for TupleParamVisitor {
 
 		let mut kind = kind.ok_or_else(|| Error::missing_field("kind"))?;
 		crate::param::set_tuple_components(&mut kind, components)?;
-		Ok(TupleParam { name, kind })
+		Ok(TupleParam { name, kind, internal_type })
 	}
 }
 
@@ -89,6 +99,9 @@ impl Serialize for TupleParam {
 		S: Serializer,
 	{
 		let mut map = serializer.serialize_map(None)?;
+		if let Some(ref internal_type) = self.internal_type {
+			map.serialize_entry("internalType", internal_type)?;
+		}
 		if let Some(name) = &self.name {
 			map.serialize_entry("name", name)?;
 		}
@@ -117,7 +130,32 @@ mod tests {
 
 		let deserialized: TupleParam = serde_json::from_str(s).unwrap();
 
-		assert_eq!(deserialized, TupleParam { name: Some("foo".to_owned()), kind: ParamType::Address });
+		assert_eq!(
+			deserialized,
+			TupleParam { name: Some("foo".to_owned()), kind: ParamType::Address, internal_type: None }
+		);
+
+		assert_json_eq(s, serde_json::to_string(&deserialized).unwrap().as_str());
+	}
+
+	#[test]
+	fn param_internal_type() {
+		let s = r#"{
+		 	"internalType": "struct Verifier.Proof",
+			"name": "foo",
+			"type": "address"
+		}"#;
+
+		let deserialized: TupleParam = serde_json::from_str(s).unwrap();
+
+		assert_eq!(
+			deserialized,
+			TupleParam {
+				name: Some("foo".to_owned()),
+				kind: ParamType::Address,
+				internal_type: Some("struct Verifier.Proof".to_string())
+			}
+		);
 
 		assert_json_eq(s, serde_json::to_string(&deserialized).unwrap().as_str());
 	}
@@ -130,7 +168,7 @@ mod tests {
 
 		let deserialized: TupleParam = serde_json::from_str(s).unwrap();
 
-		assert_eq!(deserialized, TupleParam { name: None, kind: ParamType::Address });
+		assert_eq!(deserialized, TupleParam { name: None, kind: ParamType::Address, internal_type: None });
 
 		assert_json_eq(s, serde_json::to_string(&deserialized).unwrap().as_str());
 	}
@@ -161,6 +199,7 @@ mod tests {
 			TupleParam {
 				name: None,
 				kind: ParamType::Tuple(vec![ParamType::Uint(48), ParamType::Tuple(vec![ParamType::Address])]),
+				internal_type: None
 			}
 		);
 
@@ -196,6 +235,7 @@ mod tests {
 			TupleParam {
 				name: None,
 				kind: ParamType::Tuple(vec![ParamType::Uint(48), ParamType::Tuple(vec![ParamType::Address])]),
+				internal_type: None
 			}
 		);
 
@@ -230,6 +270,7 @@ mod tests {
 					ParamType::Address,
 					ParamType::Address
 				]))),
+				internal_type: None
 			}
 		);
 
@@ -259,6 +300,7 @@ mod tests {
 					ParamType::Uint(8),
 					ParamType::Uint(16),
 				]))))),
+				internal_type: None
 			}
 		);
 
@@ -292,6 +334,7 @@ mod tests {
 					Box::new(ParamType::Tuple(vec![ParamType::Uint(48), ParamType::Address, ParamType::Address])),
 					2
 				),
+				internal_type: None
 			}
 		);
 
@@ -332,6 +375,7 @@ mod tests {
 					ParamType::Array(Box::new(ParamType::Tuple(vec![ParamType::Address]))),
 					ParamType::FixedArray(Box::new(ParamType::Tuple(vec![ParamType::Address])), 42,)
 				]),
+				internal_type: None
 			}
 		);
 

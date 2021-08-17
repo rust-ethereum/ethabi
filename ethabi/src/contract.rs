@@ -248,7 +248,7 @@ mod test {
 			deserialized,
 			Contract {
 				constructor: Some(Constructor {
-					inputs: vec![Param { name: "a".to_string(), kind: ParamType::Address }]
+					inputs: vec![Param { name: "a".to_string(), kind: ParamType::Address, internal_type: None }]
 				}),
 				functions: HashMap::new(),
 				events: HashMap::new(),
@@ -300,8 +300,16 @@ mod test {
 						"foo".to_string(),
 						vec![Function {
 							name: "foo".to_string(),
-							inputs: vec![Param { name: "a".to_string(), kind: ParamType::Address }],
-							outputs: vec![Param { name: "res".to_string(), kind: ParamType::Address }],
+							inputs: vec![Param {
+								name: "a".to_string(),
+								kind: ParamType::Address,
+								internal_type: None
+							}],
+							outputs: vec![Param {
+								name: "res".to_string(),
+								kind: ParamType::Address,
+								internal_type: None
+							}],
 							constant: false,
 							state_mutability: Default::default()
 						}]
@@ -366,8 +374,16 @@ mod test {
 					vec![
 						Function {
 							name: "foo".to_string(),
-							inputs: vec![Param { name: "a".to_string(), kind: ParamType::Address }],
-							outputs: vec![Param { name: "res".to_string(), kind: ParamType::Address }],
+							inputs: vec![Param {
+								name: "a".to_string(),
+								kind: ParamType::Address,
+								internal_type: None
+							}],
+							outputs: vec![Param {
+								name: "res".to_string(),
+								kind: ParamType::Address,
+								internal_type: None
+							}],
 							constant: false,
 							state_mutability: Default::default()
 						},

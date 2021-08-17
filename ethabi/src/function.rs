@@ -62,12 +62,12 @@ impl Function {
 
 	/// Parses the ABI function output to list of tokens.
 	pub fn decode_output(&self, data: &[u8]) -> Result<Vec<Token>> {
-		decode(&self.output_param_types(), &data)
+		decode(&self.output_param_types(), data)
 	}
 
 	/// Parses the ABI function input to a list of tokens.
 	pub fn decode_input(&self, data: &[u8]) -> Result<Vec<Token>> {
-		decode(&self.input_param_types(), &data)
+		decode(&self.input_param_types(), data)
 	}
 
 	/// Returns a signature that uniquely identifies this function.
@@ -100,8 +100,8 @@ mod tests {
 		let func = Function {
 			name: "baz".to_owned(),
 			inputs: vec![
-				Param { name: "a".to_owned(), kind: ParamType::Uint(32) },
-				Param { name: "b".to_owned(), kind: ParamType::Bool },
+				Param { name: "a".to_owned(), kind: ParamType::Uint(32), internal_type: None },
+				Param { name: "b".to_owned(), kind: ParamType::Bool, internal_type: None },
 			],
 			outputs: vec![],
 			constant: false,

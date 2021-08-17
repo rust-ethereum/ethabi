@@ -149,7 +149,7 @@ fn decode_param(param: &ParamType, data: &[u8], offset: usize) -> Result<DecodeR
 			let mut new_offset = 0;
 
 			for _ in 0..len {
-				let res = decode_param(t, &tail, new_offset)?;
+				let res = decode_param(t, tail, new_offset)?;
 				new_offset = res.new_offset;
 				tokens.push(res.token);
 			}
@@ -167,7 +167,7 @@ fn decode_param(param: &ParamType, data: &[u8], offset: usize) -> Result<DecodeR
 			let mut tokens = vec![];
 
 			for _ in 0..len {
-				let res = decode_param(t, &tail, new_offset)?;
+				let res = decode_param(t, tail, new_offset)?;
 				new_offset = res.new_offset;
 				tokens.push(res.token);
 			}
@@ -197,7 +197,7 @@ fn decode_param(param: &ParamType, data: &[u8], offset: usize) -> Result<DecodeR
 			let len = t.len();
 			let mut tokens = Vec::with_capacity(len);
 			for param in t {
-				let res = decode_param(param, &tail, new_offset)?;
+				let res = decode_param(param, tail, new_offset)?;
 				new_offset = res.new_offset;
 				tokens.push(res.token);
 			}
@@ -606,13 +606,18 @@ ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 			Function {
 				name: "f_tuple".to_string(),
 				inputs: vec![
-					Param { name: "c".to_string(), kind: Array(Box::new(Tuple(vec![Uint(256), Uint(256)]))) },
+					Param {
+						name: "c".to_string(),
+						kind: Array(Box::new(Tuple(vec![Uint(256), Uint(256)]))),
+						internal_type: None,
+					},
 					Param {
 						name: "d".to_string(),
 						kind: Array(Box::new(Tuple(vec![
 							Uint(256),
 							Array(Box::new(Tuple(vec![Uint(256), Array(Box::new(ParamType::String))]))),
 						]))),
+						internal_type: None,
 					},
 				],
 				outputs: vec![],

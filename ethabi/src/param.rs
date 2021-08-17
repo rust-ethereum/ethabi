@@ -24,6 +24,8 @@ pub struct Param {
 	pub name: String,
 	/// Param type.
 	pub kind: ParamType,
+	/// Additional Internal type.
+	pub internal_type: Option<String>,
 }
 
 impl<'a> Deserialize<'a> for Param {
@@ -51,6 +53,7 @@ impl<'a> Visitor<'a> for ParamVisitor {
 		let mut name = None;
 		let mut kind = None;
 		let mut components = None;
+		let mut internal_type = None;
 
 		while let Some(ref key) = map.next_key::<String>()? {
 			match key.as_ref() {
@@ -66,6 +69,12 @@ impl<'a> Visitor<'a> for ParamVisitor {
 					}
 					kind = Some(map.next_value()?);
 				}
+				"internalType" => {
+					if internal_type.is_some() {
+						return Err(Error::duplicate_field("internalType"));
+					}
+					internal_type = Some(map.next_value()?);
+				}
 				"components" => {
 					if components.is_some() {
 						return Err(Error::duplicate_field("components"));
@@ -79,7 +88,7 @@ impl<'a> Visitor<'a> for ParamVisitor {
 		let name = name.ok_or_else(|| Error::missing_field("name"))?;
 		let mut kind = kind.ok_or_else(|| Error::missing_field("kind"))?;
 		set_tuple_components::<V::Error>(&mut kind, components)?;
-		Ok(Param { name, kind })
+		Ok(Param { name, kind, internal_type })
 	}
 }
 
@@ -89,6 +98,9 @@ impl Serialize for Param {
 		S: Serializer,
 	{
 		let mut map = serializer.serialize_map(None)?;
+		if let Some(ref internal_type) = self.internal_type {
+			map.serialize_entry("internalType", internal_type)?;
+		}
 		map.serialize_entry("name", &self.name)?;
 		map.serialize_entry("type", &Writer::write_for_abi(&self.kind, false))?;
 		if let Some(inner_tuple) = inner_tuple(&self.kind) {
@@ -180,7 +192,29 @@ mod tests {
 
 		let deserialized: Param = serde_json::from_str(s).unwrap();
 
-		assert_eq!(deserialized, Param { name: "foo".to_owned(), kind: ParamType::Address });
+		assert_eq!(deserialized, Param { name: "foo".to_owned(), kind: ParamType::Address, internal_type: None });
+
+		assert_json_eq(s, serde_json::to_string(&deserialized).unwrap().as_str());
+	}
+
+	#[test]
+	fn param_simple_internal_type() {
+		let s = r#"{
+			"name": "foo",
+			"type": "address",
+			"internalType": "struct Verifier.Proof"
+		}"#;
+
+		let deserialized: Param = serde_json::from_str(s).unwrap();
+
+		assert_eq!(
+			deserialized,
+			Param {
+				name: "foo".to_owned(),
+				kind: ParamType::Address,
+				internal_type: Some("struct Verifier.Proof".to_string())
+			}
+		);
 
 		assert_json_eq(s, serde_json::to_string(&deserialized).unwrap().as_str());
 	}
@@ -212,6 +246,42 @@ mod tests {
 			Param {
 				name: "foo".to_owned(),
 				kind: ParamType::Tuple(vec![ParamType::Uint(48), ParamType::Tuple(vec![ParamType::Address])]),
+				internal_type: None
+			}
+		);
+
+		assert_json_eq(s, serde_json::to_string(&deserialized).unwrap().as_str());
+	}
+
+	#[test]
+	fn param_tuple_internal_type() {
+		let s = r#"{
+			"name": "foo",
+			"type": "tuple",
+			"internalType": "struct Pairing.G1Point[]",
+			"components": [
+				{
+					"type": "uint48"
+				},
+				{
+					"type": "tuple",
+					"components": [
+						{
+							"type": "address"
+						}
+					]
+				}
+			]
+		}"#;
+
+		let deserialized: Param = serde_json::from_str(s).unwrap();
+
+		assert_eq!(
+			deserialized,
+			Param {
+				name: "foo".to_owned(),
+				kind: ParamType::Tuple(vec![ParamType::Uint(48), ParamType::Tuple(vec![ParamType::Address])]),
+				internal_type: Some("struct Pairing.G1Point[]".to_string())
 			}
 		);
 
@@ -248,6 +318,7 @@ mod tests {
 			Param {
 				name: "foo".to_owned(),
 				kind: ParamType::Tuple(vec![ParamType::Uint(48), ParamType::Tuple(vec![ParamType::Address])]),
+				internal_type: None
 			}
 		);
 
@@ -283,6 +354,7 @@ mod tests {
 					ParamType::Address,
 					ParamType::Address
 				]))),
+				internal_type: None
 			}
 		);
 
@@ -313,6 +385,7 @@ mod tests {
 					ParamType::Uint(8),
 					ParamType::Uint(16),
 				]))))),
+				internal_type: None
 			}
 		);
 
@@ -347,6 +420,7 @@ mod tests {
 					Box::new(ParamType::Tuple(vec![ParamType::Uint(48), ParamType::Address, ParamType::Address])),
 					2
 				),
+				internal_type: None
 			}
 		);
 
@@ -388,6 +462,7 @@ mod tests {
 					ParamType::Array(Box::new(ParamType::Tuple(vec![ParamType::Address]))),
 					ParamType::FixedArray(Box::new(ParamType::Tuple(vec![ParamType::Address])), 42,)
 				]),
+				internal_type: None
 			}
 		);
 
