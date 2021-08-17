@@ -407,7 +407,7 @@ mod tests {
 						outputs: vec![ethabi::Param {
 							name: "".to_owned(),
 							kind: ethabi::ParamType::Uint(256usize),
-							internal_type :None
+							internal_type: None
 						}, ethabi::Param {
 							name: "".to_owned(),
 							kind: ethabi::ParamType::String,
