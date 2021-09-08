@@ -22,7 +22,7 @@ use crate::{
 #[derive(Debug, Clone, PartialEq)]
 pub struct Function {
 	/// Function name.
-	#[cfg_attr(features = "full-serde", serde(deserialize_with = "crate::util::sanitize_name::deserialize"))]
+	#[cfg_attr(feature = "full-serde", serde(deserialize_with = "crate::util::sanitize_name::deserialize"))]
 	pub name: String,
 	/// Function input.
 	pub inputs: Vec<Param>,
