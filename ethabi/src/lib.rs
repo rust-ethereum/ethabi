@@ -40,10 +40,10 @@ mod errors;
 // mod state_mutability;
 // pub mod token;
 // mod tuple_param;
-// mod util;
+mod util;
 
-#[cfg(test)]
-mod tests;
+// #[cfg(test)]
+// mod tests;
 
 pub use ethereum_types;
 
