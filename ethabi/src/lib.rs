@@ -40,7 +40,7 @@ mod filter;
 mod param;
 pub mod param_type;
 mod signature;
-// mod state_mutability;
+mod state_mutability;
 pub mod token;
 #[cfg(feature = "full-serde")]
 mod tuple_param;
@@ -66,7 +66,7 @@ pub use crate::{
 	// log::{Log, LogFilter, LogParam, ParseLog, RawLog},
 	param::Param,
 	param_type::ParamType,
-	// 	state_mutability::StateMutability,
+	state_mutability::StateMutability,
 	token::Token,
 };
 
