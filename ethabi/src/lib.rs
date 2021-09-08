@@ -34,7 +34,7 @@ mod errors;
 // mod event;
 // mod event_param;
 mod filter;
-// mod function;
+mod function;
 // mod log;
 // mod operation;
 mod param;
@@ -62,7 +62,7 @@ pub use crate::{
 	// 	event::Event,
 	// 	event_param::EventParam,
 	filter::{RawTopicFilter, Topic, TopicFilter},
-	// 	function::Function,
+	function::Function,
 	// log::{Log, LogFilter, LogParam, ParseLog, RawLog},
 	param::Param,
 	param_type::ParamType,
