@@ -39,7 +39,7 @@ mod errors;
 // mod operation;
 mod param;
 pub mod param_type;
-// mod signature;
+mod signature;
 // mod state_mutability;
 // pub mod token;
 #[cfg(feature = "full-serde")]
