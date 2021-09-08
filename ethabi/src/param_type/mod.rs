@@ -8,9 +8,16 @@
 
 //! Function and event param types.
 
+#[cfg(feature = "std")]
 mod deserialize;
-mod param_type;
-mod reader;
-mod writer;
 
-pub use self::{param_type::ParamType, reader::Reader, writer::Writer};
+mod param_type;
+pub use param_type::ParamType;
+
+#[cfg(feature = "std")]
+mod reader;
+#[cfg(feature = "std")]
+pub use reader::Reader;
+
+mod writer;
+pub use writer::Writer;

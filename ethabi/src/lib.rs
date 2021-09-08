@@ -13,12 +13,15 @@
 #![warn(missing_docs)]
 
 #[cfg(not(feature = "std"))]
+#[cfg_attr(not(feature = "std"), macro_use)]
 extern crate alloc;
 #[cfg(not(feature = "std"))]
 mod no_std_prelude {
 	pub use alloc::{
+		borrow::ToOwned,
+		boxed::Box,
 		string::{self, String},
-		vec::{self, Vec},
+		vec::Vec,
 	};
 }
 use no_std_prelude::*;
@@ -35,7 +38,7 @@ mod errors;
 // mod log;
 // mod operation;
 // mod param;
-// pub mod param_type;
+pub mod param_type;
 // mod signature;
 // mod state_mutability;
 // pub mod token;
@@ -47,7 +50,23 @@ mod util;
 
 pub use ethereum_types;
 
-pub use crate::errors::{Error, Result};
+pub use crate::{
+	// 	constructor::Constructor,
+	// 	contract::{Contract, Events, Functions},
+	// 	decoder::decode,
+	// 	encoder::encode,
+	errors::{Error, Result},
+	// 	event::Event,
+	// 	event_param::EventParam,
+	// 	filter::{RawTopicFilter, Topic, TopicFilter},
+	// 	function::Function,
+	// log::{Log, LogFilter, LogParam, ParseLog, RawLog},
+	// 	param::Param,
+	param_type::ParamType,
+	// 	state_mutability::StateMutability,
+	// token::Token,
+	// 	tuple_param::TupleParam,
+};
 
 /// ABI word.
 pub type Word = [u8; 32];
