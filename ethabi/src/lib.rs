@@ -42,7 +42,8 @@ pub mod param_type;
 // mod signature;
 // mod state_mutability;
 // pub mod token;
-// mod tuple_param;
+#[cfg(feature = "std")]
+mod tuple_param;
 mod util;
 
 // #[cfg(test)]
@@ -50,6 +51,8 @@ mod util;
 
 pub use ethereum_types;
 
+#[cfg(feature = "std")]
+pub use crate::tuple_param::TupleParam;
 pub use crate::{
 	// 	constructor::Constructor,
 	// 	contract::{Contract, Events, Functions},
@@ -65,7 +68,6 @@ pub use crate::{
 	param_type::ParamType,
 	// 	state_mutability::StateMutability,
 	// token::Token,
-	// 	tuple_param::TupleParam,
 };
 
 /// ABI word.
