@@ -8,50 +8,46 @@
 
 //! Ethereum ABI encoding decoding library.
 
+#![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::module_inception)]
 #![warn(missing_docs)]
 
-mod constructor;
-mod contract;
-mod decoder;
-mod encoder;
+#[cfg(not(feature = "std"))]
+extern crate alloc;
+#[cfg(not(feature = "std"))]
+mod no_std_prelude {
+	pub use alloc::{
+		string::{self, String},
+		vec::{self, Vec},
+	};
+}
+use no_std_prelude::*;
+
+// mod constructor;
+// mod contract;
+// mod decoder;
+// mod encoder;
 mod errors;
-mod event;
-mod event_param;
-mod filter;
-mod function;
-mod log;
-mod operation;
-mod param;
-pub mod param_type;
-mod signature;
-mod state_mutability;
-pub mod token;
-mod tuple_param;
-mod util;
+// mod event;
+// mod event_param;
+// mod filter;
+// mod function;
+// mod log;
+// mod operation;
+// mod param;
+// pub mod param_type;
+// mod signature;
+// mod state_mutability;
+// pub mod token;
+// mod tuple_param;
+// mod util;
 
 #[cfg(test)]
 mod tests;
 
 pub use ethereum_types;
 
-pub use crate::{
-	constructor::Constructor,
-	contract::{Contract, Events, Functions},
-	decoder::decode,
-	encoder::encode,
-	errors::{Error, Result},
-	event::Event,
-	event_param::EventParam,
-	filter::{RawTopicFilter, Topic, TopicFilter},
-	function::Function,
-	log::{Log, LogFilter, LogParam, ParseLog, RawLog},
-	param::Param,
-	param_type::ParamType,
-	state_mutability::StateMutability,
-	token::Token,
-	tuple_param::TupleParam,
-};
+pub use crate::errors::{Error, Result};
 
 /// ABI word.
 pub type Word = [u8; 32];
