@@ -41,7 +41,7 @@ mod param;
 pub mod param_type;
 mod signature;
 // mod state_mutability;
-// pub mod token;
+pub mod token;
 #[cfg(feature = "full-serde")]
 mod tuple_param;
 mod util;
@@ -61,13 +61,13 @@ pub use crate::{
 	errors::{Error, Result},
 	// 	event::Event,
 	// 	event_param::EventParam,
-	// 	filter::{RawTopicFilter, Topic, TopicFilter},
+	// filter::{RawTopicFilter, Topic, TopicFilter},
 	// 	function::Function,
 	// log::{Log, LogFilter, LogParam, ParseLog, RawLog},
 	param::Param,
 	param_type::ParamType,
 	// 	state_mutability::StateMutability,
-	// token::Token,
+	token::Token,
 };
 
 /// ABI word.

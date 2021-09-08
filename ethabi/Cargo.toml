@@ -14,7 +14,7 @@ edition = "2018"
 
 [dependencies]
 anyhow = { version = "1", default-features = false }
-hex = { version = "0.4", default-features = false }
+hex = { version = "0.4", default-features = false, features = ["alloc"]}
 serde = { version = "1.0", optional =  true, features = ["derive"] }
 serde_json = { version = "1.0", optional = true }
 sha3 = { version = "0.9", default-features = false }
@@ -40,7 +40,7 @@ std = [
 	"uint/std",
 ]
 
-# To enable custom `Reader` and `serde` features support
+# To enable custom `Reader`/`Tokenizer` and `serde` features support
 full-serde = [
 	"serde",
 	"serde_json",
