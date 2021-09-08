@@ -24,6 +24,7 @@ mod no_std_prelude {
 		vec::Vec,
 	};
 }
+#[cfg(not(feature = "std"))]
 use no_std_prelude::*;
 
 mod constructor;
@@ -47,8 +48,8 @@ pub mod token;
 mod tuple_param;
 mod util;
 
-// #[cfg(test)]
-// mod tests;
+#[cfg(test)]
+mod tests;
 
 pub use ethereum_types;
 

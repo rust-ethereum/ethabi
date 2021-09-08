@@ -11,7 +11,7 @@
 #[cfg(feature = "full-serde")]
 mod lenient;
 #[cfg(feature = "full-serde")]
-pub use licenses::LenientTokenizer;
+pub use lenient::LenientTokenizer;
 
 #[cfg(feature = "full-serde")]
 mod strict;

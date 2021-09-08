@@ -13,14 +13,14 @@ description = "Easy to use conversion of ethereum contract calls to bytecode."
 edition = "2018"
 
 [dependencies]
-anyhow = { version = "1", default-features = false }
+anyhow = { version = "1", optional = true }
 hex = { version = "0.4", default-features = false, features = ["alloc"]}
 serde = { version = "1.0", optional =  true, features = ["derive"] }
 serde_json = { version = "1.0", optional = true }
 sha3 = { version = "0.9", default-features = false }
 ethereum-types = { version = "0.11.0", default-features = false }
 thiserror = { version = "1", optional = true }
-uint = { version = "0.9.0", default-features = false }
+uint = { version = "0.9.0", optional = true }
 
 [dev-dependencies]
 hex-literal = "0.3"
@@ -42,6 +42,8 @@ std = [
 
 # To enable custom `Reader`/`Tokenizer` and `serde` features support
 full-serde = [
+	"anyhow",
 	"serde",
 	"serde_json",
+	"uint",
 ]

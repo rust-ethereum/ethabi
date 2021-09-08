@@ -8,9 +8,13 @@
 
 #[cfg(not(feature = "std"))]
 use alloc::collections::{btree_map::Values, BTreeMap};
-use core::iter::Flatten;
 #[cfg(feature = "full-serde")]
-use core::{fmt, io};
+use core::fmt;
+use core::iter::Flatten;
+#[cfg(feature = "std")]
+use std::collections::{btree_map::Values, BTreeMap};
+#[cfg(feature = "full-serde")]
+use std::io;
 
 #[cfg(feature = "full-serde")]
 use serde::{

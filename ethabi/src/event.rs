@@ -8,7 +8,10 @@
 
 //! Contract event.
 
+#[cfg(not(feature = "std"))]
 use alloc::collections::BTreeMap;
+#[cfg(feature = "std")]
+use std::collections::BTreeMap;
 
 #[cfg(feature = "full-serde")]
 use serde::{Deserialize, Serialize};

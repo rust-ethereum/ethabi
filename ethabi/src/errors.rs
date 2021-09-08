@@ -6,6 +6,11 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+#[cfg(feature = "full-serde")]
+use core::num;
+
+#[cfg(feature = "full-serde")]
+use anyhow::anyhow;
 #[cfg(feature = "std")]
 use thiserror::Error;
 
@@ -25,4 +30,32 @@ pub enum Error {
 	/// Invalid data.
 	#[cfg_attr(feature = "std", error("Invalid data"))]
 	InvalidData,
+	/// Serialization error.
+	#[cfg(feature = "full-serde")]
+	#[error("Serialization error: {0}")]
+	SerdeJson(#[from] serde_json::Error),
+	/// Integer parsing error.
+	#[cfg(feature = "full-serde")]
+	#[error("Integer parsing error: {0}")]
+	ParseInt(#[from] num::ParseIntError),
+	/// Hex string parsing error.
+	#[cfg(feature = "full-serde")]
+	#[error("Hex parsing error: {0}")]
+	Hex(#[from] hex::FromHexError),
+	/// Other errors.
+	#[cfg(feature = "full-serde")]
+	#[error("{0}")]
+	Other(#[from] anyhow::Error),
+}
+
+#[cfg(feature = "full-serde")]
+impl From<uint::FromDecStrErr> for Error {
+	fn from(err: uint::FromDecStrErr) -> Self {
+		use uint::FromDecStrErr::*;
+		match err {
+			InvalidCharacter => anyhow!("Uint parse error: InvalidCharacter"),
+			InvalidLength => anyhow!("Uint parse error: InvalidLength"),
+		}
+		.into()
+	}
 }
