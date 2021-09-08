@@ -6,17 +6,24 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use crate::{errors, operation::Operation, Constructor, Error, Event, Function};
+#[cfg(not(feature = "std"))]
+use alloc::collections::{btree_map::Values, BTreeMap};
+use core::iter::Flatten;
+#[cfg(feature = "full-serde")]
+use core::{fmt, io};
+
+#[cfg(feature = "full-serde")]
 use serde::{
 	de::{SeqAccess, Visitor},
 	ser::SerializeSeq,
 	Deserialize, Deserializer, Serialize, Serializer,
 };
-use std::{
-	collections::{hash_map::Values, HashMap},
-	fmt, io,
-	iter::Flatten,
-};
+
+#[cfg(not(feature = "std"))]
+use crate::no_std_prelude::*;
+#[cfg(feature = "full-serde")]
+use crate::operation::Operation;
+use crate::{errors, Constructor, Error, Event, Function};
 
 /// API building calls to contracts ABI.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -24,15 +31,16 @@ pub struct Contract {
 	/// Contract constructor.
 	pub constructor: Option<Constructor>,
 	/// Contract functions.
-	pub functions: HashMap<String, Vec<Function>>,
+	pub functions: BTreeMap<String, Vec<Function>>,
 	/// Contract events, maps signature to event.
-	pub events: HashMap<String, Vec<Event>>,
+	pub events: BTreeMap<String, Vec<Event>>,
 	/// Contract has receive function.
 	pub receive: bool,
 	/// Contract has fallback function.
 	pub fallback: bool,
 }
 
+#[cfg(feature = "full-serde")]
 impl<'a> Deserialize<'a> for Contract {
 	fn deserialize<D>(deserializer: D) -> Result<Contract, D::Error>
 	where
@@ -42,8 +50,10 @@ impl<'a> Deserialize<'a> for Contract {
 	}
 }
 
+#[cfg(feature = "full-serde")]
 struct ContractVisitor;
 
+#[cfg(feature = "full-serde")]
 impl<'a> Visitor<'a> for ContractVisitor {
 	type Value = Contract;
 
@@ -80,6 +90,7 @@ impl<'a> Visitor<'a> for ContractVisitor {
 	}
 }
 
+#[cfg(feature = "full-serde")]
 impl Serialize for Contract {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
 	where
@@ -137,6 +148,7 @@ impl Serialize for Contract {
 
 impl Contract {
 	/// Loads contract from json.
+	#[cfg(feature = "full-serde")]
 	pub fn load<T: io::Read>(reader: T) -> errors::Result<Self> {
 		serde_json::from_reader(reader).map_err(From::from)
 	}
@@ -200,11 +212,11 @@ impl<'a> Iterator for Events<'a> {
 	}
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "full-serde"))]
 #[allow(deprecated)]
 mod test {
 	use crate::{tests::assert_ser_de, Constructor, Contract, Event, EventParam, Function, Param, ParamType};
-	use std::{collections::HashMap, iter::FromIterator};
+	use std::{collections::BTreeMap, iter::FromIterator};
 
 	#[test]
 	fn empty() {
@@ -216,8 +228,8 @@ mod test {
 			deserialized,
 			Contract {
 				constructor: None,
-				functions: HashMap::new(),
-				events: HashMap::new(),
+				functions: BTreeMap::new(),
+				events: BTreeMap::new(),
 				receive: false,
 				fallback: false,
 			}
@@ -250,8 +262,8 @@ mod test {
 				constructor: Some(Constructor {
 					inputs: vec![Param { name: "a".to_string(), kind: ParamType::Address, internal_type: None }]
 				}),
-				functions: HashMap::new(),
-				events: HashMap::new(),
+				functions: BTreeMap::new(),
+				events: BTreeMap::new(),
 				receive: false,
 				fallback: false,
 			}
@@ -295,7 +307,7 @@ mod test {
 			deserialized,
 			Contract {
 				constructor: None,
-				functions: HashMap::from_iter(vec![
+				functions: BTreeMap::from_iter(vec![
 					(
 						"foo".to_string(),
 						vec![Function {
@@ -325,7 +337,7 @@ mod test {
 						}]
 					)
 				]),
-				events: HashMap::new(),
+				events: BTreeMap::new(),
 				receive: false,
 				fallback: false,
 			}
@@ -369,7 +381,7 @@ mod test {
 			deserialized,
 			Contract {
 				constructor: None,
-				functions: HashMap::from_iter(vec![(
+				functions: BTreeMap::from_iter(vec![(
 					"foo".to_string(),
 					vec![
 						Function {
@@ -396,7 +408,7 @@ mod test {
 						}
 					]
 				)]),
-				events: HashMap::new(),
+				events: BTreeMap::new(),
 				receive: false,
 				fallback: false,
 			}
@@ -441,8 +453,8 @@ mod test {
 			deserialized,
 			Contract {
 				constructor: None,
-				functions: HashMap::new(),
-				events: HashMap::from_iter(vec![
+				functions: BTreeMap::new(),
+				events: BTreeMap::from_iter(vec![
 					(
 						"foo".to_string(),
 						vec![Event {
@@ -508,8 +520,8 @@ mod test {
 			deserialized,
 			Contract {
 				constructor: None,
-				functions: HashMap::new(),
-				events: HashMap::from_iter(vec![(
+				functions: BTreeMap::new(),
+				events: BTreeMap::from_iter(vec![(
 					"foo".to_string(),
 					vec![
 						Event {
@@ -550,8 +562,8 @@ mod test {
 			deserialized,
 			Contract {
 				constructor: None,
-				functions: HashMap::new(),
-				events: HashMap::new(),
+				functions: BTreeMap::new(),
+				events: BTreeMap::new(),
 				receive: true,
 				fallback: false,
 			}
@@ -574,8 +586,8 @@ mod test {
 			deserialized,
 			Contract {
 				constructor: None,
-				functions: HashMap::new(),
-				events: HashMap::new(),
+				functions: BTreeMap::new(),
+				events: BTreeMap::new(),
 				receive: false,
 				fallback: true,
 			}
