@@ -6,10 +6,16 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use crate::{Hash, Token};
+use core::ops;
+
+#[cfg(feature = "full-serde")]
 use serde::{Serialize, Serializer};
+#[cfg(feature = "full-serde")]
 use serde_json::Value;
-use std::ops;
+
+#[cfg(not(feature = "std"))]
+use crate::no_std_prelude::*;
+use crate::{Hash, Token};
 
 /// Raw topic filter.
 #[derive(Debug, PartialEq, Default)]
@@ -35,6 +41,7 @@ pub struct TopicFilter {
 	pub topic3: Topic<Hash>,
 }
 
+#[cfg(feature = "full-serde")]
 impl Serialize for TopicFilter {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
 	where
@@ -114,6 +121,7 @@ impl<T> From<Topic<T>> for Vec<T> {
 	}
 }
 
+#[cfg(feature = "full-serde")]
 impl Serialize for Topic<Hash> {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
 	where
@@ -150,13 +158,20 @@ impl<T> ops::Index<usize> for Topic<T> {
 
 #[cfg(test)]
 mod tests {
-	use super::{Topic, TopicFilter};
+	use super::Topic;
+	#[cfg(feature = "full-serde")]
+	use super::TopicFilter;
+	#[cfg(not(feature = "std"))]
+	use crate::no_std_prelude::*;
+	#[cfg(feature = "full-serde")]
 	use crate::Hash;
 
+	#[cfg(feature = "full-serde")]
 	fn hash(s: &'static str) -> Hash {
 		s.parse().unwrap()
 	}
 
+	#[cfg(feature = "full-serde")]
 	#[test]
 	fn test_topic_filter_serialization() {
 		let expected = r#"["0x000000000000000000000000a94f5374fce5edbc8e2a8697c15331677e6ebf0b",null,["0x000000000000000000000000a94f5374fce5edbc8e2a8697c15331677e6ebf0b","0x0000000000000000000000000aff3454fce5edbc8cca8697c15331677e6ebccc"],null]"#;

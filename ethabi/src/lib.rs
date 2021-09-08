@@ -33,7 +33,7 @@ use no_std_prelude::*;
 mod errors;
 // mod event;
 // mod event_param;
-// mod filter;
+mod filter;
 // mod function;
 // mod log;
 // mod operation;
@@ -61,7 +61,7 @@ pub use crate::{
 	errors::{Error, Result},
 	// 	event::Event,
 	// 	event_param::EventParam,
-	// filter::{RawTopicFilter, Topic, TopicFilter},
+	filter::{RawTopicFilter, Topic, TopicFilter},
 	// 	function::Function,
 	// log::{Log, LogFilter, LogParam, ParseLog, RawLog},
 	param::Param,
