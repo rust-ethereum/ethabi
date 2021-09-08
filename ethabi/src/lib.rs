@@ -31,7 +31,7 @@ mod contract;
 mod decoder;
 mod encoder;
 mod errors;
-// mod event;
+mod event;
 mod event_param;
 mod filter;
 mod function;
@@ -60,7 +60,7 @@ pub use crate::{
 	decoder::decode,
 	encoder::encode,
 	errors::{Error, Result},
-	// 	event::Event,
+	event::Event,
 	event_param::EventParam,
 	filter::{RawTopicFilter, Topic, TopicFilter},
 	function::Function,
