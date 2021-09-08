@@ -26,7 +26,7 @@ mod no_std_prelude {
 }
 use no_std_prelude::*;
 
-// mod constructor;
+mod constructor;
 // mod contract;
 mod decoder;
 mod encoder;
@@ -54,7 +54,7 @@ pub use ethereum_types;
 #[cfg(feature = "full-serde")]
 pub use crate::tuple_param::TupleParam;
 pub use crate::{
-	// 	constructor::Constructor,
+		constructor::Constructor,
 	// 	contract::{Contract, Events, Functions},
 	decoder::decode,
 	encoder::encode,
