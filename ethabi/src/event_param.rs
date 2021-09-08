@@ -8,13 +8,18 @@
 
 //! Event param specification.
 
-use crate::{param_type::Writer, ParamType, TupleParam};
+use std::fmt;
+
+#[cfg(feature = "full-serde")]
 use serde::{
 	de::{Error, MapAccess, Visitor},
 	ser::SerializeMap,
 	Deserialize, Deserializer, Serialize, Serializer,
 };
-use std::fmt;
+
+#[cfg(feature = "full-serde")]
+use crate::param_type::Writer;
+use crate::{ParamType, TupleParam};
 
 /// Event param specification.
 #[derive(Debug, Clone, PartialEq)]
@@ -27,6 +32,7 @@ pub struct EventParam {
 	pub indexed: bool,
 }
 
+#[cfg(feature = "full-serde")]
 impl<'a> Deserialize<'a> for EventParam {
 	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
 	where
@@ -36,8 +42,10 @@ impl<'a> Deserialize<'a> for EventParam {
 	}
 }
 
+#[cfg(feature = "full-serde")]
 struct EventParamVisitor;
 
+#[cfg(feature = "full-serde")]
 impl<'a> Visitor<'a> for EventParamVisitor {
 	type Value = EventParam;
 
@@ -92,6 +100,7 @@ impl<'a> Visitor<'a> for EventParamVisitor {
 	}
 }
 
+#[cfg(feature = "full-serde")]
 impl Serialize for EventParam {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
 	where
@@ -109,7 +118,7 @@ impl Serialize for EventParam {
 	}
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "full-serde"))]
 mod tests {
 	use crate::{tests::assert_json_eq, EventParam, ParamType};
 

@@ -32,7 +32,7 @@ mod decoder;
 mod encoder;
 mod errors;
 // mod event;
-// mod event_param;
+mod event_param;
 mod filter;
 mod function;
 // mod log;
@@ -60,7 +60,7 @@ pub use crate::{
 	encoder::encode,
 	errors::{Error, Result},
 	// 	event::Event,
-	// 	event_param::EventParam,
+	event_param::EventParam,
 	filter::{RawTopicFilter, Topic, TopicFilter},
 	function::Function,
 	// log::{Log, LogFilter, LogParam, ParseLog, RawLog},
