@@ -36,7 +36,8 @@ mod event_param;
 mod filter;
 mod function;
 // mod log;
-// mod operation;
+#[cfg(feature = "full-serde")]
+mod operation;
 mod param;
 pub mod param_type;
 mod signature;
