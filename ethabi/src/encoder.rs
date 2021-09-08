@@ -8,6 +8,8 @@
 
 //! ABI encoder.
 
+#[cfg(not(feature = "std"))]
+use crate::no_std_prelude::*;
 use crate::{util::pad_u32, Bytes, Token, Word};
 
 fn pad_bytes(bytes: &[u8]) -> Vec<Word> {
@@ -175,8 +177,11 @@ fn encode_token(token: &Token) -> Mediate {
 
 #[cfg(test)]
 mod tests {
-	use crate::{encode, util::pad_u32, Token};
 	use hex_literal::hex;
+
+	#[cfg(not(feature = "std"))]
+	use crate::no_std_prelude::*;
+	use crate::{encode, util::pad_u32, Token};
 
 	#[test]
 	fn encode_address() {

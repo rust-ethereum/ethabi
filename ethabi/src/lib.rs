@@ -20,7 +20,7 @@ mod no_std_prelude {
 	pub use alloc::{
 		borrow::ToOwned,
 		boxed::Box,
-		string::{self, String},
+		string::{self, String, ToString},
 		vec::Vec,
 	};
 }
@@ -28,8 +28,8 @@ use no_std_prelude::*;
 
 // mod constructor;
 // mod contract;
-// mod decoder;
-// mod encoder;
+mod decoder;
+mod encoder;
 mod errors;
 // mod event;
 // mod event_param;
@@ -56,8 +56,8 @@ pub use crate::tuple_param::TupleParam;
 pub use crate::{
 	// 	constructor::Constructor,
 	// 	contract::{Contract, Events, Functions},
-	// 	decoder::decode,
-	// 	encoder::encode,
+	decoder::decode,
+	encoder::encode,
 	errors::{Error, Result},
 	// 	event::Event,
 	// 	event_param::EventParam,
