@@ -8,15 +8,15 @@
 
 //! Function and event param types.
 
-#[cfg(feature = "std")]
+#[cfg(feature = "full-serde")]
 mod deserialize;
 
 mod param_type;
 pub use param_type::ParamType;
 
-#[cfg(feature = "std")]
+#[cfg(feature = "full-serde")]
 mod reader;
-#[cfg(feature = "std")]
+#[cfg(feature = "full-serde")]
 pub use reader::Reader;
 
 mod writer;

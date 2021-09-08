@@ -37,12 +37,12 @@ mod errors;
 // mod function;
 // mod log;
 // mod operation;
-// mod param;
+mod param;
 pub mod param_type;
 // mod signature;
 // mod state_mutability;
 // pub mod token;
-#[cfg(feature = "std")]
+#[cfg(feature = "full-serde")]
 mod tuple_param;
 mod util;
 
@@ -51,7 +51,7 @@ mod util;
 
 pub use ethereum_types;
 
-#[cfg(feature = "std")]
+#[cfg(feature = "full-serde")]
 pub use crate::tuple_param::TupleParam;
 pub use crate::{
 	// 	constructor::Constructor,
@@ -64,7 +64,7 @@ pub use crate::{
 	// 	filter::{RawTopicFilter, Topic, TopicFilter},
 	// 	function::Function,
 	// log::{Log, LogFilter, LogParam, ParseLog, RawLog},
-	// 	param::Param,
+	param::Param,
 	param_type::ParamType,
 	// 	state_mutability::StateMutability,
 	// token::Token,

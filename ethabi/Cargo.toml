@@ -27,14 +27,21 @@ hex-literal = "0.3"
 paste = "1"
 
 [features]
-default = ["std"]
+default = [
+	"std",
+	"full-serde"
+]
 std = [
 	"anyhow/std",
 	"hex/std",
-	"serde",
-	"serde_json",
 	"sha3/std",
 	"ethereum-types/std",
 	"thiserror",
 	"uint/std",
+]
+
+# To enable custom `Reader` and `serde` features support
+full-serde = [
+	"serde",
+	"serde_json",
 ]
