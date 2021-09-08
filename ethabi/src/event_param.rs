@@ -17,9 +17,9 @@ use serde::{
 	Deserialize, Deserializer, Serialize, Serializer,
 };
 
+use crate::ParamType;
 #[cfg(feature = "full-serde")]
-use crate::param_type::Writer;
-use crate::{ParamType, TupleParam};
+use crate::{param_type::Writer, TupleParam};
 
 /// Event param specification.
 #[derive(Debug, Clone, PartialEq)]
