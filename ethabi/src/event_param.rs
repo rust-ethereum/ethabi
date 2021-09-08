@@ -8,7 +8,8 @@
 
 //! Event param specification.
 
-use std::fmt;
+#[cfg(feature = "full-serde")]
+use core::fmt;
 
 #[cfg(feature = "full-serde")]
 use serde::{
@@ -17,6 +18,8 @@ use serde::{
 	Deserialize, Deserializer, Serialize, Serializer,
 };
 
+#[cfg(not(feature = "std"))]
+use crate::no_std_prelude::*;
 use crate::ParamType;
 #[cfg(feature = "full-serde")]
 use crate::{param_type::Writer, TupleParam};
