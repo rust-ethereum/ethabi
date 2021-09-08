@@ -35,7 +35,7 @@ mod errors;
 mod event_param;
 mod filter;
 mod function;
-// mod log;
+mod log;
 #[cfg(feature = "full-serde")]
 mod operation;
 mod param;
@@ -64,7 +64,7 @@ pub use crate::{
 	event_param::EventParam,
 	filter::{RawTopicFilter, Topic, TopicFilter},
 	function::Function,
-	// log::{Log, LogFilter, LogParam, ParseLog, RawLog},
+	log::{Log, LogFilter, LogParam, ParseLog, RawLog},
 	param::Param,
 	param_type::ParamType,
 	state_mutability::StateMutability,
