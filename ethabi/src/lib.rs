@@ -12,7 +12,6 @@
 #![allow(clippy::module_inception)]
 #![warn(missing_docs)]
 
-#[cfg(not(feature = "std"))]
 #[cfg_attr(not(feature = "std"), macro_use)]
 extern crate alloc;
 #[cfg(not(feature = "std"))]

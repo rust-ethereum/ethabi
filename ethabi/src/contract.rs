@@ -6,13 +6,10 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-#[cfg(not(feature = "std"))]
 use alloc::collections::{btree_map::Values, BTreeMap};
 #[cfg(feature = "full-serde")]
 use core::fmt;
 use core::iter::Flatten;
-#[cfg(feature = "std")]
-use std::collections::{btree_map::Values, BTreeMap};
 #[cfg(feature = "full-serde")]
 use std::io;
 
