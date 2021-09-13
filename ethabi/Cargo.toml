@@ -28,7 +28,6 @@ paste = "1"
 
 [features]
 default = [
-	"std",
 	"full-serde"
 ]
 std = [
@@ -42,6 +41,7 @@ std = [
 
 # To enable custom `Reader`/`Tokenizer` and `serde` features support
 full-serde = [
+	"std",
 	"anyhow",
 	"serde",
 	"serde_json",
