@@ -47,4 +47,5 @@ full-serde = [
 	"serde",
 	"serde_json",
 	"uint",
+	"ethereum-types/serialize",
 ]
