@@ -8,8 +8,11 @@
 
 //! Function and event param types.
 
+use core::fmt;
+
 use super::Writer;
-use std::fmt;
+#[cfg(not(feature = "std"))]
+use crate::no_std_prelude::*;
 
 /// Function and event param types.
 #[derive(Debug, Clone, PartialEq)]
@@ -67,6 +70,8 @@ impl ParamType {
 
 #[cfg(test)]
 mod tests {
+	#[cfg(not(feature = "std"))]
+	use crate::no_std_prelude::*;
 	use crate::ParamType;
 
 	#[test]

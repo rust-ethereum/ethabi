@@ -7,11 +7,17 @@
 // except according to those terms.
 
 //! Contract constructor call builder.
-use crate::{encode, Bytes, Error, Param, ParamType, Result, Token};
+
+#[cfg(feature = "full-serde")]
 use serde::{Deserialize, Serialize};
 
+#[cfg(not(feature = "std"))]
+use crate::no_std_prelude::*;
+use crate::{encode, Bytes, Error, Param, ParamType, Result, Token};
+
 /// Contract constructor specification.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "full-serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Constructor {
 	/// Constructor input.
 	pub inputs: Vec<Param>,

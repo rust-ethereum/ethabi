@@ -1,19 +1,21 @@
+#[cfg(feature = "full-serde")]
 use serde::{Deserialize, Serialize};
 
 /// Whether a function modifies or reads blockchain state
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "full-serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum StateMutability {
 	/// Specified not to read blockchain state
-	#[serde(rename = "pure")]
+	#[cfg_attr(feature = "full-serde", serde(rename = "pure"))]
 	Pure,
 	/// Specified to not modify the blockchain state
-	#[serde(rename = "view")]
+	#[cfg_attr(feature = "full-serde", serde(rename = "view"))]
 	View,
 	/// Function does not accept Ether - the default
-	#[serde(rename = "nonpayable")]
+	#[cfg_attr(feature = "full-serde", serde(rename = "nonpayable"))]
 	NonPayable,
 	/// Function accepts Ether
-	#[serde(rename = "payable")]
+	#[cfg_attr(feature = "full-serde", serde(rename = "payable"))]
 	Payable,
 }
 
@@ -23,7 +25,7 @@ impl Default for StateMutability {
 	}
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "full-serde"))]
 mod test {
 	use crate::{tests::assert_json_eq, StateMutability};
 

@@ -147,7 +147,7 @@ mod tests {
 			let deserialized: Operation = serde_json::from_str(&s).unwrap();
 			let function = match &deserialized {
 				Operation::Function(f) => f,
-				_ => panic!("expected funciton"),
+				_ => panic!("expected function"),
 			};
 
 			assert_eq!(function.name, expected);

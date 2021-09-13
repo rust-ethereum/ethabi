@@ -6,39 +6,49 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+#[cfg(feature = "full-serde")]
+use core::num;
+
+#[cfg(feature = "full-serde")]
 use anyhow::anyhow;
-use std::{num, string};
+#[cfg(feature = "std")]
 use thiserror::Error;
 
+#[cfg(not(feature = "std"))]
+use crate::no_std_prelude::*;
+
 /// Ethabi result type
-pub type Result<T> = std::result::Result<T, Error>;
+pub type Result<T> = core::result::Result<T, Error>;
 
 /// Ethabi errors
-#[derive(Debug, Error)]
+#[cfg_attr(feature = "std", derive(Error))]
+#[derive(Debug)]
 pub enum Error {
 	/// Invalid entity such as a bad function name.
-	#[error("Invalid name: {0}")]
+	#[cfg_attr(feature = "std", error("Invalid name: {0}"))]
 	InvalidName(String),
 	/// Invalid data.
-	#[error("Invalid data")]
+	#[cfg_attr(feature = "std", error("Invalid data"))]
 	InvalidData,
 	/// Serialization error.
+	#[cfg(feature = "full-serde")]
 	#[error("Serialization error: {0}")]
 	SerdeJson(#[from] serde_json::Error),
 	/// Integer parsing error.
+	#[cfg(feature = "full-serde")]
 	#[error("Integer parsing error: {0}")]
 	ParseInt(#[from] num::ParseIntError),
-	/// UTF-8 parsing error.
-	#[error("UTF-8 parsing error: {0}")]
-	Utf8(#[from] string::FromUtf8Error),
 	/// Hex string parsing error.
+	#[cfg(feature = "full-serde")]
 	#[error("Hex parsing error: {0}")]
 	Hex(#[from] hex::FromHexError),
 	/// Other errors.
+	#[cfg(feature = "full-serde")]
 	#[error("{0}")]
 	Other(#[from] anyhow::Error),
 }
 
+#[cfg(feature = "full-serde")]
 impl From<uint::FromDecStrErr> for Error {
 	fn from(err: uint::FromDecStrErr) -> Self {
 		use uint::FromDecStrErr::*;

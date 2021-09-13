@@ -6,6 +6,8 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+#[cfg(not(feature = "std"))]
+use crate::no_std_prelude::*;
 use crate::ParamType;
 
 /// Output formatter for param type.
@@ -54,6 +56,8 @@ impl Writer {
 #[cfg(test)]
 mod tests {
 	use super::Writer;
+	#[cfg(not(feature = "std"))]
+	use crate::no_std_prelude::*;
 	use crate::ParamType;
 
 	#[test]

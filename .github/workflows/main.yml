@@ -41,6 +41,11 @@ jobs:
 
       - uses: actions-rs/cargo@v1
         with:
+          command: build
+          args: --all --all-targets --no-default-features
+
+      - uses: actions-rs/cargo@v1
+        with:
           command: test
           args: --all --all-targets --all-features
 
@@ -48,3 +53,8 @@ jobs:
         with:
           command: clippy
           args: --all --all-targets --all-features -- -D warnings
+
+      - uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --all --all-targets --no-default-features -- -D warnings

@@ -6,6 +6,8 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+#[cfg(not(feature = "std"))]
+use crate::no_std_prelude::*;
 use crate::{Bytes, Hash, Result, Token, TopicFilter};
 
 /// Common filtering functions that are available for any event.

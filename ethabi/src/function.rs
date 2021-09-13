@@ -8,18 +8,21 @@
 
 //! Contract function call builder.
 
-use std::string::ToString;
+#[cfg(feature = "full-serde")]
+use serde::{Deserialize, Serialize};
 
+#[cfg(not(feature = "std"))]
+use crate::no_std_prelude::*;
 use crate::{
 	decode, encode, signature::short_signature, Bytes, Error, Param, ParamType, Result, StateMutability, Token,
 };
-use serde::{Deserialize, Serialize};
 
 /// Contract function specification.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "full-serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Function {
 	/// Function name.
-	#[serde(deserialize_with = "crate::util::sanitize_name::deserialize")]
+	#[cfg_attr(feature = "full-serde", serde(deserialize_with = "crate::util::sanitize_name::deserialize"))]
 	pub name: String,
 	/// Function input.
 	pub inputs: Vec<Param>,
@@ -29,10 +32,10 @@ pub struct Function {
 				replaced with stateMutability. If parsing a JSON AST created with \
 				this version or later this value will always be false, which may be wrong.")]
 	/// Constant function.
-	#[serde(default)]
+	#[cfg_attr(feature = "full-serde", serde(default))]
 	pub constant: bool,
 	/// Whether the function reads or modifies blockchain state
-	#[serde(rename = "stateMutability", default)]
+	#[cfg_attr(feature = "full-serde", serde(rename = "stateMutability", default))]
 	pub state_mutability: StateMutability,
 }
 
@@ -91,8 +94,11 @@ impl Function {
 
 #[cfg(test)]
 mod tests {
-	use crate::{Function, Param, ParamType, StateMutability, Token};
 	use hex_literal::hex;
+
+	#[cfg(not(feature = "std"))]
+	use crate::no_std_prelude::*;
+	use crate::{Function, Param, ParamType, StateMutability, Token};
 
 	#[test]
 	fn test_function_encode_call() {

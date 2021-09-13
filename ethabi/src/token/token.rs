@@ -7,8 +7,12 @@
 // except according to those terms.
 
 //! Ethereum ABI params.
+
+use core::fmt;
+
+#[cfg(not(feature = "std"))]
+use crate::no_std_prelude::*;
 use crate::{Address, Bytes, FixedBytes, Int, ParamType, Uint};
-use std::fmt;
 
 /// Ethereum ABI params.
 #[derive(Debug, PartialEq, Clone)]
@@ -225,6 +229,8 @@ impl Token {
 
 #[cfg(test)]
 mod tests {
+	#[cfg(not(feature = "std"))]
+	use crate::no_std_prelude::*;
 	use crate::{ParamType, Token};
 
 	#[test]

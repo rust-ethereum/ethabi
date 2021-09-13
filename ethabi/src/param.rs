@@ -8,14 +8,21 @@
 
 //! Function param.
 
+#[cfg(feature = "full-serde")]
+use core::fmt;
+
+#[cfg(feature = "full-serde")]
 use serde::{
 	de::{Error, MapAccess, Visitor},
+	ser::{SerializeMap, SerializeSeq},
 	Deserialize, Deserializer, Serialize, Serializer,
 };
-use std::fmt;
 
-use crate::{param_type::Writer, ParamType, TupleParam};
-use serde::ser::{SerializeMap, SerializeSeq};
+#[cfg(not(feature = "std"))]
+use crate::no_std_prelude::*;
+use crate::ParamType;
+#[cfg(feature = "full-serde")]
+use crate::{param_type::Writer, TupleParam};
 
 /// Function param.
 #[derive(Debug, Clone, PartialEq)]
@@ -28,6 +35,7 @@ pub struct Param {
 	pub internal_type: Option<String>,
 }
 
+#[cfg(feature = "full-serde")]
 impl<'a> Deserialize<'a> for Param {
 	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
 	where
@@ -37,8 +45,10 @@ impl<'a> Deserialize<'a> for Param {
 	}
 }
 
+#[cfg(feature = "full-serde")]
 struct ParamVisitor;
 
+#[cfg(feature = "full-serde")]
 impl<'a> Visitor<'a> for ParamVisitor {
 	type Value = Param;
 
@@ -92,6 +102,7 @@ impl<'a> Visitor<'a> for ParamVisitor {
 	}
 }
 
+#[cfg(feature = "full-serde")]
 impl Serialize for Param {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
 	where
@@ -111,6 +122,7 @@ impl Serialize for Param {
 	}
 }
 
+#[cfg(feature = "full-serde")]
 pub(crate) fn inner_tuple_mut(mut param: &mut ParamType) -> Option<&mut Vec<ParamType>> {
 	loop {
 		match param {
@@ -122,6 +134,7 @@ pub(crate) fn inner_tuple_mut(mut param: &mut ParamType) -> Option<&mut Vec<Para
 	}
 }
 
+#[cfg(feature = "full-serde")]
 pub(crate) fn inner_tuple(mut param: &ParamType) -> Option<&Vec<ParamType>> {
 	loop {
 		match param {
@@ -133,6 +146,7 @@ pub(crate) fn inner_tuple(mut param: &ParamType) -> Option<&Vec<ParamType>> {
 	}
 }
 
+#[cfg(feature = "full-serde")]
 pub(crate) fn set_tuple_components<Error: serde::de::Error>(
 	kind: &mut ParamType,
 	components: Option<Vec<TupleParam>>,
@@ -144,8 +158,10 @@ pub(crate) fn set_tuple_components<Error: serde::de::Error>(
 	Ok(())
 }
 
+#[cfg(feature = "full-serde")]
 pub(crate) struct SerializeableParamVec<'a>(pub(crate) &'a [ParamType]);
 
+#[cfg(feature = "full-serde")]
 impl Serialize for SerializeableParamVec<'_> {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
 	where
@@ -159,8 +175,10 @@ impl Serialize for SerializeableParamVec<'_> {
 	}
 }
 
+#[cfg(feature = "full-serde")]
 pub(crate) struct SerializeableParam<'a>(pub(crate) &'a ParamType);
 
+#[cfg(feature = "full-serde")]
 impl Serialize for SerializeableParam<'_> {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
 	where
@@ -176,7 +194,7 @@ impl Serialize for SerializeableParam<'_> {
 	}
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "full-serde"))]
 mod tests {
 	use crate::{
 		tests::{assert_json_eq, assert_ser_de},

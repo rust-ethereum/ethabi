@@ -6,11 +6,14 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+use sha3::{Digest, Keccak256};
+
+#[cfg(not(feature = "std"))]
+use crate::no_std_prelude::*;
 use crate::{
 	param_type::{ParamType, Writer},
 	Hash,
 };
-use sha3::{Digest, Keccak256};
 
 pub fn short_signature(name: &str, params: &[ParamType]) -> [u8; 4] {
 	let mut result = [0u8; 4];

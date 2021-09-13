@@ -8,6 +8,8 @@
 
 //! ABI decoder.
 
+#[cfg(not(feature = "std"))]
+use crate::no_std_prelude::*;
 use crate::{Error, ParamType, Token, Word};
 
 #[derive(Debug)]
@@ -217,8 +219,11 @@ fn decode_param(param: &ParamType, data: &[u8], offset: usize) -> Result<DecodeR
 
 #[cfg(test)]
 mod tests {
-	use crate::{decode, ParamType, Token, Uint};
 	use hex_literal::hex;
+
+	#[cfg(not(feature = "std"))]
+	use crate::no_std_prelude::*;
+	use crate::{decode, ParamType, Token, Uint};
 
 	#[test]
 	fn decode_from_empty_byte_slice() {

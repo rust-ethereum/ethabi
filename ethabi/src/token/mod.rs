@@ -8,16 +8,27 @@
 
 //! ABI param and parsing for it.
 
+#[cfg(feature = "full-serde")]
 mod lenient;
+#[cfg(feature = "full-serde")]
+pub use lenient::LenientTokenizer;
+
+#[cfg(feature = "full-serde")]
 mod strict;
+#[cfg(feature = "full-serde")]
+pub use strict::StrictTokenizer;
+
 mod token;
+pub use token::Token;
 
-use std::cmp::Ordering::{Equal, Less};
+#[cfg(feature = "full-serde")]
+use core::cmp::Ordering::{Equal, Less};
 
-pub use self::{lenient::LenientTokenizer, strict::StrictTokenizer, token::Token};
+#[cfg(feature = "full-serde")]
 use crate::{Error, ParamType};
 
 /// This trait should be used to parse string values as tokens.
+#[cfg(feature = "full-serde")]
 pub trait Tokenizer {
 	/// Tries to parse a string as a token of given type.
 	fn tokenize(param: &ParamType, value: &str) -> Result<Token, Error> {
@@ -176,7 +187,7 @@ pub trait Tokenizer {
 	fn tokenize_int(value: &str) -> Result<[u8; 32], Error>;
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "full-serde"))]
 mod test {
 	use super::{LenientTokenizer, ParamType, Tokenizer};
 	#[test]
