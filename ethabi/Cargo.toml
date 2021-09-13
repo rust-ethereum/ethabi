@@ -30,6 +30,7 @@ paste = "1"
 default = [
 	"std",
 	"full-serde",
+	"rlp",
 ]
 std = [
 	"anyhow/std",
@@ -48,4 +49,8 @@ full-serde = [
 	"serde_json",
 	"uint",
 	"ethereum-types/serialize",
+]
+
+rlp = [
+	"ethereum-types/rlp",
 ]
