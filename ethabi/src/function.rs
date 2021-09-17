@@ -63,6 +63,12 @@ impl Function {
 		Ok(signed.into_iter().chain(encoded.into_iter()).collect())
 	}
 
+	/// Return the 4 byte short signature of this function.
+	pub fn short_signature(&self) -> [u8; 4] {
+		let params = self.input_param_types();
+		short_signature(&self.name, &params)
+	}
+
 	/// Parses the ABI function output to list of tokens.
 	pub fn decode_output(&self, data: &[u8]) -> Result<Vec<Token>> {
 		decode(&self.output_param_types(), data)
@@ -119,5 +125,8 @@ mod tests {
 		let encoded = func.encode_input(&[Token::Uint(uint.into()), Token::Bool(true)]).unwrap();
 		let expected = hex!("cdcd77c000000000000000000000000000000000000000000000000000000000000000450000000000000000000000000000000000000000000000000000000000000001").to_vec();
 		assert_eq!(encoded, expected);
+
+		let expected_sig = hex!("cdcd77c0").to_vec();
+		assert_eq!(func.short_signature().to_vec(), expected_sig);
 	}
 }
