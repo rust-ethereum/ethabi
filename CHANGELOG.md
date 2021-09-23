@@ -4,6 +4,15 @@ The format is based on [Keep a Changelog].
 
 [Keep a Changelog]: http://keepachangelog.com/en/1.0.0/
 
+## [15.0.0] - 2021-09-23
+### Added
+- Optional field internalType to Param.
+- Support for no std.
+- Method to retrieve the short 4 byte signature of a function.
+
+### Changed
+- Bump ethereum-types to 0.12.0.
+
 ## [14.1.0] - 2021-07-08
 ### Added
 - `Serialize` support for contracts.
