@@ -12,7 +12,6 @@ edition = "2018"
 proc-macro = true
 
 [dependencies]
-anyhow = "1"
 ethabi = { path = "../ethabi", version = "15.0.0" }
 heck = "0.3.1"
 syn = { version = "1.0.13", default-features = false, features = ["derive", "parsing", "printing", "proc-macro"] }
