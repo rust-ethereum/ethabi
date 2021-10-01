@@ -6,16 +6,13 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-#[cfg(feature = "full-serde")]
-use core::num;
-
-#[cfg(feature = "full-serde")]
-use anyhow::anyhow;
-#[cfg(feature = "std")]
-use thiserror::Error;
-
+use crate::no_std_prelude::Cow;
 #[cfg(not(feature = "std"))]
 use crate::no_std_prelude::*;
+#[cfg(feature = "full-serde")]
+use core::num;
+#[cfg(feature = "std")]
+use thiserror::Error;
 
 /// Ethabi result type
 pub type Result<T> = core::result::Result<T, Error>;
@@ -43,9 +40,8 @@ pub enum Error {
 	#[error("Hex parsing error: {0}")]
 	Hex(#[from] hex::FromHexError),
 	/// Other errors.
-	#[cfg(feature = "full-serde")]
-	#[error("{0}")]
-	Other(#[from] anyhow::Error),
+	#[cfg_attr(feature = "std", error("{0}"))]
+	Other(Cow<'static, str>),
 }
 
 #[cfg(feature = "full-serde")]
@@ -53,9 +49,8 @@ impl From<uint::FromDecStrErr> for Error {
 	fn from(err: uint::FromDecStrErr) -> Self {
 		use uint::FromDecStrErr::*;
 		match err {
-			InvalidCharacter => anyhow!("Uint parse error: InvalidCharacter"),
-			InvalidLength => anyhow!("Uint parse error: InvalidLength"),
+			InvalidCharacter => Self::Other(Cow::Borrowed("Uint parse error: InvalidCharacter")),
+			InvalidLength => Self::Other(Cow::Borrowed("Uint parse error: InvalidLength")),
 		}
-		.into()
 	}
 }

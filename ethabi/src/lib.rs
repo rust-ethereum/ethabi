@@ -17,11 +17,15 @@ extern crate alloc;
 #[cfg(not(feature = "std"))]
 mod no_std_prelude {
 	pub use alloc::{
-		borrow::ToOwned,
+		borrow::{Cow, ToOwned},
 		boxed::Box,
 		string::{self, String, ToString},
 		vec::Vec,
 	};
+}
+#[cfg(feature = "std")]
+mod no_std_prelude {
+	pub use std::borrow::Cow;
 }
 #[cfg(not(feature = "std"))]
 use no_std_prelude::*;
