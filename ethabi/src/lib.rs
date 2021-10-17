@@ -71,6 +71,7 @@ pub use crate::{
 	log::{Log, LogFilter, LogParam, ParseLog, RawLog},
 	param::Param,
 	param_type::ParamType,
+	signature::{long_signature, short_signature},
 	state_mutability::StateMutability,
 	token::Token,
 };
