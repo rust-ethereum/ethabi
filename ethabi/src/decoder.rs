@@ -632,4 +632,41 @@ ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 		};
 		assert!(func.decode_input(&input).is_err());
 	}
+
+	#[test]
+	fn decode_corrupted_fixed_array_of_strings() {
+		let input = hex!(
+			"
+0000000000000000000000000000000000000000000000000000000000000001
+0000000000000000000000000000000000000000000000000000000001000040
+0000000000000000000000000000000000000000000000000000000000000040
+0000000000000000000000000000000000000000000000000000000000000080
+0000000000000000000000000000000000000000000000000000000000000008
+5445535454455354000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000008
+5445535454455354000000000000000000000000000000000000000000000000
+"
+		);
+
+		let func = {
+			use crate::{Function, Param};
+			use ParamType::*;
+			#[allow(deprecated)]
+			Function {
+				name: "f".to_string(),
+				inputs: vec![
+					Param { name: "i".to_string(), kind: Uint(256), internal_type: None },
+					Param {
+						name: "p".to_string(),
+						kind: FixedArray(Box::new(ParamType::String), 2),
+						internal_type: None,
+					},
+				],
+				outputs: vec![],
+				constant: false,
+				state_mutability: crate::StateMutability::default(),
+			}
+		};
+		assert!(func.decode_input(&input).is_err());
+	}
 }
