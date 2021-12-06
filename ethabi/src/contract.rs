@@ -20,6 +20,7 @@ use serde::{
 	Deserialize, Deserializer, Serialize, Serializer,
 };
 
+use crate::error::Error as AbiError;
 #[cfg(not(feature = "std"))]
 use crate::no_std_prelude::*;
 #[cfg(feature = "full-serde")]
@@ -35,6 +36,8 @@ pub struct Contract {
 	pub functions: BTreeMap<String, Vec<Function>>,
 	/// Contract events, maps signature to event.
 	pub events: BTreeMap<String, Vec<Event>>,
+	/// Contract errors, maps signature to error.
+	pub errors: BTreeMap<String, Vec<AbiError>>,
 	/// Contract has receive function.
 	pub receive: bool,
 	/// Contract has fallback function.
@@ -78,6 +81,9 @@ impl<'a> Visitor<'a> for ContractVisitor {
 				Operation::Event(event) => {
 					result.events.entry(event.name.clone()).or_default().push(event);
 				}
+				Operation::Error(error) => {
+					result.errors.entry(error.name.clone()).or_default().push(error);
+				}
 				Operation::Fallback => {
 					result.fallback = true;
 				}
@@ -110,6 +116,9 @@ impl Serialize for Contract {
 			#[serde(rename = "event")]
 			Event(&'a Event),
 
+			#[serde(rename = "error")]
+			Error(&'a AbiError),
+
 			#[serde(rename = "fallback")]
 			Fallback,
 
@@ -132,6 +141,12 @@ impl Serialize for Contract {
 		for events in self.events.values() {
 			for event in events {
 				seq.serialize_element(&OperationRef::Event(event))?;
+			}
+		}
+
+		for errors in self.errors.values() {
+			for error in errors {
+				seq.serialize_element(&OperationRef::Error(error))?;
 			}
 		}
 
@@ -231,6 +246,7 @@ mod test {
 				constructor: None,
 				functions: BTreeMap::new(),
 				events: BTreeMap::new(),
+				errors: BTreeMap::new(),
 				receive: false,
 				fallback: false,
 			}
@@ -265,6 +281,7 @@ mod test {
 				}),
 				functions: BTreeMap::new(),
 				events: BTreeMap::new(),
+				errors: BTreeMap::new(),
 				receive: false,
 				fallback: false,
 			}
@@ -339,6 +356,7 @@ mod test {
 					)
 				]),
 				events: BTreeMap::new(),
+				errors: BTreeMap::new(),
 				receive: false,
 				fallback: false,
 			}
@@ -410,6 +428,7 @@ mod test {
 					]
 				)]),
 				events: BTreeMap::new(),
+				errors: BTreeMap::new(),
 				receive: false,
 				fallback: false,
 			}
@@ -477,6 +496,7 @@ mod test {
 						}]
 					)
 				]),
+				errors: BTreeMap::new(),
 				receive: false,
 				fallback: false,
 			}
@@ -541,6 +561,7 @@ mod test {
 						}
 					]
 				)]),
+				errors: BTreeMap::new(),
 				receive: false,
 				fallback: false,
 			}
@@ -565,6 +586,7 @@ mod test {
 				constructor: None,
 				functions: BTreeMap::new(),
 				events: BTreeMap::new(),
+				errors: BTreeMap::new(),
 				receive: true,
 				fallback: false,
 			}
@@ -589,6 +611,7 @@ mod test {
 				constructor: None,
 				functions: BTreeMap::new(),
 				events: BTreeMap::new(),
+				errors: BTreeMap::new(),
 				receive: false,
 				fallback: true,
 			}

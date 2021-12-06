@@ -8,6 +8,7 @@
 
 //! Operation type.
 
+use crate::error::Error;
 use crate::{Constructor, Event, Function};
 use serde::{Deserialize, Serialize};
 
@@ -24,6 +25,9 @@ pub enum Operation {
 	/// Contract event.
 	#[serde(rename = "event")]
 	Event(Event),
+	/// Contract event.
+	#[serde(rename = "error")]
+	Error(Error),
 	/// Fallback function.
 	#[serde(rename = "fallback")]
 	Fallback,

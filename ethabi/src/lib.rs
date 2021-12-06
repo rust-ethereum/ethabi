@@ -34,6 +34,7 @@ mod constructor;
 mod contract;
 mod decoder;
 mod encoder;
+mod error;
 mod errors;
 mod event;
 mod event_param;
