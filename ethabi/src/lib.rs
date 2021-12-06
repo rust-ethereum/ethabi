@@ -64,6 +64,7 @@ pub use crate::{
 	contract::{Contract, Events, Functions},
 	decoder::decode,
 	encoder::encode,
+	error::Error as AbiError,
 	errors::{Error, Result},
 	event::Event,
 	event_param::EventParam,
