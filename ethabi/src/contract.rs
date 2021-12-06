@@ -231,8 +231,9 @@ impl<'a> Iterator for Events<'a> {
 #[cfg(all(test, feature = "full-serde"))]
 #[allow(deprecated)]
 mod test {
-	use crate::{tests::assert_ser_de, Constructor, Contract, Event, EventParam, Function, Param, ParamType};
 	use std::{collections::BTreeMap, iter::FromIterator};
+
+	use crate::{tests::assert_ser_de, AbiError, Constructor, Contract, Event, EventParam, Function, Param, ParamType};
 
 	#[test]
 	fn empty() {
@@ -333,15 +334,15 @@ mod test {
 							inputs: vec![Param {
 								name: "a".to_string(),
 								kind: ParamType::Address,
-								internal_type: None
+								internal_type: None,
 							}],
 							outputs: vec![Param {
 								name: "res".to_string(),
 								kind: ParamType::Address,
-								internal_type: None
+								internal_type: None,
 							}],
 							constant: false,
-							state_mutability: Default::default()
+							state_mutability: Default::default(),
 						}]
 					),
 					(
@@ -351,9 +352,9 @@ mod test {
 							inputs: vec![],
 							outputs: vec![],
 							constant: false,
-							state_mutability: Default::default()
+							state_mutability: Default::default(),
 						}]
-					)
+					),
 				]),
 				events: BTreeMap::new(),
 				errors: BTreeMap::new(),
@@ -408,23 +409,23 @@ mod test {
 							inputs: vec![Param {
 								name: "a".to_string(),
 								kind: ParamType::Address,
-								internal_type: None
+								internal_type: None,
 							}],
 							outputs: vec![Param {
 								name: "res".to_string(),
 								kind: ParamType::Address,
-								internal_type: None
+								internal_type: None,
 							}],
 							constant: false,
-							state_mutability: Default::default()
+							state_mutability: Default::default(),
 						},
 						Function {
 							name: "foo".to_string(),
 							inputs: vec![],
 							outputs: vec![],
 							constant: false,
-							state_mutability: Default::default()
-						}
+							state_mutability: Default::default(),
+						},
 					]
 				)]),
 				events: BTreeMap::new(),
@@ -482,9 +483,9 @@ mod test {
 							inputs: vec![EventParam {
 								name: "a".to_string(),
 								kind: ParamType::Address,
-								indexed: false
+								indexed: false,
 							}],
-							anonymous: false
+							anonymous: false,
 						}]
 					),
 					(
@@ -492,9 +493,9 @@ mod test {
 						vec![Event {
 							name: "bar".to_string(),
 							inputs: vec![EventParam { name: "a".to_string(), kind: ParamType::Address, indexed: true }],
-							anonymous: false
+							anonymous: false,
 						}]
-					)
+					),
 				]),
 				errors: BTreeMap::new(),
 				receive: false,
@@ -550,18 +551,162 @@ mod test {
 							inputs: vec![EventParam {
 								name: "a".to_string(),
 								kind: ParamType::Address,
-								indexed: false
+								indexed: false,
 							}],
-							anonymous: false
+							anonymous: false,
 						},
 						Event {
 							name: "foo".to_string(),
 							inputs: vec![EventParam { name: "a".to_string(), kind: ParamType::Address, indexed: true }],
-							anonymous: false
-						}
+							anonymous: false,
+						},
 					]
 				)]),
 				errors: BTreeMap::new(),
+				receive: false,
+				fallback: false,
+			}
+		);
+
+		assert_ser_de(&deserialized);
+	}
+
+	#[test]
+	fn errors() {
+		let json = r#"
+            [
+              {
+                "type": "error",
+                "inputs": [
+                  {
+                    "name": "available",
+                    "type": "uint256"
+                  },
+                  {
+                    "name": "required",
+                    "type": "address"
+                  }
+                ],
+                "name": "foo"
+              },
+              {
+                "type": "error",
+                "inputs": [
+                  {
+                    "name": "a",
+                    "type": "uint256"
+                  },
+                  {
+                    "name": "b",
+                    "type": "address"
+                  }
+                ],
+                "name": "bar"
+              }
+            ]
+		"#;
+
+		let deserialized: Contract = serde_json::from_str(json).unwrap();
+
+		assert_eq!(
+			deserialized,
+			Contract {
+				constructor: None,
+				functions: BTreeMap::new(),
+				events: BTreeMap::new(),
+				errors: BTreeMap::from_iter(vec![
+					(
+						"foo".to_string(),
+						vec![AbiError {
+							name: "foo".to_string(),
+							inputs: vec![
+								Param {
+									name: "available".to_string(),
+									kind: ParamType::Uint(256),
+									internal_type: None,
+								},
+								Param { name: "required".to_string(), kind: ParamType::Address, internal_type: None }
+							],
+						}]
+					),
+					(
+						"bar".to_string(),
+						vec![AbiError {
+							name: "bar".to_string(),
+							inputs: vec![
+								Param { name: "a".to_string(), kind: ParamType::Uint(256), internal_type: None },
+								Param { name: "b".to_string(), kind: ParamType::Address, internal_type: None }
+							],
+						}]
+					),
+				]),
+				receive: false,
+				fallback: false,
+			}
+		);
+
+		assert_ser_de(&deserialized);
+	}
+
+	#[test]
+	fn errors_overload() {
+		let json = r#"
+			[
+			  {
+				"type": "error",
+				"inputs": [
+				  {
+					"name": "a",
+					"type": "uint256"
+				  }
+				],
+				"name": "foo"
+			  },
+			  {
+				"type": "error",
+				"inputs": [
+				  {
+					"name": "a",
+					"type": "uint256"
+				  },
+				  {
+					"name": "b",
+					"type": "address"
+				  }
+				],
+				"name": "foo"
+			  }
+			]
+		"#;
+
+		let deserialized: Contract = serde_json::from_str(json).unwrap();
+
+		assert_eq!(
+			deserialized,
+			Contract {
+				constructor: None,
+				functions: BTreeMap::new(),
+				events: BTreeMap::new(),
+				errors: BTreeMap::from_iter(vec![(
+					"foo".to_string(),
+					vec![
+						AbiError {
+							name: "foo".to_string(),
+							inputs: vec![Param {
+								name: "a".to_string(),
+								kind: ParamType::Uint(256),
+								internal_type: None,
+							}],
+						},
+						AbiError {
+							name: "foo".to_string(),
+							inputs: vec![
+								Param { name: "a".to_string(), kind: ParamType::Uint(256), internal_type: None },
+								Param { name: "b".to_string(), kind: ParamType::Address, internal_type: None }
+							],
+						},
+					]
+				),]),
 				receive: false,
 				fallback: false,
 			}
