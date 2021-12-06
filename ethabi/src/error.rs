@@ -11,11 +11,13 @@
 #[cfg(feature = "full-serde")]
 use serde::{Deserialize, Serialize};
 
-use crate::errors;
 #[cfg(not(feature = "std"))]
 use crate::no_std_prelude::*;
-use crate::signature::short_signature;
-use crate::{decode, encode, signature::long_signature, Bytes, Hash, Param, ParamType, Result, Token};
+use crate::{
+	decode, encode, errors,
+	signature::{long_signature, short_signature},
+	Bytes, Hash, Param, ParamType, Result, Token,
+};
 
 /// Contract error specification.
 #[cfg_attr(feature = "full-serde", derive(Serialize, Deserialize))]

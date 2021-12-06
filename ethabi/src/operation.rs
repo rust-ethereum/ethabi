@@ -8,8 +8,7 @@
 
 //! Operation type.
 
-use crate::error::Error;
-use crate::{Constructor, Event, Function};
+use crate::{error::Error, Constructor, Event, Function};
 use serde::{Deserialize, Serialize};
 
 /// Operation type.

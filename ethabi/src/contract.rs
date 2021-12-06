@@ -20,12 +20,11 @@ use serde::{
 	Deserialize, Deserializer, Serialize, Serializer,
 };
 
-use crate::error::Error as AbiError;
 #[cfg(not(feature = "std"))]
 use crate::no_std_prelude::*;
 #[cfg(feature = "full-serde")]
 use crate::operation::Operation;
-use crate::{errors, Constructor, Error, Event, Function};
+use crate::{error::Error as AbiError, errors, Constructor, Error, Event, Function};
 
 /// API building calls to contracts ABI.
 #[derive(Clone, Debug, Default, PartialEq)]
