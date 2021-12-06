@@ -185,6 +185,11 @@ impl Contract {
 		self.events.get(name).into_iter().flatten().next().ok_or_else(|| Error::InvalidName(name.to_owned()))
 	}
 
+	/// Get the contract error named `name`, the first if there are multiple.
+	pub fn error(&self, name: &str) -> errors::Result<&AbiError> {
+		self.errors.get(name).into_iter().flatten().next().ok_or_else(|| Error::InvalidName(name.to_owned()))
+	}
+
 	/// Get all contract events named `name`.
 	pub fn events_by_name(&self, name: &str) -> errors::Result<&Vec<Event>> {
 		self.events.get(name).ok_or_else(|| Error::InvalidName(name.to_owned()))
@@ -195,6 +200,11 @@ impl Contract {
 		self.functions.get(name).ok_or_else(|| Error::InvalidName(name.to_owned()))
 	}
 
+	/// Get all errors named `name`.
+	pub fn errors_by_name(&self, name: &str) -> errors::Result<&Vec<AbiError>> {
+		self.errors.get(name).ok_or_else(|| Error::InvalidName(name.to_owned()))
+	}
+
 	/// Iterate over all functions of the contract in arbitrary order.
 	pub fn functions(&self) -> Functions {
 		Functions(self.functions.values().flatten())
@@ -203,6 +213,11 @@ impl Contract {
 	/// Iterate over all events of the contract in arbitrary order.
 	pub fn events(&self) -> Events {
 		Events(self.events.values().flatten())
+	}
+
+	/// Iterate over all errors of the contract in arbitrary order.
+	pub fn errors(&self) -> AbiErrors {
+		AbiErrors(self.errors.values().flatten())
 	}
 }
 
@@ -222,6 +237,17 @@ pub struct Events<'a>(Flatten<Values<'a, String, Vec<Event>>>);
 
 impl<'a> Iterator for Events<'a> {
 	type Item = &'a Event;
+
+	fn next(&mut self) -> Option<Self::Item> {
+		self.0.next()
+	}
+}
+
+/// Contract errors iterator.
+pub struct AbiErrors<'a>(Flatten<Values<'a, String, Vec<AbiError>>>);
+
+impl<'a> Iterator for AbiErrors<'a> {
+	type Item = &'a AbiError;
 
 	fn next(&mut self) -> Option<Self::Item> {
 		self.0.next()
