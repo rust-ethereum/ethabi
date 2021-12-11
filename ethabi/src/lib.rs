@@ -34,6 +34,7 @@ mod constructor;
 mod contract;
 mod decoder;
 mod encoder;
+mod error;
 mod errors;
 mod event;
 mod event_param;
@@ -63,6 +64,7 @@ pub use crate::{
 	contract::{Contract, Events, Functions},
 	decoder::decode,
 	encoder::encode,
+	error::Error as AbiError,
 	errors::{Error, Result},
 	event::Event,
 	event_param::EventParam,

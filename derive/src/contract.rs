@@ -75,6 +75,7 @@ mod test {
 			constructor: None,
 			functions: Default::default(),
 			events: Default::default(),
+			errors: Default::default(),
 			receive: false,
 			fallback: false,
 		};
