@@ -1,6 +1,6 @@
 [package]
 name = "ethabi-contract"
-version = "11.0.0"
+version = "16.0.0"
 authors = [
     "Parity Technologies <admin@parity.io>",
     "Artem Vorotnikov <artem@vorotnikov.me>",
