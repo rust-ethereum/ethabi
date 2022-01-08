@@ -14,7 +14,8 @@ use crate::{
 use std::borrow::Cow;
 
 use once_cell::sync::Lazy;
-static RE: Lazy<regex::Regex> = Lazy::new(|| regex::Regex::new(r"([0-9]+(?:\.[0-9]+)?)\s*(ether|gwei|nanoether|nano|wei)").expect("invalid regex"));
+static RE: Lazy<regex::Regex> =
+	Lazy::new(|| regex::Regex::new(r"([0-9]+(?:\.[0-9]+)?)\s*(ether|gwei|nanoether|nano|wei)").expect("invalid regex"));
 
 /// Tries to parse string as a token. Does not require string to clearly represent the value.
 pub struct LenientTokenizer;
