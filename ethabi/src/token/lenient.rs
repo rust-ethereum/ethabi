@@ -11,8 +11,14 @@ use crate::{
 	token::{StrictTokenizer, Tokenizer},
 	Uint,
 };
-use regex::Regex;
 use std::borrow::Cow;
+
+macro_rules! regex {
+	($re:literal $(,)?) => {{
+		static RE: once_cell::sync::OnceCell<regex::Regex> = once_cell::sync::OnceCell::new();
+		RE.get_or_init(|| regex::Regex::new($re).unwrap())
+	}};
+}
 
 /// Tries to parse string as a token. Does not require string to clearly represent the value.
 pub struct LenientTokenizer;
@@ -51,8 +57,8 @@ impl Tokenizer for LenientTokenizer {
 			Ok(_uint) => _uint,
 			Err(dec_error) => {
 				let original_dec_error = dec_error.to_string();
-				let re = Regex::new(r"([0-9.]+) *(ether|gwei|nano|nanoether|wei)")
-					.map_err(|_| Error::Other(Cow::Borrowed("invalid regex expression")))?;
+				let re = regex!(r##"([0-9]+\.{0,1}[0-9]+)\s*(ether|gwei|nano|nanoether|wei)"##);
+
 				match re.captures(value) {
 					Some(captures) => {
 						if captures.len() != 3 {
