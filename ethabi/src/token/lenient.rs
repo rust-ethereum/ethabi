@@ -57,7 +57,7 @@ impl Tokenizer for LenientTokenizer {
 			Ok(_uint) => _uint,
 			Err(dec_error) => {
 				let original_dec_error = dec_error.to_string();
-				let re = regex!(r##"([0-9]+\.{0,1}[0-9]+)\s*(ether|gwei|nano|nanoether|wei)"##);
+				let re = regex!(r##"([0-9]+(?:\.[0-9]+)?)\s*(ether|gwei|nano|nanoether|wei)"##);
 
 				match re.captures(value) {
 					Some(captures) => {
