@@ -13,12 +13,8 @@ use crate::{
 };
 use std::borrow::Cow;
 
-macro_rules! regex {
-	($re:literal $(,)?) => {{
-		static RE: once_cell::sync::OnceCell<regex::Regex> = once_cell::sync::OnceCell::new();
-		RE.get_or_init(|| regex::Regex::new($re).unwrap())
-	}};
-}
+use once_cell::sync::Lazy;
+static RE: Lazy<regex::Regex> = Lazy::new(|| regex::Regex::new(r"([0-9]+(?:\.[0-9]+)?)\s*(ether|gwei|nanoether|nano|wei)").expect("invalid regex"));
 
 /// Tries to parse string as a token. Does not require string to clearly represent the value.
 pub struct LenientTokenizer;
@@ -57,9 +53,8 @@ impl Tokenizer for LenientTokenizer {
 			Ok(_uint) => _uint,
 			Err(dec_error) => {
 				let original_dec_error = dec_error.to_string();
-				let re = regex!(r##"([0-9]+(?:\.[0-9]+)?)\s*(ether|gwei|nanoether|nano|wei)"##);
 
-				match re.captures(value) {
+				match RE.captures(value) {
 					Some(captures) => {
 						if captures.len() != 3
 							|| captures
@@ -235,5 +230,7 @@ mod tests {
 		assert!(matches!(LenientTokenizer::tokenize(&ParamType::Uint(256), "2.1.1 gwei"), Err(_error)));
 
 		assert!(matches!(LenientTokenizer::tokenize(&ParamType::Uint(256), ".1.1 gwei"), Err(_error)));
+
+		assert!(matches!(LenientTokenizer::tokenize(&ParamType::Uint(256), "1abc"), Err(_error)));
 	}
 }
