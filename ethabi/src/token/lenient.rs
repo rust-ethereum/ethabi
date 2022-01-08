@@ -197,4 +197,12 @@ mod tests {
 			LenientTokenizer::tokenize(&ParamType::Uint(256), "1wei").unwrap(),
 		);
 	}
+
+	#[test]
+	fn tokenize_uint_array_ether() {
+		assert_eq!(
+			LenientTokenizer::tokenize(&ParamType::Array(Box::new(ParamType::Uint(256))), "[1ether,0.1 ether]").unwrap(),
+			Token::Array(vec![Token::Uint(Uint::from_dec_str("1000000000000000000").unwrap()),Token::Uint(Uint::from_dec_str("100000000000000000").unwrap())])
+		);
+	}
 }
