@@ -15,7 +15,7 @@ use std::borrow::Cow;
 
 use once_cell::sync::Lazy;
 static RE: Lazy<regex::Regex> =
-	Lazy::new(|| regex::Regex::new(r"([0-9]+(?:\.[0-9]+)?)\s*(ether|gwei|nanoether|nano|wei)").expect("invalid regex"));
+	Lazy::new(|| regex::Regex::new(r"^([0-9]+(?:\.[0-9]+)?)\s*(ether|gwei|nanoether|nano|wei)$").expect("invalid regex"));
 
 /// Tries to parse string as a token. Does not require string to clearly represent the value.
 pub struct LenientTokenizer;
@@ -57,12 +57,7 @@ impl Tokenizer for LenientTokenizer {
 
 				match RE.captures(value) {
 					Some(captures) => {
-						if captures.len() != 3
-							|| captures
-								.get(0)
-								.ok_or_else(|| Error::Other(Cow::Owned(original_dec_error.clone())))?
-								.as_str() != value
-						{
+						if captures.len() != 3 {
 							return Err(dec_error.into());
 						} else {
 							let amount = captures
@@ -233,5 +228,11 @@ mod tests {
 		assert!(matches!(LenientTokenizer::tokenize(&ParamType::Uint(256), ".1.1 gwei"), Err(_error)));
 
 		assert!(matches!(LenientTokenizer::tokenize(&ParamType::Uint(256), "1abc"), Err(_error)));
+
+		assert!(matches!(LenientTokenizer::tokenize(&ParamType::Uint(256), "1 gwei "), Err(_error)));
+
+		assert!(matches!(LenientTokenizer::tokenize(&ParamType::Uint(256), "g 1 gwei"), Err(_error)));
+
+		assert!(matches!(LenientTokenizer::tokenize(&ParamType::Uint(256), "1gwei 1 gwei"), Err(_error)));
 	}
 }
