@@ -11,6 +11,7 @@ use crate::{
 	token::{StrictTokenizer, Tokenizer},
 	Uint,
 };
+use regex::Regex;
 use std::borrow::Cow;
 
 /// Tries to parse string as a token. Does not require string to clearly represent the value.
@@ -43,7 +44,50 @@ impl Tokenizer for LenientTokenizer {
 			return result;
 		}
 
-		let uint = Uint::from_dec_str(value)?;
+		// Tries to parse it as is first. If it fails, tries to check for
+		// expectable units with the following format: 'Number[Spaces]Unit'.
+		//   If regex fails, then the original FromDecStrErr should take priority
+		let uint = match Uint::from_dec_str(value) {
+			Ok(_uint) => _uint,
+			Err(dec_error) => {
+				let original_dec_error = dec_error.to_string();
+				let re = Regex::new(r"([0-9.]+) *(ether|gwei|nano|nanoether|wei)")
+					.map_err(|_| Error::Other(Cow::Borrowed("invalid regex expression")))?;
+				match re.captures(value) {
+					Some(captures) => {
+						if captures.len() != 3 {
+							return Err(dec_error.into());
+						} else {
+							let amount = captures
+								.get(1)
+								.ok_or_else(|| Error::Other(Cow::Owned(original_dec_error.clone())))?
+								.as_str();
+							let units = captures
+								.get(2)
+								.ok_or_else(|| Error::Other(Cow::Owned(original_dec_error.clone())))?
+								.as_str();
+
+							let units = match units.to_lowercase().as_str() {
+								"ether" => 18,
+								"gwei" | "nano" | "nanoether" => 9,
+								"wei" => 0,
+								_ => return Err(dec_error.into()),
+							};
+
+							let float_n: f64 = amount
+								.parse::<f64>()
+								.map_err(|_| Error::Other(Cow::Owned(original_dec_error.clone())))?
+								* 10u64.pow(units) as f64;
+
+							Uint::from_dec_str(&float_n.round().to_string())
+								.map_err(|_| Error::Other(Cow::Owned(original_dec_error)))?
+						}
+					}
+					None => return Err(dec_error.into()),
+				}
+			}
+		};
+
 		Ok(uint.into())
 	}
 
@@ -72,5 +116,85 @@ impl Tokenizer for LenientTokenizer {
 			abs
 		};
 		Ok(int.into())
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use crate::{
+		token::{LenientTokenizer, Token, Tokenizer},
+		ParamType, Uint,
+	};
+
+	#[test]
+	fn tokenize_uint() {
+		assert_eq!(
+			LenientTokenizer::tokenize(
+				&ParamType::Uint(256),
+				"1111111111111111111111111111111111111111111111111111111111111111"
+			)
+			.unwrap(),
+			Token::Uint([0x11u8; 32].into())
+		);
+	}
+
+	#[test]
+	fn tokenize_uint_wei() {
+		assert_eq!(LenientTokenizer::tokenize(&ParamType::Uint(256), "1wei").unwrap(), Token::Uint(Uint::from(1)));
+
+		assert_eq!(LenientTokenizer::tokenize(&ParamType::Uint(256), "1 wei").unwrap(), Token::Uint(Uint::from(1)));
+
+		assert_eq!(LenientTokenizer::tokenize(&ParamType::Uint(256), "0.1 wei").unwrap(), Token::Uint(Uint::from(0)));
+	}
+
+	#[test]
+	fn tokenize_uint_gwei() {
+		assert_eq!(
+			LenientTokenizer::tokenize(&ParamType::Uint(256), "1nano").unwrap(),
+			Token::Uint(Uint::from_dec_str("1000000000").unwrap())
+		);
+
+		assert_eq!(
+			LenientTokenizer::tokenize(&ParamType::Uint(256), "1nanoether").unwrap(),
+			Token::Uint(Uint::from_dec_str("1000000000").unwrap())
+		);
+
+		assert_eq!(
+			LenientTokenizer::tokenize(&ParamType::Uint(256), "1gwei").unwrap(),
+			Token::Uint(Uint::from_dec_str("1000000000").unwrap())
+		);
+
+		assert_eq!(
+			LenientTokenizer::tokenize(&ParamType::Uint(256), "0.1 gwei").unwrap(),
+			Token::Uint(Uint::from_dec_str("100000000").unwrap())
+		);
+	}
+
+	#[test]
+	fn tokenize_uint_ether() {
+		assert_eq!(
+			LenientTokenizer::tokenize(&ParamType::Uint(256), "1000000ether").unwrap(),
+			Token::Uint(Uint::from_dec_str("1000000000000000000000000").unwrap())
+		);
+
+		assert_eq!(
+			LenientTokenizer::tokenize(&ParamType::Uint(256), "1ether").unwrap(),
+			Token::Uint(Uint::from_dec_str("1000000000000000000").unwrap())
+		);
+
+		assert_eq!(
+			LenientTokenizer::tokenize(&ParamType::Uint(256), "0.01 ether").unwrap(),
+			Token::Uint(Uint::from_dec_str("10000000000000000").unwrap())
+		);
+
+		assert_eq!(
+			LenientTokenizer::tokenize(&ParamType::Uint(256), "0.000000000000000001ether").unwrap(),
+			Token::Uint(Uint::from_dec_str("1").unwrap())
+		);
+
+		assert_eq!(
+			LenientTokenizer::tokenize(&ParamType::Uint(256), "0.000000000000000001ether").unwrap(),
+			LenientTokenizer::tokenize(&ParamType::Uint(256), "1wei").unwrap(),
+		);
 	}
 }
