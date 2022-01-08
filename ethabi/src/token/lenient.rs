@@ -57,11 +57,16 @@ impl Tokenizer for LenientTokenizer {
 			Ok(_uint) => _uint,
 			Err(dec_error) => {
 				let original_dec_error = dec_error.to_string();
-				let re = regex!(r##"([0-9]+(?:\.[0-9]+)?)\s*(ether|gwei|nano|nanoether|wei)"##);
+				let re = regex!(r##"([0-9]+(?:\.[0-9]+)?)\s*(ether|gwei|nanoether|nano|wei)"##);
 
 				match re.captures(value) {
 					Some(captures) => {
-						if captures.len() != 3 {
+						if captures.len() != 3
+							|| captures
+								.get(0)
+								.ok_or_else(|| Error::Other(Cow::Owned(original_dec_error.clone())))?
+								.as_str() != value
+						{
 							return Err(dec_error.into());
 						} else {
 							let amount = captures
@@ -127,7 +132,10 @@ impl Tokenizer for LenientTokenizer {
 
 #[cfg(test)]
 mod tests {
+	use ethereum_types::FromDecStrErr;
+
 	use crate::{
+		errors::Error,
 		token::{LenientTokenizer, Token, Tokenizer},
 		ParamType, Uint,
 	};
@@ -213,6 +221,32 @@ mod tests {
 				Token::Uint(Uint::from_dec_str("1000000000000000000").unwrap()),
 				Token::Uint(Uint::from_dec_str("100000000000000000").unwrap())
 			])
+		);
+	}
+
+	#[test]
+	fn tokenize_uint_invalid_units() {
+
+		let _error = Error::from(FromDecStrErr::InvalidCharacter);
+
+		assert!(matches!(
+			LenientTokenizer::tokenize(&ParamType::Uint(256), "0..1 gwei"),
+			Err(_error))
+		);
+
+		assert!(matches!(
+			LenientTokenizer::tokenize(&ParamType::Uint(256), "..1 gwei"),
+			Err(_error))
+		);
+
+		assert!(matches!(
+			LenientTokenizer::tokenize(&ParamType::Uint(256), "2.1.1 gwei"),
+			Err(_error))
+		);
+
+		assert!(matches!(
+			LenientTokenizer::tokenize(&ParamType::Uint(256), ".1.1 gwei"),
+			Err(_error))
 		);
 	}
 }
