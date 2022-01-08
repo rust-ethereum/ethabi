@@ -226,27 +226,14 @@ mod tests {
 
 	#[test]
 	fn tokenize_uint_invalid_units() {
-
 		let _error = Error::from(FromDecStrErr::InvalidCharacter);
 
-		assert!(matches!(
-			LenientTokenizer::tokenize(&ParamType::Uint(256), "0..1 gwei"),
-			Err(_error))
-		);
+		assert!(matches!(LenientTokenizer::tokenize(&ParamType::Uint(256), "0..1 gwei"), Err(_error)));
 
-		assert!(matches!(
-			LenientTokenizer::tokenize(&ParamType::Uint(256), "..1 gwei"),
-			Err(_error))
-		);
+		assert!(matches!(LenientTokenizer::tokenize(&ParamType::Uint(256), "..1 gwei"), Err(_error)));
 
-		assert!(matches!(
-			LenientTokenizer::tokenize(&ParamType::Uint(256), "2.1.1 gwei"),
-			Err(_error))
-		);
+		assert!(matches!(LenientTokenizer::tokenize(&ParamType::Uint(256), "2.1.1 gwei"), Err(_error)));
 
-		assert!(matches!(
-			LenientTokenizer::tokenize(&ParamType::Uint(256), ".1.1 gwei"),
-			Err(_error))
-		);
+		assert!(matches!(LenientTokenizer::tokenize(&ParamType::Uint(256), ".1.1 gwei"), Err(_error)));
 	}
 }
