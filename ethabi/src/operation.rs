@@ -59,7 +59,7 @@ mod tests {
 			name: "foo".to_owned(),
 			inputs: vec![Param { name: "a".to_owned(), kind: ParamType::Address, internal_type: None }],
 			outputs: vec![],
-			constant: false,
+			constant: None,
 			state_mutability: StateMutability::NonPayable,
 		};
 		assert_eq!(deserialized, Operation::Function(function));
