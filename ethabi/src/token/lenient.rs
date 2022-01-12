@@ -14,8 +14,9 @@ use crate::{
 use std::borrow::Cow;
 
 use once_cell::sync::Lazy;
-static RE: Lazy<regex::Regex> =
-	Lazy::new(|| regex::Regex::new(r"^([0-9]+(?:\.[0-9]+)?)\s*(ether|gwei|nanoether|nano|wei)$").expect("invalid regex"));
+static RE: Lazy<regex::Regex> = Lazy::new(|| {
+	regex::Regex::new(r"^([0-9]+(?:\.[0-9]+)?)\s*(ether|gwei|nanoether|nano|wei)$").expect("invalid regex")
+});
 
 /// Tries to parse string as a token. Does not require string to clearly represent the value.
 pub struct LenientTokenizer;
@@ -57,33 +58,22 @@ impl Tokenizer for LenientTokenizer {
 
 				match RE.captures(value) {
 					Some(captures) => {
-						if captures.len() != 3 {
-							return Err(dec_error.into());
-						} else {
-							let amount = captures
-								.get(1)
-								.ok_or_else(|| Error::Other(Cow::Owned(original_dec_error.clone())))?
-								.as_str();
-							let units = captures
-								.get(2)
-								.ok_or_else(|| Error::Other(Cow::Owned(original_dec_error.clone())))?
-								.as_str();
+						let amount = captures.get(1).expect("capture group does not exist").as_str();
+						let units = captures.get(2).expect("capture group does not exist").as_str();
 
-							let units = match units.to_lowercase().as_str() {
-								"ether" => 18,
-								"gwei" | "nano" | "nanoether" => 9,
-								"wei" => 0,
-								_ => return Err(dec_error.into()),
-							};
+						let units = match units.to_lowercase().as_str() {
+							"ether" => 18,
+							"gwei" | "nano" | "nanoether" => 9,
+							"wei" => 0,
+							_ => return Err(dec_error.into()),
+						};
 
-							let float_n: f64 = amount
-								.parse::<f64>()
-								.map_err(|_| Error::Other(Cow::Owned(original_dec_error.clone())))?
+						let float_n: f64 =
+							amount.parse::<f64>().map_err(|_| Error::Other(Cow::Owned(original_dec_error.clone())))?
 								* 10u64.pow(units) as f64;
 
-							Uint::from_dec_str(&float_n.round().to_string())
-								.map_err(|_| Error::Other(Cow::Owned(original_dec_error)))?
-						}
+						Uint::from_dec_str(&float_n.round().to_string())
+							.map_err(|_| Error::Other(Cow::Owned(original_dec_error)))?
 					}
 					None => return Err(dec_error.into()),
 				}
