@@ -157,9 +157,10 @@ impl Reader {
 				let len = s[5..].parse()?;
 				ParamType::FixedBytes(len)
 			}
-			_ => {
-				return Err(Error::InvalidName(name.to_owned()));
-			}
+			// As discussed in https://github.com/rust-ethereum/ethabi/issues/254,
+			// any type that does not fit the above corresponds to a Solidity
+			// enum, and as a result we treat it as a uint8.
+			_ => ParamType::Uint(8),
 		};
 
 		Ok(result)
