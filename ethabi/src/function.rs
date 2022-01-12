@@ -29,11 +29,10 @@ pub struct Function {
 	/// Function output.
 	pub outputs: Vec<Param>,
 	#[deprecated(note = "The constant attribute was removed in Solidity 0.5.0 and has been \
-				replaced with stateMutability. If parsing a JSON AST created with \
-				this version or later this value will always be false, which may be wrong.")]
+				replaced with stateMutability.")]
 	/// Constant function.
 	#[cfg_attr(feature = "full-serde", serde(default))]
-	pub constant: bool,
+	pub constant: Option<bool>,
 	/// Whether the function reads or modifies blockchain state
 	#[cfg_attr(feature = "full-serde", serde(rename = "stateMutability", default))]
 	pub state_mutability: StateMutability,
@@ -116,7 +115,7 @@ mod tests {
 				Param { name: "b".to_owned(), kind: ParamType::Bool, internal_type: None },
 			],
 			outputs: vec![],
-			constant: false,
+			constant: None,
 			state_mutability: StateMutability::Payable,
 		};
 

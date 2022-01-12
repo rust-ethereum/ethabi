@@ -366,7 +366,7 @@ mod test {
 								kind: ParamType::Address,
 								internal_type: None,
 							}],
-							constant: false,
+							constant: None,
 							state_mutability: Default::default(),
 						}]
 					),
@@ -376,7 +376,7 @@ mod test {
 							name: "bar".to_string(),
 							inputs: vec![],
 							outputs: vec![],
-							constant: false,
+							constant: None,
 							state_mutability: Default::default(),
 						}]
 					),
@@ -441,14 +441,14 @@ mod test {
 								kind: ParamType::Address,
 								internal_type: None,
 							}],
-							constant: false,
+							constant: None,
 							state_mutability: Default::default(),
 						},
 						Function {
 							name: "foo".to_string(),
 							inputs: vec![],
 							outputs: vec![],
-							constant: false,
+							constant: None,
 							state_mutability: Default::default(),
 						},
 					]

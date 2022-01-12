@@ -633,7 +633,7 @@ ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 					},
 				],
 				outputs: vec![],
-				constant: false,
+				constant: None,
 				state_mutability: crate::StateMutability::default(),
 			}
 		};
@@ -670,7 +670,7 @@ ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 					},
 				],
 				outputs: vec![],
-				constant: false,
+				constant: None,
 				state_mutability: crate::StateMutability::default(),
 			}
 		};

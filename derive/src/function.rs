@@ -61,8 +61,7 @@ pub struct Function {
 	/// Function output params.
 	outputs: Outputs,
 	#[deprecated(note = "The constant attribute was removed in Solidity 0.5.0 and has been \
-				replaced with stateMutability. If parsing a JSON AST created with \
-				this version or later this value will always be false, which may be wrong.")]
+				replaced with stateMutability.")]
 	/// Constant function.
 	constant: bool,
 	/// Whether the function reads or modifies blockchain state
@@ -139,7 +138,7 @@ impl<'a> From<&'a ethabi::Function> for Function {
 				result: output_result,
 				recreate_quote: to_ethabi_param_vec(&f.outputs),
 			},
-			constant: f.constant,
+			constant: f.constant.unwrap_or_default(),
 			state_mutability: f.state_mutability,
 		}
 	}
@@ -176,7 +175,7 @@ impl Function {
 						name: #name.into(),
 						inputs: #recreate_inputs,
 						outputs: #recreate_outputs,
-						constant: #constant,
+						constant: Some(#constant),
 						state_mutability: #state_mutability
 					}
 				}
@@ -227,7 +226,7 @@ mod tests {
 			name: "empty".into(),
 			inputs: vec![],
 			outputs: vec![],
-			constant: false,
+			constant: None,
 			state_mutability: ethabi::StateMutability::Payable,
 		};
 
@@ -243,7 +242,7 @@ mod tests {
 						name: "empty".into(),
 						inputs: vec![],
 						outputs: vec![],
-						constant: false,
+						constant: Some(false),
 						state_mutability: ::ethabi::StateMutability::Payable
 					}
 				}
@@ -295,7 +294,7 @@ mod tests {
 				kind: ethabi::ParamType::Uint(256),
 				internal_type: None,
 			}],
-			constant: false,
+			constant: None,
 			state_mutability: ethabi::StateMutability::Payable,
 		};
 
@@ -319,7 +318,7 @@ mod tests {
 							kind: ethabi::ParamType::Uint(256usize),
 							internal_type: None
 						}],
-						constant: false,
+						constant: Some(false),
 						state_mutability: ::ethabi::StateMutability::Payable
 					}
 				}
@@ -381,7 +380,7 @@ mod tests {
 				ethabi::Param { name: "".into(), kind: ethabi::ParamType::Uint(256), internal_type: None },
 				ethabi::Param { name: "".into(), kind: ethabi::ParamType::String, internal_type: None },
 			],
-			constant: false,
+			constant: None,
 			state_mutability: ethabi::StateMutability::Payable,
 		};
 
@@ -413,7 +412,7 @@ mod tests {
 							kind: ethabi::ParamType::String,
 							internal_type: None
 						}],
-						constant: false,
+						constant: Some(false),
 						state_mutability: ::ethabi::StateMutability::Payable
 					}
 				}
