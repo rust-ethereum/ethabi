@@ -72,6 +72,12 @@ impl Tokenizer for LenientTokenizer {
 							amount.parse::<f64>().map_err(|_| Error::Other(Cow::Owned(original_dec_error.clone())))?
 								* 10u64.pow(units) as f64;
 
+						// decimals beyond 18 are not accepted as valid (eg. 1.5 wei or equivalent on other units)
+						//   string comparison is done in case of precision loss
+						if float_n.fract() != 0 as f64 || (float_n / (10u64.pow(units) as f64)).to_string() != amount {
+							return Err(dec_error.into());
+						}
+
 						Uint::from_dec_str(&float_n.round().to_string())
 							.map_err(|_| Error::Other(Cow::Owned(original_dec_error)))?
 					}
@@ -138,8 +144,6 @@ mod tests {
 		assert_eq!(LenientTokenizer::tokenize(&ParamType::Uint(256), "1wei").unwrap(), Token::Uint(Uint::from(1)));
 
 		assert_eq!(LenientTokenizer::tokenize(&ParamType::Uint(256), "1 wei").unwrap(), Token::Uint(Uint::from(1)));
-
-		assert_eq!(LenientTokenizer::tokenize(&ParamType::Uint(256), "0.1 wei").unwrap(), Token::Uint(Uint::from(0)));
 	}
 
 	#[test]
@@ -168,8 +172,8 @@ mod tests {
 	#[test]
 	fn tokenize_uint_ether() {
 		assert_eq!(
-			LenientTokenizer::tokenize(&ParamType::Uint(256), "1000000ether").unwrap(),
-			Token::Uint(Uint::from_dec_str("1000000000000000000000000").unwrap())
+			LenientTokenizer::tokenize(&ParamType::Uint(256), "10000000000ether").unwrap(),
+			Token::Uint(Uint::from_dec_str("10000000000000000000000000000").unwrap())
 		);
 
 		assert_eq!(
@@ -208,6 +212,20 @@ mod tests {
 	#[test]
 	fn tokenize_uint_invalid_units() {
 		let _error = Error::from(FromDecStrErr::InvalidCharacter);
+
+		assert!(matches!(LenientTokenizer::tokenize(&ParamType::Uint(256), "0.1 wei"), Err(_error)));
+
+		// 0.1 wei
+		assert!(matches!(LenientTokenizer::tokenize(&ParamType::Uint(256), "0.0000000000000000001ether"), Err(_error)));
+
+		// 100 ether + 0.1 wei
+		assert!(matches!(LenientTokenizer::tokenize(&ParamType::Uint(256), "1.0000000000000000001ether"), Err(_error)));
+
+		// 1_000_000_000 ether + 0.1 wei
+		assert!(matches!(
+			LenientTokenizer::tokenize(&ParamType::Uint(256), "1000000000.0000000000000000001ether"),
+			Err(_error)
+		));
 
 		assert!(matches!(LenientTokenizer::tokenize(&ParamType::Uint(256), "0..1 gwei"), Err(_error)));
 
