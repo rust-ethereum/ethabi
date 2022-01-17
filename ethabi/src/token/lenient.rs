@@ -218,7 +218,7 @@ mod tests {
 		// 0.1 wei
 		assert!(matches!(LenientTokenizer::tokenize(&ParamType::Uint(256), "0.0000000000000000001ether"), Err(_error)));
 
-		// 100 ether + 0.1 wei
+		// 1 ether + 0.1 wei
 		assert!(matches!(LenientTokenizer::tokenize(&ParamType::Uint(256), "1.0000000000000000001ether"), Err(_error)));
 
 		// 1_000_000_000 ether + 0.1 wei
