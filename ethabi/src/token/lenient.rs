@@ -78,7 +78,7 @@ impl Tokenizer for LenientTokenizer {
 							return Err(dec_error.into());
 						}
 
-						Uint::from_dec_str(&float_n.round().to_string())
+						Uint::from_dec_str(&float_n.to_string())
 							.map_err(|_| Error::Other(Cow::Owned(original_dec_error)))?
 					}
 					None => return Err(dec_error.into()),
