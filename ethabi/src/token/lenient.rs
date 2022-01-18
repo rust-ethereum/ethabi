@@ -14,9 +14,8 @@ use crate::{
 use std::borrow::Cow;
 
 use once_cell::sync::Lazy;
-static RE: Lazy<regex::Regex> = Lazy::new(|| {
-	regex::Regex::new(r"^([0-9]+(?:\.[0-9]+)?)\s*(ether|gwei|nanoether|nano|wei)$").expect("invalid regex")
-});
+static RE: Lazy<regex::Regex> =
+	Lazy::new(|| regex::Regex::new(r"^([0-9]+)(\.[0-9]+)?\s*(ether|gwei|nanoether|nano|wei)$").expect("invalid regex"));
 
 /// Tries to parse string as a token. Does not require string to clearly represent the value.
 pub struct LenientTokenizer;
@@ -58,28 +57,33 @@ impl Tokenizer for LenientTokenizer {
 
 				match RE.captures(value) {
 					Some(captures) => {
-						let amount = captures.get(1).expect("capture group does not exist").as_str();
-						let units = captures.get(2).expect("capture group does not exist").as_str();
+						let integer = captures.get(1).expect("capture group does not exist").as_str();
+						let fract = captures.get(2).map(|c| c.as_str().trim_start_matches('.')).unwrap_or_else(|| "");
+						let units = captures.get(3).expect("capture group does not exist").as_str();
 
-						let units = match units.to_lowercase().as_str() {
+						let units = Uint::from(match units.to_lowercase().as_str() {
 							"ether" => 18,
 							"gwei" | "nano" | "nanoether" => 9,
 							"wei" => 0,
 							_ => return Err(dec_error.into()),
-						};
+						});
 
-						let float_n: f64 =
-							amount.parse::<f64>().map_err(|_| Error::Other(Cow::Owned(original_dec_error.clone())))?
-								* 10u64.pow(units) as f64;
+						let integer = Uint::from_dec_str(integer)?.checked_mul(Uint::from(10u32).pow(units));
 
-						// decimals beyond 18 are not accepted as valid (eg. 1.5 wei or equivalent on other units)
-						//   string comparison is done in case of precision loss
-						if float_n.fract() != 0 as f64 || (float_n / (10u64.pow(units) as f64)).to_string() != amount {
-							return Err(dec_error.into());
+						if fract.is_empty() {
+							integer.ok_or(dec_error)?
+						} else {
+							// makes sure we don't go beyond 18 decimals
+							let fract_pow = units.checked_sub(Uint::from(fract.len())).ok_or(dec_error)?;
+
+							let fract = Uint::from_dec_str(fract)?
+								.checked_mul(Uint::from(10u32).pow(fract_pow))
+								.ok_or_else(|| Error::Other(Cow::Owned(original_dec_error.clone())))?;
+
+							integer
+								.and_then(|integer| integer.checked_add(fract))
+								.ok_or(Error::Other(Cow::Owned(original_dec_error)))?
 						}
-
-						Uint::from_dec_str(&float_n.to_string())
-							.map_err(|_| Error::Other(Cow::Owned(original_dec_error)))?
 					}
 					None => return Err(dec_error.into()),
 				}
@@ -230,6 +234,10 @@ mod tests {
 		assert!(matches!(LenientTokenizer::tokenize(&ParamType::Uint(256), "0..1 gwei"), Err(_error)));
 
 		assert!(matches!(LenientTokenizer::tokenize(&ParamType::Uint(256), "..1 gwei"), Err(_error)));
+
+		assert!(matches!(LenientTokenizer::tokenize(&ParamType::Uint(256), "1. gwei"), Err(_error)));
+
+		assert!(matches!(LenientTokenizer::tokenize(&ParamType::Uint(256), ".1 gwei"), Err(_error)));
 
 		assert!(matches!(LenientTokenizer::tokenize(&ParamType::Uint(256), "2.1.1 gwei"), Err(_error)));
 
