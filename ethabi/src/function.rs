@@ -31,7 +31,7 @@ pub struct Function {
 	#[deprecated(note = "The constant attribute was removed in Solidity 0.5.0 and has been \
 				replaced with stateMutability.")]
 	/// Constant function.
-	#[cfg_attr(feature = "full-serde", serde(default))]
+	#[cfg_attr(feature = "full-serde", serde(skip_serializing_if = "Option::is_none"))]
 	pub constant: Option<bool>,
 	/// Whether the function reads or modifies blockchain state
 	#[cfg_attr(feature = "full-serde", serde(rename = "stateMutability", default))]
