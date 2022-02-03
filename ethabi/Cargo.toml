@@ -55,3 +55,7 @@ full-serde = [
 rlp = [
 	"ethereum-types/rlp",
 ]
+
+parity-codec = [
+	"ethereum-types/codec"
+]
