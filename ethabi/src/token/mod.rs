@@ -33,11 +33,15 @@ pub trait Tokenizer {
 	/// Tries to parse a string as a token of given type.
 	fn tokenize(param: &ParamType, value: &str) -> Result<Token, Error> {
 		match *param {
-			ParamType::Address => Self::tokenize_address(value).map(|a| Token::Address(a.into())),
+			ParamType::Address => {
+				Self::tokenize_address(value.strip_prefix("0x").unwrap_or(value)).map(|a| Token::Address(a.into()))
+			}
 			ParamType::String => Self::tokenize_string(value).map(Token::String),
 			ParamType::Bool => Self::tokenize_bool(value).map(Token::Bool),
-			ParamType::Bytes => Self::tokenize_bytes(value).map(Token::Bytes),
-			ParamType::FixedBytes(len) => Self::tokenize_fixed_bytes(value, len).map(Token::FixedBytes),
+			ParamType::Bytes => Self::tokenize_bytes(value.strip_prefix("0x").unwrap_or(value)).map(Token::Bytes),
+			ParamType::FixedBytes(len) => {
+				Self::tokenize_fixed_bytes(value.strip_prefix("0x").unwrap_or(value), len).map(Token::FixedBytes)
+			}
 			ParamType::Uint(_) => Self::tokenize_uint(value).map(Into::into).map(Token::Uint),
 			ParamType::Int(_) => Self::tokenize_int(value).map(Into::into).map(Token::Int),
 			ParamType::Array(ref p) => Self::tokenize_array(value, p).map(Token::Array),
