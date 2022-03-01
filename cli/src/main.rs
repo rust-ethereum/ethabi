@@ -246,7 +246,7 @@ fn decode_log(path: &str, name_or_signature: &str, topics: &[String], data: &str
 }
 
 fn hash_signature(sig: &str) -> Hash {
-	Hash::from_slice(Keccak256::digest(sig.replace(" ", "").as_bytes()).as_slice())
+	Hash::from_slice(Keccak256::digest(sig.replace(' ', "").as_bytes()).as_slice())
 }
 
 #[cfg(test)]

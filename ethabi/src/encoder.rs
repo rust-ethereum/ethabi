@@ -77,7 +77,7 @@ impl Mediate {
 	fn head(&self, suffix_offset: u32) -> Vec<Word> {
 		match *self {
 			Mediate::Raw(ref raw) => raw.clone(),
-			Mediate::RawTuple(ref raw) => raw.iter().map(|mediate| mediate.head(0)).flatten().collect(),
+			Mediate::RawTuple(ref raw) => raw.iter().flat_map(|mediate| mediate.head(0)).collect(),
 			Mediate::Prefixed(_)
 			| Mediate::PrefixedArray(_)
 			| Mediate::PrefixedArrayWithLength(_)
