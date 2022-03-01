@@ -16,7 +16,7 @@ mod event;
 mod function;
 
 use ethabi::{Contract, Error, Param, ParamType, Result};
-use heck::SnakeCase;
+use heck::ToSnakeCase;
 use proc_macro2::Span;
 use quote::quote;
 use std::{borrow::Cow, env, fs, path::PathBuf};

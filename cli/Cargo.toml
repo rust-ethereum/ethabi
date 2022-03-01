@@ -1,6 +1,6 @@
 [package]
 name = "ethabi-cli"
-version = "16.0.0"
+version = "17.0.0"
 authors = [
     "Parity Technologies <admin@parity.io>",
     "Artem Vorotnikov <artem@vorotnikov.me>",
@@ -14,9 +14,9 @@ edition = "2018"
 
 [dependencies]
 anyhow = "1"
-ethabi = { version = "16.0.0", path = "../ethabi" }
+ethabi = { version = "17.0.0", path = "../ethabi" }
 hex = "0.4"
-sha3 = "0.9"
+sha3 = "0.10"
 structopt = "0.3"
 itertools = "0.10"
 

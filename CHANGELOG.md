@@ -4,6 +4,29 @@ The format is based on [Keep a Changelog].
 
 [Keep a Changelog]: http://keepachangelog.com/en/1.0.0/
 
+## [17.0.0] - 2022-03-01
+### Added
+- `parity-codec` cargo feature.
+
+### Changed
+- Make deprecated function "constant" field optional.
+- Allow LenientTokenizer to parse uint256 with units `ether|gwei|nano|nanoether|wei`.
+- Bump ethereum-types to 0.13.1.
+
+### Fixed
+- Make abi of public library function containing enum parameter parsable.
+
+## [16.0.0] - 2021-12-18
+### Added
+- Reexport signature functions
+- Support solidity error type
+
+### Changed
+- Remove anyhow in crates intended to be libraries.
+
+### Fixed
+- Fix out of bounds access resulting in panic during decoding of dynamic arrays.
+
 ## [15.0.0] - 2021-09-23
 ### Added
 - Optional field internalType to Param.
