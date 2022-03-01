@@ -6,7 +6,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use heck::{CamelCase, SnakeCase};
+use heck::{ToSnakeCase, ToUpperCamelCase};
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
 
@@ -137,7 +137,7 @@ impl<'a> From<&'a ethabi::Event> for Event {
 impl Event {
 	/// Generates event log struct.
 	pub fn generate_log(&self) -> TokenStream {
-		let name = syn::Ident::new(&self.name.to_camel_case(), Span::call_site());
+		let name = syn::Ident::new(&self.name.to_upper_camel_case(), Span::call_site());
 		let log_fields = &self.log_fields;
 
 		quote! {
@@ -150,9 +150,9 @@ impl Event {
 
 	/// Generates rust interface for contract's event.
 	pub fn generate_event(&self) -> TokenStream {
-		let name_as_string = &self.name.to_camel_case();
+		let name_as_string = &self.name.to_upper_camel_case();
 		let name = syn::Ident::new(&self.name.to_snake_case(), Span::call_site());
-		let camel_name = syn::Ident::new(&self.name.to_camel_case(), Span::call_site());
+		let camel_name = syn::Ident::new(&self.name.to_upper_camel_case(), Span::call_site());
 		let recreate_inputs_quote = &self.recreate_inputs_quote;
 		let anonymous = &self.anonymous;
 		let log_init = &self.log_init;

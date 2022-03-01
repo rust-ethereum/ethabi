@@ -6,7 +6,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use heck::SnakeCase;
+use heck::ToSnakeCase;
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
 
