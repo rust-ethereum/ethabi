@@ -116,7 +116,7 @@ impl Mediate<'_> {
 pub fn encode(tokens: &[Token]) -> Bytes {
 	let mediates = &tokens.iter().map(mediate_token).collect::<Vec<_>>();
 
-	encode_head_tail(mediates).iter().flat_map(|word| word.to_vec()).collect()
+	encode_head_tail(mediates).into_iter().flat_map(|word| word).collect()
 }
 
 fn encode_head_tail(mediates: &[Mediate]) -> Vec<Word> {
