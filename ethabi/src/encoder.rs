@@ -22,12 +22,8 @@ fn pad_bytes_append(data: &mut Vec<Word>, bytes: &[u8]) {
 	fixed_bytes_append(data, bytes);
 }
 
-fn pad_fixed_bytes_len(bytes: &[u8]) -> u32 {
+fn fixed_bytes_len(bytes: &[u8]) -> u32 {
 	((bytes.len() + 31) / 32) as u32
-}
-
-fn pad_fixed_bytes_append(result: &mut Vec<Word>, bytes: &[u8]) {
-	fixed_bytes_append(result, bytes);
 }
 
 fn fixed_bytes_append(result: &mut Vec<Word>, bytes: &[u8]) {
@@ -150,7 +146,7 @@ fn mediate_token(token: &Token) -> Mediate {
 		Token::Address(_) => Mediate::Raw(1, token),
 		Token::Bytes(bytes) => Mediate::Prefixed(pad_bytes_len(bytes), token),
 		Token::String(s) => Mediate::Prefixed(pad_bytes_len(s.as_bytes()), token),
-		Token::FixedBytes(bytes) => Mediate::Raw(pad_fixed_bytes_len(bytes), token),
+		Token::FixedBytes(bytes) => Mediate::Raw(fixed_bytes_len(bytes), token),
 		Token::Int(_) | Token::Uint(_) | Token::Bool(_) => Mediate::Raw(1, token),
 		Token::Array(ref tokens) => {
 			let mediates = tokens.iter().map(mediate_token).collect();
@@ -188,7 +184,7 @@ fn encode_token_append(data: &mut Vec<Word>, token: &Token) {
 		}
 		Token::Bytes(ref bytes) => pad_bytes_append(data, bytes),
 		Token::String(ref s) => pad_bytes_append(data, s.as_bytes()),
-		Token::FixedBytes(ref bytes) => pad_fixed_bytes_append(data, bytes),
+		Token::FixedBytes(ref bytes) => fixed_bytes_append(data, bytes),
 		Token::Int(int) => data.push(int.into()),
 		Token::Uint(uint) => data.push(uint.into()),
 		Token::Bool(b) => {
