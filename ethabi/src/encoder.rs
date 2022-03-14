@@ -63,8 +63,9 @@ impl Mediate<'_> {
 	fn head_len(&self) -> u32 {
 		match self {
 			Mediate::Raw(len, _) => 32 * len,
-			Mediate::RawArray(raw) => raw.len() as u32 * 32,
-			Mediate::RawTuple(ref mediates) => mediates.iter().map(|mediate| mediate.head_len()).sum(),
+			Mediate::RawArray(ref mediates) | Mediate::RawTuple(ref mediates) => {
+				mediates.iter().map(|mediate| mediate.head_len()).sum()
+			}
 			Mediate::Prefixed(_, _)
 			| Mediate::PrefixedArray(_)
 			| Mediate::PrefixedArrayWithLength(_)
@@ -382,6 +383,35 @@ mod tests {
 			0000000000000000000000002222222222222222222222222222222222222222
 			0000000000000000000000003333333333333333333333333333333333333333
 			0000000000000000000000004444444444444444444444444444444444444444
+		"
+		)
+		.to_vec();
+		assert_eq!(encoded, expected);
+	}
+
+	#[test]
+	fn encode_fixed_array_of_static_tuples_followed_by_dynamic_type() {
+		let tuple1 = Token::Tuple(vec![
+			Token::Uint(93523141.into()),
+			Token::Uint(352332135.into()),
+			Token::Address([0x44u8; 20].into()),
+		]);
+		let tuple2 =
+			Token::Tuple(vec![Token::Uint(12411.into()), Token::Uint(451.into()), Token::Address([0x22u8; 20].into())]);
+		let fixed = Token::FixedArray(vec![tuple1, tuple2]);
+		let s = Token::String("gavofyork".to_owned());
+		let encoded = encode(&[fixed, s]);
+		let expected = hex!(
+			"
+			0000000000000000000000000000000000000000000000000000000005930cc5
+			0000000000000000000000000000000000000000000000000000000015002967
+			0000000000000000000000004444444444444444444444444444444444444444
+			000000000000000000000000000000000000000000000000000000000000307b
+			00000000000000000000000000000000000000000000000000000000000001c3
+			0000000000000000000000002222222222222222222222222222222222222222
+			00000000000000000000000000000000000000000000000000000000000000e0
+			0000000000000000000000000000000000000000000000000000000000000009
+			6761766f66796f726b0000000000000000000000000000000000000000000000
 		"
 		)
 		.to_vec();
