@@ -10,6 +10,7 @@
 
 use core::fmt;
 
+#[cfg(feature = "full-serde")]
 use serde::{Deserialize, Serialize};
 
 #[cfg(not(feature = "std"))]

@@ -6,6 +6,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+#[cfg(feature = "full-serde")]
 use serde::{Deserialize, Serialize};
 
 #[cfg(not(feature = "std"))]
