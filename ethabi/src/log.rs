@@ -6,6 +6,8 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+use serde::Serialize;
+
 #[cfg(not(feature = "std"))]
 use crate::no_std_prelude::*;
 use crate::{Bytes, Hash, Result, Token, TopicFilter};
@@ -43,7 +45,7 @@ impl From<(Vec<Hash>, Bytes)> for RawLog {
 }
 
 /// Decoded log param.
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Serialize)]
 pub struct LogParam {
 	/// Decoded log name.
 	pub name: String,
@@ -52,7 +54,7 @@ pub struct LogParam {
 }
 
 /// Decoded log.
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Serialize)]
 pub struct Log {
 	/// Log params.
 	pub params: Vec<LogParam>,
