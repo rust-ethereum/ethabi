@@ -10,14 +10,15 @@
 
 use core::fmt;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 #[cfg(not(feature = "std"))]
 use crate::no_std_prelude::*;
 use crate::{Address, Bytes, FixedBytes, Int, ParamType, Uint};
 
 /// Ethereum ABI params.
-#[derive(Debug, PartialEq, Clone, Serialize)]
+#[cfg_attr(feature = "full-serde", derive(Serialize, Deserialize))]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Token {
 	/// Address.
 	///
