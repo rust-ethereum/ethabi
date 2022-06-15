@@ -4,6 +4,13 @@ The format is based on [Keep a Changelog].
 
 [Keep a Changelog]: http://keepachangelog.com/en/1.0.0/
 
+## [17.1.0] - 2022-06-15
+### Added
+- Add Serialize trait to Token, Log, LogParams.
+
+### Changed
+- Optimize encoder to minimize allocations and copying for ~85% speedup.
+
 ## [17.0.0] - 2022-03-01
 ### Added
 - `parity-codec` cargo feature.
