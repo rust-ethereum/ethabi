@@ -213,6 +213,14 @@ impl Token {
 		}
 	}
 
+	/// Converts token to...
+	pub fn into_tuple(self) -> Option<Vec<Token>> {
+		match self {
+			Token::Tuple(tuple) => Some(tuple),
+			_ => None,
+		}
+	}
+
 	/// Check if all the types of the tokens match the given parameter types.
 	pub fn types_check(tokens: &[Token], param_types: &[ParamType]) -> bool {
 		param_types.len() == tokens.len() && {

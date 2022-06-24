@@ -4,6 +4,10 @@ The format is based on [Keep a Changelog].
 
 [Keep a Changelog]: http://keepachangelog.com/en/1.0.0/
 
+## Unreleased
+### Added
+- Add `Token::into_tuple`
+
 ## [17.1.0] - 2022-06-15
 ### Added
 - Add Serialize trait to Token, Log, LogParams.
