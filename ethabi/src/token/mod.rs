@@ -95,7 +95,7 @@ pub trait Tokenizer {
 							return Err(Error::InvalidData);
 						}
 						Equal => {
-							let sub = &value[array_item_start..pos+1];
+							let sub = &value[array_item_start..pos + 1];
 							let token = Self::tokenize(params.next().ok_or(Error::InvalidData)?, sub)?;
 							result.push(token);
 							last_is_array = !last_is_array;
@@ -187,7 +187,7 @@ pub trait Tokenizer {
 							return Err(Error::InvalidData);
 						}
 						Equal => {
-							let sub = &value[tuple_item_start..i+1];
+							let sub = &value[tuple_item_start..i + 1];
 							let token = Self::tokenize(param, sub)?;
 							result.push(token);
 							last_is_tuple = !last_is_tuple;
@@ -269,8 +269,8 @@ pub trait Tokenizer {
 
 #[cfg(all(test, feature = "full-serde"))]
 mod test {
-	use crate::Token;
 	use super::{LenientTokenizer, ParamType, Tokenizer};
+	use crate::Token;
 
 	#[test]
 	fn single_quoted_in_array_must_error() {
@@ -283,33 +283,19 @@ mod test {
 
 	#[test]
 	fn tuples_arrays_mixed() {
-		assert_eq!(LenientTokenizer::tokenize_array(
-			"[([(true)],[(false,true)])]",
-			&ParamType::Tuple(vec![
-				ParamType::Array(
-					Box::new(ParamType::Tuple(vec![
-						ParamType::Bool,
-					])),
-				),
-				ParamType::Array(
-					Box::new(ParamType::Tuple(vec![
-						ParamType::Bool,
-						ParamType::Bool,
-					])),
-				),
-			]),
-		).unwrap(), vec![Token::Tuple(vec![
-			Token::Array(vec![
-				Token::Tuple(vec![
-					Token::Bool(true),
+		assert_eq!(
+			LenientTokenizer::tokenize_array(
+				"[([(true)],[(false,true)])]",
+				&ParamType::Tuple(vec![
+					ParamType::Array(Box::new(ParamType::Tuple(vec![ParamType::Bool,])),),
+					ParamType::Array(Box::new(ParamType::Tuple(vec![ParamType::Bool, ParamType::Bool,])),),
 				]),
-			]),
-			Token::Array(vec![
-				Token::Tuple(vec![
-					Token::Bool(false),
-					Token::Bool(true),
-				]),
-			]),
-		])]);
+			)
+			.unwrap(),
+			vec![Token::Tuple(vec![
+				Token::Array(vec![Token::Tuple(vec![Token::Bool(true),]),]),
+				Token::Array(vec![Token::Tuple(vec![Token::Bool(false), Token::Bool(true),]),]),
+			])]
+		);
 	}
 }
