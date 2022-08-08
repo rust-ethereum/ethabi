@@ -287,15 +287,30 @@ mod test {
 			LenientTokenizer::tokenize_array(
 				"[([(true)],[(false,true)])]",
 				&ParamType::Tuple(vec![
-					ParamType::Array(Box::new(ParamType::Tuple(vec![ParamType::Bool,])),),
-					ParamType::Array(Box::new(ParamType::Tuple(vec![ParamType::Bool, ParamType::Bool,])),),
+					ParamType::Array(Box::new(ParamType::Tuple(vec![ParamType::Bool]))),
+					ParamType::Array(Box::new(ParamType::Tuple(vec![ParamType::Bool, ParamType::Bool]))),
 				]),
 			)
 			.unwrap(),
 			vec![Token::Tuple(vec![
-				Token::Array(vec![Token::Tuple(vec![Token::Bool(true),]),]),
-				Token::Array(vec![Token::Tuple(vec![Token::Bool(false), Token::Bool(true),]),]),
+				Token::Array(vec![Token::Tuple(vec![Token::Bool(true)])]),
+				Token::Array(vec![Token::Tuple(vec![Token::Bool(false), Token::Bool(true)])]),
 			])]
+		);
+
+		assert_eq!(
+			LenientTokenizer::tokenize_struct(
+				"([(true)],[(false,true)])",
+				&[
+					ParamType::Array(Box::new(ParamType::Tuple(vec![ParamType::Bool]))),
+					ParamType::Array(Box::new(ParamType::Tuple(vec![ParamType::Bool, ParamType::Bool]))),
+				]
+			)
+			.unwrap(),
+			vec![
+				Token::Array(vec![Token::Tuple(vec![Token::Bool(true)])]),
+				Token::Array(vec![Token::Tuple(vec![Token::Bool(false), Token::Bool(true)])]),
+			]
 		);
 	}
 }
