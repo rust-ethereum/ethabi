@@ -73,11 +73,43 @@ pub trait Tokenizer {
 		let mut nested = 0isize;
 		let mut ignore = false;
 		let mut last_item = 1;
+
+		let mut array_nested = 0isize;
+		let mut array_item_start = 1;
+		let mut last_is_array = false;
+
 		let mut params = param.iter();
 		for (pos, ch) in value.chars().enumerate() {
 			match ch {
+				'[' if !ignore => {
+					if array_nested == 0 {
+						array_item_start = pos;
+					}
+					array_nested += 1;
+				}
+				']' if !ignore => {
+					array_nested -= 1;
+
+					match array_nested.cmp(&0) {
+						Less => {
+							return Err(Error::InvalidData);
+						}
+						Equal => {
+							let sub = &value[array_item_start..pos + 1];
+							let token = Self::tokenize(params.next().ok_or(Error::InvalidData)?, sub)?;
+							result.push(token);
+							last_is_array = !last_is_array;
+						}
+						_ => {}
+					}
+				}
+				_ if array_nested != 0 => continue,
 				'(' if !ignore => {
 					nested += 1;
+				}
+				')' if !ignore && last_is_array => {
+					nested -= 1;
+					last_is_array = !last_is_array;
 				}
 				')' if !ignore => {
 					nested -= 1;
@@ -87,16 +119,23 @@ pub trait Tokenizer {
 							return Err(Error::InvalidData);
 						}
 						Equal => {
-							let sub = &value[last_item..pos];
-							let token = Self::tokenize(params.next().ok_or(Error::InvalidData)?, sub)?;
-							result.push(token);
-							last_item = pos + 1;
+							if last_is_array {
+								last_is_array = !last_is_array;
+							} else {
+								let sub = &value[last_item..pos];
+								let token = Self::tokenize(params.next().ok_or(Error::InvalidData)?, sub)?;
+								result.push(token);
+								last_item = pos + 1;
+							}
 						}
 						_ => {}
 					}
 				}
 				'"' => {
 					ignore = !ignore;
+				}
+				',' if array_nested == 0 && nested == 1 && !ignore && last_is_array => {
+					last_is_array = !last_is_array;
 				}
 				',' if nested == 1 && !ignore => {
 					let sub = &value[last_item..pos];
@@ -129,10 +168,40 @@ pub trait Tokenizer {
 		let mut nested = 0isize;
 		let mut ignore = false;
 		let mut last_item = 1;
+
+		let mut tuple_nested = 0isize;
+		let mut tuple_item_start = 1;
+		let mut last_is_tuple = false;
 		for (i, ch) in value.chars().enumerate() {
 			match ch {
+				'(' if !ignore => {
+					if tuple_nested == 0 {
+						tuple_item_start = i;
+					}
+					tuple_nested += 1;
+				}
+				')' if !ignore => {
+					tuple_nested -= 1;
+					match tuple_nested.cmp(&0) {
+						Less => {
+							return Err(Error::InvalidData);
+						}
+						Equal => {
+							let sub = &value[tuple_item_start..i + 1];
+							let token = Self::tokenize(param, sub)?;
+							result.push(token);
+							last_is_tuple = !last_is_tuple;
+						}
+						_ => {}
+					}
+				}
+				_ if tuple_nested != 0 => continue,
 				'[' if !ignore => {
 					nested += 1;
+				}
+				']' if !ignore && last_is_tuple => {
+					nested -= 1;
+					last_is_tuple = !last_is_tuple;
 				}
 				']' if !ignore => {
 					nested -= 1;
@@ -141,10 +210,14 @@ pub trait Tokenizer {
 							return Err(Error::InvalidData);
 						}
 						Equal => {
-							let sub = &value[last_item..i];
-							let token = Self::tokenize(param, sub)?;
-							result.push(token);
-							last_item = i + 1;
+							if last_is_tuple {
+								last_is_tuple = !last_is_tuple;
+							} else {
+								let sub = &value[last_item..i];
+								let token = Self::tokenize(param, sub)?;
+								result.push(token);
+								last_item = i + 1;
+							}
 						}
 						_ => {}
 					}
@@ -152,7 +225,10 @@ pub trait Tokenizer {
 				'"' => {
 					ignore = !ignore;
 				}
-				',' if nested == 1 && !ignore => {
+				',' if tuple_nested == 0 && nested == 1 && !ignore && last_is_tuple => {
+					last_is_tuple = !last_is_tuple;
+				}
+				',' if tuple_nested == 0 && nested == 1 && !ignore => {
 					let sub = &value[last_item..i];
 					let token = Self::tokenize(param, sub)?;
 					result.push(token);
@@ -194,6 +270,8 @@ pub trait Tokenizer {
 #[cfg(all(test, feature = "full-serde"))]
 mod test {
 	use super::{LenientTokenizer, ParamType, Tokenizer};
+	use crate::Token;
+
 	#[test]
 	fn single_quoted_in_array_must_error() {
 		assert!(LenientTokenizer::tokenize_array("[1,\"0,false]", &ParamType::Bool).is_err());
@@ -201,5 +279,38 @@ mod test {
 		assert!(LenientTokenizer::tokenize_array("[1,false\"]", &ParamType::Bool).is_err());
 		assert!(LenientTokenizer::tokenize_array("[1,\"0\",false]", &ParamType::Bool).is_err());
 		assert!(LenientTokenizer::tokenize_array("[1,0]", &ParamType::Bool).is_ok());
+	}
+
+	#[test]
+	fn tuples_arrays_mixed() {
+		assert_eq!(
+			LenientTokenizer::tokenize_array(
+				"[([(true)],[(false,true)])]",
+				&ParamType::Tuple(vec![
+					ParamType::Array(Box::new(ParamType::Tuple(vec![ParamType::Bool]))),
+					ParamType::Array(Box::new(ParamType::Tuple(vec![ParamType::Bool, ParamType::Bool]))),
+				]),
+			)
+			.unwrap(),
+			vec![Token::Tuple(vec![
+				Token::Array(vec![Token::Tuple(vec![Token::Bool(true)])]),
+				Token::Array(vec![Token::Tuple(vec![Token::Bool(false), Token::Bool(true)])]),
+			])]
+		);
+
+		assert_eq!(
+			LenientTokenizer::tokenize_struct(
+				"([(true)],[(false,true)])",
+				&[
+					ParamType::Array(Box::new(ParamType::Tuple(vec![ParamType::Bool]))),
+					ParamType::Array(Box::new(ParamType::Tuple(vec![ParamType::Bool, ParamType::Bool]))),
+				]
+			)
+			.unwrap(),
+			vec![
+				Token::Array(vec![Token::Tuple(vec![Token::Bool(true)])]),
+				Token::Array(vec![Token::Tuple(vec![Token::Bool(false), Token::Bool(true)])]),
+			]
+		);
 	}
 }
