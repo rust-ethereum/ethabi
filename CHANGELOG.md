@@ -4,9 +4,10 @@ The format is based on [Keep a Changelog].
 
 [Keep a Changelog]: http://keepachangelog.com/en/1.0.0/
 
-## Unreleased
+## [17.2.0] - 2022-08-12
 ### Added
 - Add `Token::into_tuple`
+- Parse nested tuples/arrays
 
 ## [17.1.0] - 2022-06-15
 ### Added
