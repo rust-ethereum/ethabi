@@ -6,7 +6,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-#[cfg(feature = "full-serde")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 #[cfg(not(feature = "std"))]
@@ -46,7 +46,7 @@ impl From<(Vec<Hash>, Bytes)> for RawLog {
 }
 
 /// Decoded log param.
-#[cfg_attr(feature = "full-serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, PartialEq, Clone)]
 pub struct LogParam {
 	/// Decoded log name.
@@ -56,7 +56,7 @@ pub struct LogParam {
 }
 
 /// Decoded log.
-#[cfg_attr(feature = "full-serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, PartialEq, Clone)]
 pub struct Log {
 	/// Log params.

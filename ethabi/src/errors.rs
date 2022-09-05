@@ -9,7 +9,7 @@
 use crate::no_std_prelude::Cow;
 #[cfg(not(feature = "std"))]
 use crate::no_std_prelude::*;
-#[cfg(feature = "full-serde")]
+#[cfg(feature = "serde")]
 use core::num;
 #[cfg(feature = "std")]
 use thiserror::Error;
@@ -32,19 +32,19 @@ pub enum Error {
 	#[error("Serialization error: {0}")]
 	SerdeJson(#[from] serde_json::Error),
 	/// Integer parsing error.
-	#[cfg(feature = "full-serde")]
-	#[error("Integer parsing error: {0}")]
-	ParseInt(#[from] num::ParseIntError),
+	#[cfg(feature = "serde")]
+	#[cfg_attr(feature = "std", error("Integer parsing error: {0}"))]
+	ParseInt(#[cfg_attr(feature = "std", from)] num::ParseIntError),
 	/// Hex string parsing error.
-	#[cfg(feature = "full-serde")]
-	#[error("Hex parsing error: {0}")]
-	Hex(#[from] hex::FromHexError),
+	#[cfg(feature = "serde")]
+	#[cfg_attr(feature = "std", error("Hex parsing error: {0}"))]
+	Hex(#[cfg_attr(feature = "std", from)] hex::FromHexError),
 	/// Other errors.
 	#[cfg_attr(feature = "std", error("{0}"))]
 	Other(Cow<'static, str>),
 }
 
-#[cfg(feature = "full-serde")]
+#[cfg(feature = "serde")]
 impl From<uint::FromDecStrErr> for Error {
 	fn from(err: uint::FromDecStrErr) -> Self {
 		use uint::FromDecStrErr::*;

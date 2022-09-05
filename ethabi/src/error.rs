@@ -8,7 +8,7 @@
 
 //! Contract error
 
-#[cfg(feature = "full-serde")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 #[cfg(not(feature = "std"))]
@@ -20,11 +20,11 @@ use crate::{
 };
 
 /// Contract error specification.
-#[cfg_attr(feature = "full-serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, PartialEq)]
 pub struct Error {
 	/// Error name.
-	#[cfg_attr(feature = "full-serde", serde(deserialize_with = "crate::util::sanitize_name::deserialize"))]
+	#[cfg_attr(feature = "serde", serde(deserialize_with = "crate::util::sanitize_name::deserialize"))]
 	pub name: String,
 	/// Error input.
 	pub inputs: Vec<Param>,

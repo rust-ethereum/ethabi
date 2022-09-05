@@ -6,6 +6,8 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+#[cfg(not(feature = "std"))]
+use crate::no_std_prelude::*;
 use crate::{Error, ParamType};
 
 /// Used to convert param type represented as a string to rust structure.
@@ -80,7 +82,7 @@ impl Reader {
 								let subtype = Reader::read(inner_tuple)?;
 
 								if nested > 1 {
-									let mut subtuple = std::mem::take(&mut subtuples[(nested - 2) as usize]);
+									let mut subtuple = core::mem::take(&mut subtuples[(nested - 2) as usize]);
 									subtuple.push(subtype);
 									subtypes.push(ParamType::Tuple(subtuple));
 								} else {
@@ -129,7 +131,7 @@ impl Reader {
 					Ok(ParamType::Array(Box::new(subtype)))
 				} else {
 					// it's a fixed array.
-					let len = num.parse()?;
+					let len = num.parse().map_err(Error::ParseInt)?;
 					let subtype = Reader::read(&name[..count - num.len() - 2])?;
 					Ok(ParamType::FixedArray(Box::new(subtype), len))
 				};
@@ -146,15 +148,15 @@ impl Reader {
 			"tuple" => ParamType::Tuple(vec![]),
 			"uint" => ParamType::Uint(256),
 			s if s.starts_with("int") => {
-				let len = s[3..].parse()?;
+				let len = s[3..].parse().map_err(Error::ParseInt)?;
 				ParamType::Int(len)
 			}
 			s if s.starts_with("uint") => {
-				let len = s[4..].parse()?;
+				let len = s[4..].parse().map_err(Error::ParseInt)?;
 				ParamType::Uint(len)
 			}
 			s if s.starts_with("bytes") => {
-				let len = s[5..].parse()?;
+				let len = s[5..].parse().map_err(Error::ParseInt)?;
 				ParamType::FixedBytes(len)
 			}
 			// As discussed in https://github.com/rust-ethereum/ethabi/issues/254,
@@ -172,6 +174,8 @@ impl Reader {
 #[cfg(test)]
 mod tests {
 	use super::Reader;
+	#[cfg(not(feature = "std"))]
+	use crate::no_std_prelude::*;
 	use crate::ParamType;
 
 	#[test]

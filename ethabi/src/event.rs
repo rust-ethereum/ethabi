@@ -10,7 +10,7 @@
 
 use alloc::collections::BTreeMap;
 
-#[cfg(feature = "full-serde")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use sha3::{Digest, Keccak256};
 
@@ -22,11 +22,11 @@ use crate::{
 };
 
 /// Contract event.
-#[cfg_attr(feature = "full-serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq)]
 pub struct Event {
 	/// Event name.
-	#[cfg_attr(feature = "full-serde", serde(deserialize_with = "crate::util::sanitize_name::deserialize"))]
+	#[cfg_attr(feature = "serde", serde(deserialize_with = "crate::util::sanitize_name::deserialize"))]
 	pub name: String,
 	/// Event input.
 	pub inputs: Vec<EventParam>,

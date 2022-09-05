@@ -21,14 +21,16 @@ pub use strict::StrictTokenizer;
 mod token;
 pub use token::Token;
 
-#[cfg(feature = "full-serde")]
+#[cfg(all(feature = "serde", not(feature = "std")))]
+use crate::no_std_prelude::*;
+#[cfg(feature = "serde")]
 use core::cmp::Ordering::{Equal, Less};
 
-#[cfg(feature = "full-serde")]
+#[cfg(feature = "serde")]
 use crate::{Error, ParamType};
 
 /// This trait should be used to parse string values as tokens.
-#[cfg(feature = "full-serde")]
+#[cfg(feature = "serde")]
 pub trait Tokenizer {
 	/// Tries to parse a string as a token of given type.
 	fn tokenize(param: &ParamType, value: &str) -> Result<Token, Error> {
