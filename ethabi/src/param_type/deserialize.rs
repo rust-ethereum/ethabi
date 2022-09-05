@@ -5,13 +5,14 @@
 // <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
-
 use super::{ParamType, Reader};
+#[cfg(not(feature = "std"))]
+use crate::no_std_prelude::*;
+use core::fmt;
 use serde::{
 	de::{Error as SerdeError, Visitor},
 	Deserialize, Deserializer,
 };
-use std::fmt;
 
 impl<'a> Deserialize<'a> for ParamType {
 	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
@@ -48,6 +49,8 @@ impl<'a> Visitor<'a> for ParamTypeVisitor {
 
 #[cfg(test)]
 mod tests {
+	#[cfg(not(feature = "std"))]
+	use crate::no_std_prelude::*;
 	use crate::ParamType;
 
 	#[test]

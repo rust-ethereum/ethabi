@@ -8,7 +8,7 @@
 
 //! Contract constructor call builder.
 
-#[cfg(feature = "full-serde")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 #[cfg(not(feature = "std"))]
@@ -16,7 +16,7 @@ use crate::no_std_prelude::*;
 use crate::{encode, Bytes, Error, Param, ParamType, Result, Token};
 
 /// Contract constructor specification.
-#[cfg_attr(feature = "full-serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, PartialEq)]
 pub struct Constructor {
 	/// Constructor input.

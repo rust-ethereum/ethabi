@@ -6,27 +6,27 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-#[cfg(feature = "full-serde")]
+#[cfg(feature = "serde")]
 use core::fmt::Debug;
 
 use hex_literal::hex;
-#[cfg(feature = "full-serde")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-#[cfg(feature = "full-serde")]
+#[cfg(feature = "serde")]
 use serde_json::Value;
 
 #[cfg(not(feature = "std"))]
 use crate::no_std_prelude::*;
 use crate::{decode, encode, ParamType, Token};
 
-#[cfg(feature = "full-serde")]
+#[cfg(feature = "serde")]
 pub(crate) fn assert_json_eq(left: &str, right: &str) {
 	let left: Value = serde_json::from_str(left).unwrap();
 	let right: Value = serde_json::from_str(right).unwrap();
 	assert_eq!(left, right);
 }
 
-#[cfg(feature = "full-serde")]
+#[cfg(feature = "serde")]
 pub(crate) fn assert_ser_de<T>(canon: &T)
 where
 	T: Serialize + for<'a> Deserialize<'a> + PartialEq + Debug,

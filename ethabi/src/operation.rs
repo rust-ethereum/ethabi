@@ -38,6 +38,8 @@ pub enum Operation {
 #[cfg(test)]
 mod tests {
 	use super::Operation;
+	#[cfg(not(feature = "std"))]
+	use crate::no_std_prelude::*;
 	use crate::{tests::assert_ser_de, Event, EventParam, Function, Param, ParamType, StateMutability};
 
 	#[test]

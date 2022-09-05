@@ -19,8 +19,10 @@ pub fn pad_u32(value: u32) -> Word {
 
 // This is a workaround to support non-spec compliant function and event names,
 // see: https://github.com/paritytech/parity/issues/4122
-#[cfg(feature = "full-serde")]
+#[cfg(feature = "serde")]
 pub(crate) mod sanitize_name {
+	#[cfg(not(feature = "std"))]
+	use crate::no_std_prelude::*;
 	use serde::{Deserialize, Deserializer};
 
 	pub fn deserialize<'de, D>(deserializer: D) -> Result<String, D::Error>

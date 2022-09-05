@@ -8,10 +8,8 @@
 
 use core::ops;
 
-#[cfg(feature = "full-serde")]
+#[cfg(feature = "serde")]
 use serde::{Serialize, Serializer};
-#[cfg(feature = "full-serde")]
-use serde_json::Value;
 
 #[cfg(not(feature = "std"))]
 use crate::no_std_prelude::*;
@@ -41,7 +39,7 @@ pub struct TopicFilter {
 	pub topic3: Topic<Hash>,
 }
 
-#[cfg(feature = "full-serde")]
+#[cfg(feature = "serde")]
 impl Serialize for TopicFilter {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
 	where
@@ -121,21 +119,17 @@ impl<T> From<Topic<T>> for Vec<T> {
 	}
 }
 
-#[cfg(feature = "full-serde")]
+#[cfg(feature = "serde")]
 impl Serialize for Topic<Hash> {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
 	where
 		S: Serializer,
 	{
-		let value = match *self {
-			Topic::Any => Value::Null,
-			Topic::OneOf(ref vec) => {
-				let v = vec.iter().map(|h| format!("0x{h:x}")).map(Value::String).collect();
-				Value::Array(v)
-			}
-			Topic::This(ref hash) => Value::String(format!("0x{hash:x}")),
-		};
-		value.serialize(serializer)
+		match *self {
+			Topic::Any => Option::<()>::None.serialize(serializer),
+			Topic::OneOf(ref vec) => vec.serialize(serializer),
+			Topic::This(ref hash) => hash.serialize(serializer),
+		}
 	}
 }
 
@@ -159,19 +153,19 @@ impl<T> ops::Index<usize> for Topic<T> {
 #[cfg(test)]
 mod tests {
 	use super::Topic;
-	#[cfg(feature = "full-serde")]
+	#[cfg(feature = "serde")]
 	use super::TopicFilter;
 	#[cfg(not(feature = "std"))]
 	use crate::no_std_prelude::*;
-	#[cfg(feature = "full-serde")]
+	#[cfg(feature = "serde")]
 	use crate::Hash;
 
-	#[cfg(feature = "full-serde")]
+	#[cfg(feature = "serde")]
 	fn hash(s: &'static str) -> Hash {
 		s.parse().unwrap()
 	}
 
-	#[cfg(feature = "full-serde")]
+	#[cfg(feature = "serde")]
 	#[test]
 	fn test_topic_filter_serialization() {
 		let expected = r#"["0x000000000000000000000000a94f5374fce5edbc8e2a8697c15331677e6ebf0b",null,["0x000000000000000000000000a94f5374fce5edbc8e2a8697c15331677e6ebf0b","0x0000000000000000000000000aff3454fce5edbc8cca8697c15331677e6ebccc"],null]"#;

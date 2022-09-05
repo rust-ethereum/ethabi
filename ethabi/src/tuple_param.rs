@@ -8,13 +8,15 @@
 
 //! Tuple param type.
 
+#[cfg(not(feature = "std"))]
+use crate::no_std_prelude::*;
 use crate::{param_type::Writer, ParamType};
+use core::fmt;
 use serde::{
 	de::{Error, MapAccess, Visitor},
 	ser::SerializeMap,
 	Deserialize, Deserializer, Serialize, Serializer,
 };
-use std::fmt;
 
 /// Tuple params specification
 #[derive(Debug, Clone, PartialEq)]
@@ -116,6 +118,8 @@ impl Serialize for TupleParam {
 
 #[cfg(test)]
 mod tests {
+	#[cfg(not(feature = "std"))]
+	use crate::no_std_prelude::*;
 	use crate::{
 		tests::{assert_json_eq, assert_ser_de},
 		ParamType, TupleParam,

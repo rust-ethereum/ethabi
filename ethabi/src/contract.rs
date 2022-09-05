@@ -7,13 +7,13 @@
 // except according to those terms.
 
 use alloc::collections::{btree_map::Values, BTreeMap};
-#[cfg(feature = "full-serde")]
+#[cfg(feature = "serde")]
 use core::fmt;
 use core::iter::Flatten;
 #[cfg(feature = "full-serde")]
 use std::io;
 
-#[cfg(feature = "full-serde")]
+#[cfg(feature = "serde")]
 use serde::{
 	de::{SeqAccess, Visitor},
 	ser::SerializeSeq,
@@ -22,7 +22,7 @@ use serde::{
 
 #[cfg(not(feature = "std"))]
 use crate::no_std_prelude::*;
-#[cfg(feature = "full-serde")]
+#[cfg(feature = "serde")]
 use crate::operation::Operation;
 use crate::{error::Error as AbiError, errors, Constructor, Error, Event, Function};
 
@@ -43,7 +43,7 @@ pub struct Contract {
 	pub fallback: bool,
 }
 
-#[cfg(feature = "full-serde")]
+#[cfg(feature = "serde")]
 impl<'a> Deserialize<'a> for Contract {
 	fn deserialize<D>(deserializer: D) -> Result<Contract, D::Error>
 	where
@@ -53,10 +53,10 @@ impl<'a> Deserialize<'a> for Contract {
 	}
 }
 
-#[cfg(feature = "full-serde")]
+#[cfg(feature = "serde")]
 struct ContractVisitor;
 
-#[cfg(feature = "full-serde")]
+#[cfg(feature = "serde")]
 impl<'a> Visitor<'a> for ContractVisitor {
 	type Value = Contract;
 
@@ -96,7 +96,7 @@ impl<'a> Visitor<'a> for ContractVisitor {
 	}
 }
 
-#[cfg(feature = "full-serde")]
+#[cfg(feature = "serde")]
 impl Serialize for Contract {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
 	where
@@ -253,10 +253,13 @@ impl<'a> Iterator for AbiErrors<'a> {
 	}
 }
 
-#[cfg(all(test, feature = "full-serde"))]
+#[cfg(all(test, feature = "serde"))]
 #[allow(deprecated)]
 mod test {
-	use std::{collections::BTreeMap, iter::FromIterator};
+	#[cfg(not(feature = "std"))]
+	use crate::no_std_prelude::*;
+	use alloc::collections::BTreeMap;
+	use core::iter::FromIterator;
 
 	use crate::{tests::assert_ser_de, AbiError, Constructor, Contract, Event, EventParam, Function, Param, ParamType};
 
