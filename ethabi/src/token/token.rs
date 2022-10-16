@@ -42,7 +42,7 @@ pub enum Token {
 	///
 	/// solidity name: int
 	Int(Int),
-	/// Unisnged integer.
+	/// Unsigned integer.
 	///
 	/// solidity name: uint
 	Uint(Uint),
