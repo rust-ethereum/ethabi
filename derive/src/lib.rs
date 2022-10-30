@@ -59,7 +59,7 @@ fn get_option(options: &[syn::NestedMeta], name: &str) -> Result<String> {
 			_ => None,
 		})
 		.find(|meta| meta.path().is_ident(name))
-		.ok_or_else(|| Error::Other(Cow::Owned(format!("Expected to find option {}", name))))?;
+		.ok_or_else(|| Error::Other(Cow::Owned(format!("Expected to find option {name}"))))?;
 
 	str_value_of_meta_item(item, name)
 }
@@ -71,7 +71,7 @@ fn str_value_of_meta_item(item: &syn::Meta, name: &str) -> Result<String> {
 		}
 	}
 
-	Err(Error::Other(Cow::Owned(format!(r#"`{}` must be in the form `#[{}="something"]`"#, name, name))))
+	Err(Error::Other(Cow::Owned(format!(r#"`{name}` must be in the form `#[{name}="something"]`"#))))
 }
 
 fn normalize_path(relative_path: &str) -> Result<PathBuf> {
@@ -139,11 +139,11 @@ fn rust_type(input: &ParamType) -> proc_macro2::TokenStream {
 		ParamType::Bool => quote! { bool },
 		ParamType::String => quote! { String },
 		ParamType::Array(ref kind) => {
-			let t = rust_type(&*kind);
+			let t = rust_type(kind);
 			quote! { Vec<#t> }
 		}
 		ParamType::FixedArray(ref kind, size) => {
-			let t = rust_type(&*kind);
+			let t = rust_type(kind);
 			quote! { [#t, #size] }
 		}
 		ParamType::Tuple(_) => {
@@ -153,8 +153,8 @@ fn rust_type(input: &ParamType) -> proc_macro2::TokenStream {
 }
 
 fn template_param_type(input: &ParamType, index: usize) -> proc_macro2::TokenStream {
-	let t_ident = syn::Ident::new(&format!("T{}", index), Span::call_site());
-	let u_ident = syn::Ident::new(&format!("U{}", index), Span::call_site());
+	let t_ident = syn::Ident::new(&format!("T{index}"), Span::call_site());
+	let u_ident = syn::Ident::new(&format!("U{index}"), Span::call_site());
 	match *input {
 		ParamType::Address => quote! { #t_ident: Into<ethabi::Address> },
 		ParamType::Bytes => quote! { #t_ident: Into<ethabi::Bytes> },
@@ -165,13 +165,13 @@ fn template_param_type(input: &ParamType, index: usize) -> proc_macro2::TokenStr
 		ParamType::Bool => quote! { #t_ident: Into<bool> },
 		ParamType::String => quote! { #t_ident: Into<String> },
 		ParamType::Array(ref kind) => {
-			let t = rust_type(&*kind);
+			let t = rust_type(kind);
 			quote! {
 				#t_ident: IntoIterator<Item = #u_ident>, #u_ident: Into<#t>
 			}
 		}
 		ParamType::FixedArray(ref kind, size) => {
-			let t = rust_type(&*kind);
+			let t = rust_type(kind);
 			quote! {
 				#t_ident: Into<[#u_ident; #size]>, #u_ident: Into<#t>
 			}
@@ -289,7 +289,7 @@ fn input_names(inputs: &[Param]) -> Vec<syn::Ident> {
 		.enumerate()
 		.map(|(index, param)| {
 			if param.name.is_empty() {
-				syn::Ident::new(&format!("param{}", index), Span::call_site())
+				syn::Ident::new(&format!("param{index}"), Span::call_site())
 			} else {
 				syn::Ident::new(&rust_variable(&param.name), Span::call_site())
 			}
@@ -298,7 +298,7 @@ fn input_names(inputs: &[Param]) -> Vec<syn::Ident> {
 }
 
 fn get_template_names(kinds: &[proc_macro2::TokenStream]) -> Vec<syn::Ident> {
-	kinds.iter().enumerate().map(|(index, _)| syn::Ident::new(&format!("T{}", index), Span::call_site())).collect()
+	kinds.iter().enumerate().map(|(index, _)| syn::Ident::new(&format!("T{index}"), Span::call_site())).collect()
 }
 
 fn get_output_kinds(outputs: &[Param]) -> proc_macro2::TokenStream {

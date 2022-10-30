@@ -39,9 +39,9 @@ mod tests {
 		let encoded_from_vec_wrapped = functions::set_validators::encode_input(vec![Wrapper(first), Wrapper(second)]);
 
 		let expected = "9300c9260000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000200000000000000000000000011111111111111111111111111111111111111110000000000000000000000002222222222222222222222222222222222222222".to_owned();
-		assert_eq!(expected, hex::encode(&encoded_from_vec));
-		assert_eq!(expected, hex::encode(&encoded_from_vec_iter));
-		assert_eq!(expected, hex::encode(&encoded_from_vec_wrapped));
+		assert_eq!(expected, hex::encode(encoded_from_vec));
+		assert_eq!(expected, hex::encode(encoded_from_vec_iter));
+		assert_eq!(expected, hex::encode(encoded_from_vec_wrapped));
 	}
 
 	#[test]
@@ -74,9 +74,9 @@ mod tests {
 		let encoded_from_vec_wrapped = constructor(code, vec![Wrapper(first), Wrapper(second)]);
 
 		let expected = "0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000200000000000000000000000011111111111111111111111111111111111111110000000000000000000000002222222222222222222222222222222222222222".to_owned();
-		assert_eq!(expected, hex::encode(&encoded_from_vec));
-		assert_eq!(expected, hex::encode(&encoded_from_vec_iter));
-		assert_eq!(expected, hex::encode(&encoded_from_vec_wrapped));
+		assert_eq!(expected, hex::encode(encoded_from_vec));
+		assert_eq!(expected, hex::encode(encoded_from_vec_iter));
+		assert_eq!(expected, hex::encode(encoded_from_vec_wrapped));
 	}
 
 	#[test]
@@ -92,9 +92,9 @@ mod tests {
 
 		let expected_array = "7de33d2000000000000000000000000011111111111111111111111111111111111111110000000000000000000000002222222222222222222222222222222222222222".to_owned();
 		let expected_string = "72910be000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000003666f6f0000000000000000000000000000000000000000000000000000000000".to_owned();
-		assert_eq!(expected_array, hex::encode(&encoded_from_array));
-		assert_eq!(expected_array, hex::encode(&encoded_from_array_wrapped));
-		assert_eq!(expected_string, hex::encode(&encoded_from_string))
+		assert_eq!(expected_array, hex::encode(encoded_from_array));
+		assert_eq!(expected_array, hex::encode(encoded_from_array_wrapped));
+		assert_eq!(expected_string, hex::encode(encoded_from_string))
 	}
 
 	#[test]
@@ -104,7 +104,7 @@ mod tests {
 		let spender = [1u8; 20];
 		let encoded = eip20::functions::allowance::encode_input(owner, spender);
 		// 4 bytes signature + 2 * 32 bytes for params
-		assert_eq!(hex::encode(&encoded), expected);
+		assert_eq!(hex::encode(encoded), expected);
 
 		let from: Address = [2u8; 20].into();
 		let to: Address = [3u8; 20].into();

@@ -178,7 +178,7 @@ fn encode_input(path: &str, name_or_signature: &str, values: &[String], lenient:
 	let tokens = parse_tokens(&params, lenient)?;
 	let result = function.encode_input(&tokens)?;
 
-	Ok(hex::encode(&result))
+	Ok(hex::encode(result))
 }
 
 fn encode_params(params: &[String], lenient: bool) -> anyhow::Result<String> {
@@ -193,23 +193,19 @@ fn encode_params(params: &[String], lenient: bool) -> anyhow::Result<String> {
 	let tokens = parse_tokens(params.as_slice(), lenient)?;
 	let result = encode(&tokens);
 
-	Ok(hex::encode(&result))
+	Ok(hex::encode(result))
 }
 
 fn decode_call_output(path: &str, name_or_signature: &str, data: &str) -> anyhow::Result<String> {
 	let function = load_function(path, name_or_signature)?;
-	let data: Vec<u8> = hex::decode(&data)?;
+	let data: Vec<u8> = hex::decode(data)?;
 	let tokens = function.decode_output(&data)?;
 	let types = function.outputs;
 
 	assert_eq!(types.len(), tokens.len());
 
-	let result = types
-		.iter()
-		.zip(tokens.iter())
-		.map(|(ty, to)| format!("{} {}", ty.kind, to))
-		.collect::<Vec<String>>()
-		.join("\n");
+	let result =
+		types.iter().zip(tokens.iter()).map(|(ty, to)| format!("{} {to}", ty.kind)).collect::<Vec<String>>().join("\n");
 
 	Ok(result)
 }
@@ -217,14 +213,14 @@ fn decode_call_output(path: &str, name_or_signature: &str, data: &str) -> anyhow
 fn decode_params(types: &[String], data: &str) -> anyhow::Result<String> {
 	let types: Vec<ParamType> = types.iter().map(|s| Reader::read(s)).collect::<Result<_, _>>()?;
 
-	let data: Vec<u8> = hex::decode(&data)?;
+	let data: Vec<u8> = hex::decode(data)?;
 
 	let tokens = decode(&types, &data)?;
 
 	assert_eq!(types.len(), tokens.len());
 
 	let result =
-		types.iter().zip(tokens.iter()).map(|(ty, to)| format!("{} {}", ty, to)).collect::<Vec<String>>().join("\n");
+		types.iter().zip(tokens.iter()).map(|(ty, to)| format!("{ty} {to}")).collect::<Vec<String>>().join("\n");
 
 	Ok(result)
 }
