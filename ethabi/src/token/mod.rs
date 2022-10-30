@@ -90,6 +90,11 @@ pub trait Tokenizer {
 				']' if !ignore => {
 					array_nested -= 1;
 
+					if nested > 0 {
+						// still in nested tuple
+						continue;
+					}
+
 					match array_nested.cmp(&0) {
 						Less => {
 							return Err(Error::InvalidData);
@@ -310,6 +315,23 @@ mod test {
 			vec![
 				Token::Array(vec![Token::Tuple(vec![Token::Bool(true)])]),
 				Token::Array(vec![Token::Tuple(vec![Token::Bool(false), Token::Bool(true)])]),
+			]
+		);
+	}
+
+	#[test]
+	fn tuple_array_nested() {
+		assert_eq!(
+			LenientTokenizer::tokenize_struct(
+				"([(5c9d55b78febcc2061715ba4f57ecf8ea2711f2c)],2)",
+				&[ParamType::Array(Box::new(ParamType::Tuple(vec![ParamType::Address,],)),), ParamType::Uint(256,),]
+			)
+			.unwrap(),
+			vec![
+				Token::Array(vec![Token::Tuple(vec![Token::Address(
+					"0x5c9d55b78febcc2061715ba4f57ecf8ea2711f2c".parse().unwrap(),
+				),])]),
+				Token::Uint(2u64.into()),
 			]
 		);
 	}
