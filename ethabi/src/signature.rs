@@ -32,9 +32,9 @@ pub fn long_signature(name: &str, params: &[ParamType]) -> Hash {
 fn fill_signature(name: &str, params: &[ParamType], result: &mut [u8]) {
 	let types = params.iter().map(Writer::write).collect::<Vec<String>>().join(",");
 
-	let data: Vec<u8> = From::from(format!("{}({})", name, types).as_str());
+	let data: Vec<u8> = From::from(format!("{name}({types})").as_str());
 
-	result.copy_from_slice(&Keccak256::digest(&data)[..result.len()])
+	result.copy_from_slice(&Keccak256::digest(data)[..result.len()])
 }
 
 #[cfg(test)]

@@ -35,7 +35,7 @@ impl<'a> Visitor<'a> for ParamTypeVisitor {
 	where
 		E: SerdeError,
 	{
-		Reader::read(value).map_err(|e| SerdeError::custom(format!("{:?}", e).as_str()))
+		Reader::read(value).map_err(|e| SerdeError::custom(format!("{e:?}").as_str()))
 	}
 
 	fn visit_string<E>(self, value: String) -> Result<Self::Value, E>

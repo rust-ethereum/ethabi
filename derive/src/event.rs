@@ -34,9 +34,9 @@ impl<'a> From<&'a ethabi::Event> for Event {
 			.map(|(index, param)| {
 				if param.name.is_empty() {
 					if param.indexed {
-						syn::Ident::new(&format!("topic{}", index), Span::call_site())
+						syn::Ident::new(&format!("topic{index}"), Span::call_site())
 					} else {
-						syn::Ident::new(&format!("param{}", index), Span::call_site())
+						syn::Ident::new(&format!("param{index}"), Span::call_site())
 					}
 				} else {
 					syn::Ident::new(&param.name.to_snake_case(), Span::call_site())
@@ -63,7 +63,7 @@ impl<'a> From<&'a ethabi::Event> for Event {
 			.filter(|&(_, param)| param.indexed)
 			.map(|(index, param)| {
 				if param.name.is_empty() {
-					syn::Ident::new(&format!("topic{}", index), Span::call_site())
+					syn::Ident::new(&format!("topic{index}"), Span::call_site())
 				} else {
 					syn::Ident::new(&param.name.to_snake_case(), Span::call_site())
 				}
@@ -94,7 +94,7 @@ impl<'a> From<&'a ethabi::Event> for Event {
 			.enumerate()
 			.take(3)
 			.map(|(index, (param_name, param))| {
-				let topic = syn::Ident::new(&format!("topic{}", index), Span::call_site());
+				let topic = syn::Ident::new(&format!("topic{index}"), Span::call_site());
 				let i = quote! { i };
 				let to_token = to_token(&i, &param.kind);
 				quote! { #topic: #param_name.into().map(|#i| #to_token), }
@@ -141,7 +141,7 @@ impl Event {
 		let log_fields = &self.log_fields;
 
 		quote! {
-			#[derive(Debug, Clone, PartialEq)]
+			#[derive(Debug, Clone, PartialEq, Eq)]
 			pub struct #name {
 				#(#log_fields),*
 			}
@@ -213,7 +213,7 @@ mod tests {
 		let e = Event::from(&ethabi_event);
 
 		let expected = quote! {
-			#[derive(Debug, Clone, PartialEq)]
+			#[derive(Debug, Clone, PartialEq, Eq)]
 			pub struct Hello {}
 		};
 
@@ -330,7 +330,7 @@ mod tests {
 		let e = Event::from(&ethabi_event);
 
 		let expected = quote! {
-			#[derive(Debug, Clone, PartialEq)]
+			#[derive(Debug, Clone, PartialEq, Eq)]
 			pub struct One {
 				pub foo: ethabi::Address
 			}
@@ -358,7 +358,7 @@ mod tests {
 		let e = Event::from(&ethabi_event);
 
 		let expected = quote! {
-			#[derive(Debug, Clone, PartialEq)]
+			#[derive(Debug, Clone, PartialEq, Eq)]
 			pub struct Many {
 				pub foo: ethabi::Address,
 				pub bar: Vec<String>,

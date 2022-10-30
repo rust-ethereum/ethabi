@@ -91,8 +91,8 @@ impl Function {
 		let outputs = self.outputs.iter().map(|p| p.kind.to_string()).collect::<Vec<_>>().join(",");
 
 		match (inputs.len(), outputs.len()) {
-			(_, 0) => format!("{}({})", self.name, inputs),
-			(_, _) => format!("{}({}):({})", self.name, inputs, outputs),
+			(_, 0) => format!("{}({inputs})", self.name),
+			(_, _) => format!("{}({inputs}):({outputs})", self.name),
 		}
 	}
 }

@@ -74,20 +74,20 @@ pub enum Token {
 impl fmt::Display for Token {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 		match *self {
-			Token::Bool(b) => write!(f, "{}", b),
-			Token::String(ref s) => write!(f, "{}", s),
-			Token::Address(ref a) => write!(f, "{:x}", a),
-			Token::Bytes(ref bytes) | Token::FixedBytes(ref bytes) => write!(f, "{}", hex::encode(&bytes)),
-			Token::Uint(ref i) | Token::Int(ref i) => write!(f, "{:x}", i),
+			Token::Bool(b) => write!(f, "{b}"),
+			Token::String(ref s) => write!(f, "{s}"),
+			Token::Address(ref a) => write!(f, "{a:x}"),
+			Token::Bytes(ref bytes) | Token::FixedBytes(ref bytes) => write!(f, "{}", hex::encode(bytes)),
+			Token::Uint(ref i) | Token::Int(ref i) => write!(f, "{i:x}"),
 			Token::Array(ref arr) | Token::FixedArray(ref arr) => {
-				let s = arr.iter().map(|ref t| format!("{}", t)).collect::<Vec<String>>().join(",");
+				let s = arr.iter().map(|ref t| format!("{t}")).collect::<Vec<String>>().join(",");
 
-				write!(f, "[{}]", s)
+				write!(f, "[{s}]")
 			}
 			Token::Tuple(ref s) => {
-				let s = s.iter().map(|ref t| format!("{}", t)).collect::<Vec<String>>().join(",");
+				let s = s.iter().map(|ref t| format!("{t}")).collect::<Vec<String>>().join(",");
 
-				write!(f, "({})", s)
+				write!(f, "({s})")
 			}
 		}
 	}

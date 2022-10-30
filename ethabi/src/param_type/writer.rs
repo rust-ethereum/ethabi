@@ -26,13 +26,13 @@ impl Writer {
 		match *param {
 			ParamType::Address => "address".to_owned(),
 			ParamType::Bytes => "bytes".to_owned(),
-			ParamType::FixedBytes(len) => format!("bytes{}", len),
-			ParamType::Int(len) => format!("int{}", len),
-			ParamType::Uint(len) => format!("uint{}", len),
+			ParamType::FixedBytes(len) => format!("bytes{len}"),
+			ParamType::Int(len) => format!("int{len}"),
+			ParamType::Uint(len) => format!("uint{len}"),
 			ParamType::Bool => "bool".to_owned(),
 			ParamType::String => "string".to_owned(),
 			ParamType::FixedArray(ref param, len) => {
-				format!("{}[{}]", Writer::write_for_abi(param, serialize_tuple_contents), len)
+				format!("{}[{len}]", Writer::write_for_abi(param, serialize_tuple_contents))
 			}
 			ParamType::Array(ref param) => {
 				format!("{}[]", Writer::write_for_abi(param, serialize_tuple_contents))
@@ -44,7 +44,7 @@ impl Writer {
 						.map(|t| Writer::write_for_abi(t, serialize_tuple_contents))
 						.collect::<Vec<String>>()
 						.join(",");
-					format!("({})", formatted)
+					format!("({formatted})")
 				} else {
 					"tuple".to_owned()
 				}

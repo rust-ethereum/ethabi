@@ -84,7 +84,7 @@ fn take_bytes(data: &[u8], offset: usize, len: usize) -> Result<Vec<u8>, Error> 
 	if offset + len > data.len() {
 		Err(Error::InvalidData)
 	} else {
-		Ok((&data[offset..(offset + len)]).to_vec())
+		Ok(data[offset..(offset + len)].to_vec())
 	}
 }
 
@@ -135,7 +135,7 @@ fn decode_param(param: &ParamType, data: &[u8], offset: usize) -> Result<DecodeR
 				// prevent invalid strings written into contracts by either users or
 				// Solidity bugs from causing graph-node to fail decoding event
 				// data.
-				token: Token::String(String::from_utf8_lossy(&*bytes).into()),
+				token: Token::String(String::from_utf8_lossy(&bytes).into()),
 				new_offset: offset + 32,
 			};
 			Ok(result)

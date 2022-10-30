@@ -29,7 +29,7 @@ pub struct RawTopicFilter {
 }
 
 /// Topic filter.
-#[derive(Debug, PartialEq, Default)]
+#[derive(Debug, PartialEq, Eq, Default)]
 pub struct TopicFilter {
 	/// Usually (for not-anonymous transactions) the first topic is event signature.
 	pub topic0: Topic<Hash>,
@@ -52,7 +52,7 @@ impl Serialize for TopicFilter {
 }
 
 /// Acceptable topic possibilities.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Topic<T> {
 	/// Match any.
 	Any,
@@ -130,10 +130,10 @@ impl Serialize for Topic<Hash> {
 		let value = match *self {
 			Topic::Any => Value::Null,
 			Topic::OneOf(ref vec) => {
-				let v = vec.iter().map(|h| format!("0x{:x}", h)).map(Value::String).collect();
+				let v = vec.iter().map(|h| format!("0x{h:x}")).map(Value::String).collect();
 				Value::Array(v)
 			}
-			Topic::This(ref hash) => Value::String(format!("0x{:x}", hash)),
+			Topic::This(ref hash) => Value::String(format!("0x{hash:x}")),
 		};
 		value.serialize(serializer)
 	}
