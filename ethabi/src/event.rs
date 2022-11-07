@@ -124,11 +124,7 @@ impl Event {
 		}
 	}
 
-	fn parse_log_inner(
-		&self,
-		log: RawLog,
-		decode: fn(&[ParamType], &[u8]) -> std::result::Result<Vec<Token>, super::Error>,
-	) -> Result<Log> {
+	fn parse_log_inner<F: Fn(&[ParamType], &[u8]) -> Result<Vec<Token>>>(&self, log: RawLog, decode: F) -> Result<Log> {
 		let topics = log.topics;
 		let data = log.data;
 		let topics_len = topics.len();
