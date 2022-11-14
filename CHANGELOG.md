@@ -4,6 +4,10 @@ The format is based on [Keep a Changelog].
 
 [Keep a Changelog]: http://keepachangelog.com/en/1.0.0/
 
+## [18.0.0] - 2022-11-14
+### Dependencies
+- Bump ethereum-types to 0.14.0
+
 ## [17.2.0] - 2022-08-12
 ### Added
 - Add `Token::into_tuple`
