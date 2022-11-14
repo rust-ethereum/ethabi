@@ -39,7 +39,9 @@ fn as_bool(slice: &Word) -> Result<bool, Error> {
 	Ok(slice[31] == 1)
 }
 
-fn decode_offset(types: &[ParamType], data: &[u8]) -> Result<(Vec<Token>, usize), Error> {
+/// Decodes ABI compliant vector of bytes into vector of tokens described by types param.
+/// Returns ok, even if some data left to decode
+pub fn decode(types: &[ParamType], data: &[u8]) -> Result<Vec<Token>, Error> {
 	let is_empty_bytes_valid_encoding = types.iter().all(|t| t.is_empty_bytes_valid_encoding());
 	if !is_empty_bytes_valid_encoding && data.is_empty() {
 		return Err(Error::InvalidName(
@@ -60,27 +62,37 @@ fn decode_offset(types: &[ParamType], data: &[u8]) -> Result<(Vec<Token>, usize)
 		tokens.push(res.token);
 	}
 
-	Ok((tokens, offset))
+	Ok(tokens)
 }
 
 /// Decodes ABI compliant vector of bytes into vector of tokens described by types param.
 /// Fails, if some data left to decode
 pub fn decode_whole(types: &[ParamType], data: &[u8]) -> Result<Vec<Token>, Error> {
-	decode_offset(types, data).and_then(
-		|(tokens, offset)| {
-			if offset != data.len() {
-				Err(Error::InvalidData)
-			} else {
-				Ok(tokens)
-			}
-		},
-	)
-}
+	let is_empty_bytes_valid_encoding = types.iter().all(|t| t.is_empty_bytes_valid_encoding());
+	if !is_empty_bytes_valid_encoding && data.is_empty() {
+		return Err(Error::InvalidName(
+			"please ensure the contract and method you're calling exist! \
+			 failed to decode empty bytes. if you're using jsonrpc this is \
+			 likely due to jsonrpc returning `0x` in case contract or method \
+			 don't exist"
+				.into(),
+		));
+	}
 
-/// Decodes ABI compliant vector of bytes into vector of tokens described by types param.
-/// Returns ok, even if some data left to decode
-pub fn decode(types: &[ParamType], data: &[u8]) -> Result<Vec<Token>, Error> {
-	decode_offset(types, data).map(|(tokens, _)| tokens)
+	let mut tokens = vec![];
+	let mut offset = 0;
+
+	for param in types {
+		let res = decode_param(param, data, offset)?;
+		offset = res.new_offset;
+		tokens.push(res.token);
+	}
+
+	if offset != data.len() {
+		return Err(Error::InvalidData);
+	}
+
+	Ok(tokens)
 }
 
 fn peek(data: &[u8], offset: usize, len: usize) -> Result<&[u8], Error> {
@@ -249,7 +261,7 @@ mod tests {
 
 	#[cfg(not(feature = "std"))]
 	use crate::no_std_prelude::*;
-	use crate::{decode, ParamType, Token, Uint};
+	use crate::{decode, decode_whole, ParamType, Token, Uint};
 
 	#[test]
 	fn decode_from_empty_byte_slice() {
@@ -694,5 +706,18 @@ ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 			}
 		};
 		assert!(func.decode_input(&input).is_err());
+	}
+
+	#[test]
+	fn decode_whole_addresses() {
+		let input = hex!(
+			"
+		0000000000000000000000000000000000000000000000000000000000012345
+		0000000000000000000000000000000000000000000000000000000000054321
+		"
+		);
+		assert!(decode(&[ParamType::Address], &input).is_ok());
+		assert!(decode_whole(&[ParamType::Address], &input).is_err());
+		assert!(decode_whole(&[ParamType::Address, ParamType::Address], &input).is_ok());
 	}
 }
