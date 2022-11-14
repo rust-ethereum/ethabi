@@ -124,63 +124,7 @@ impl Event {
 		}
 	}
 
-	/// Parses `RawLog` and retrieves all log params from it.
-	/// Fails, if some data left to decode
-	pub fn parse_log_whole(&self, log: RawLog) -> Result<Log> {
-		let topics = log.topics;
-		let data = log.data;
-		let topics_len = topics.len();
-		// obtains all params info
-		let topic_params = self.indexed_params(true);
-		let data_params = self.indexed_params(false);
-		// then take first topic if event is not anonymous
-		let to_skip = if self.anonymous {
-			0
-		} else {
-			// verify
-			let event_signature = topics.get(0).ok_or(Error::InvalidData)?;
-			if event_signature != &self.signature() {
-				return Err(Error::InvalidData);
-			}
-			1
-		};
-
-		let topic_types =
-			topic_params.iter().map(|p| self.convert_topic_param_type(&p.kind)).collect::<Vec<ParamType>>();
-
-		let flat_topics = topics.into_iter().skip(to_skip).flat_map(|t| t.as_ref().to_vec()).collect::<Vec<u8>>();
-
-		let topic_tokens = decode_whole(&topic_types, &flat_topics)?;
-
-		// topic may be only a 32 bytes encoded token
-		if topic_tokens.len() != topics_len - to_skip {
-			return Err(Error::InvalidData);
-		}
-
-		let topics_named_tokens = topic_params.into_iter().map(|p| p.name).zip(topic_tokens.into_iter());
-
-		let data_types = data_params.iter().map(|p| p.kind.clone()).collect::<Vec<ParamType>>();
-
-		let data_tokens = decode_whole(&data_types, &data)?;
-
-		let data_named_tokens = data_params.into_iter().map(|p| p.name).zip(data_tokens.into_iter());
-
-		let named_tokens = topics_named_tokens.chain(data_named_tokens).collect::<BTreeMap<String, Token>>();
-
-		let decoded_params = self
-			.params_names()
-			.into_iter()
-			.map(|name| LogParam { name: name.clone(), value: named_tokens[&name].clone() })
-			.collect();
-
-		let result = Log { params: decoded_params };
-
-		Ok(result)
-	}
-
-	/// Parses `RawLog` and retrieves all log params from it.
-	/// Returns ok, even if some data left to decode
-	pub fn parse_log(&self, log: RawLog) -> Result<Log> {
+	fn parse_log_inner<F: Fn(&[ParamType], &[u8]) -> Result<Vec<Token>>>(&self, log: RawLog, decode: F) -> Result<Log> {
 		let topics = log.topics;
 		let data = log.data;
 		let topics_len = topics.len();
@@ -230,6 +174,18 @@ impl Event {
 		let result = Log { params: decoded_params };
 
 		Ok(result)
+	}
+
+	/// Parses `RawLog` and retrieves all log params from it.
+	/// Fails, if some data left to decode
+	pub fn parse_log_whole(&self, log: RawLog) -> Result<Log> {
+		self.parse_log_inner(log, decode_whole)
+	}
+
+	/// Parses `RawLog` and retrieves all log params from it.
+	/// Returns ok, even if some data left to decode
+	pub fn parse_log(&self, log: RawLog) -> Result<Log> {
+		self.parse_log_inner(log, decode)
 	}
 }
 
@@ -370,6 +326,6 @@ mod tests {
 
 		assert!(wrong_event.parse_log(log.clone()).is_ok());
 		assert!(wrong_event.parse_log_whole(log.clone()).is_err());
-		assert!(correct_event.parse_log_whole(log.clone()).is_ok());
+		assert!(correct_event.parse_log_whole(log).is_ok());
 	}
 }
