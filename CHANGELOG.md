@@ -4,7 +4,18 @@ The format is based on [Keep a Changelog].
 
 [Keep a Changelog]: http://keepachangelog.com/en/1.0.0/
 
-## [18.0.0] - 2022-11-14
+## [18.0.0] - 2022-11-16
+### Added
+- Decode function that fails if there is leftover data.
+
+### Changed
+- Allow serde in no_std.
+- Bump ethereum-types to 0.14.0.
+- Updated Rust edition to 2021.
+
+### Fixed
+- Nested tuple handling.
+
 ### Dependencies
 - Bump ethereum-types to 0.14.0
 
