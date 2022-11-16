@@ -62,7 +62,7 @@ pub use crate::tuple_param::TupleParam;
 pub use crate::{
 	constructor::Constructor,
 	contract::{Contract, Events, Functions},
-	decoder::decode,
+	decoder::{decode, decode_whole},
 	encoder::encode,
 	error::Error as AbiError,
 	errors::{Error, Result},

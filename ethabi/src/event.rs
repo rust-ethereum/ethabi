@@ -17,7 +17,7 @@ use sha3::{Digest, Keccak256};
 #[cfg(not(feature = "std"))]
 use crate::no_std_prelude::*;
 use crate::{
-	decode, encode, signature::long_signature, Error, EventParam, Hash, Log, LogParam, ParamType, RawLog,
+	decode, decode_whole, encode, signature::long_signature, Error, EventParam, Hash, Log, LogParam, ParamType, RawLog,
 	RawTopicFilter, Result, Token, Topic, TopicFilter,
 };
 
@@ -124,8 +124,7 @@ impl Event {
 		}
 	}
 
-	/// Parses `RawLog` and retrieves all log params from it.
-	pub fn parse_log(&self, log: RawLog) -> Result<Log> {
+	fn parse_log_inner<F: Fn(&[ParamType], &[u8]) -> Result<Vec<Token>>>(&self, log: RawLog, decode: F) -> Result<Log> {
 		let topics = log.topics;
 		let data = log.data;
 		let topics_len = topics.len();
@@ -175,6 +174,18 @@ impl Event {
 		let result = Log { params: decoded_params };
 
 		Ok(result)
+	}
+
+	/// Parses `RawLog` and retrieves all log params from it.
+	/// Fails, if some data left to decode
+	pub fn parse_log_whole(&self, log: RawLog) -> Result<Log> {
+		self.parse_log_inner(log, decode_whole)
+	}
+
+	/// Parses `RawLog` and retrieves all log params from it.
+	/// Returns ok, even if some data left to decode
+	pub fn parse_log(&self, log: RawLog) -> Result<Log> {
+		self.parse_log_inner(log, decode)
 	}
 }
 
@@ -278,5 +289,43 @@ mod tests {
 				.collect::<Vec<_>>()
 			}
 		);
+	}
+
+	#[test]
+	fn parse_log_whole() {
+		let correct_event = Event {
+			name: "Test".into(),
+			inputs: vec![
+				EventParam {
+					name: "tuple".into(),
+					kind: ParamType::Tuple(vec![ParamType::Address, ParamType::Address]),
+					indexed: false,
+				},
+				EventParam { name: "addr".into(), kind: ParamType::Address, indexed: true },
+			],
+			anonymous: false,
+		};
+		// swap indexed params
+		let mut wrong_event = correct_event.clone();
+		wrong_event.inputs[0].indexed = true;
+		wrong_event.inputs[1].indexed = false;
+
+		let log = RawLog {
+			topics: vec![
+				hex!("cf74b4e62f836eeedcd6f92120ffb5afea90e6fa490d36f8b81075e2a7de0cf7").into(),
+				hex!("0000000000000000000000000000000000000000000000000000000000012321").into(),
+			],
+			data: hex!(
+				"
+			0000000000000000000000000000000000000000000000000000000000012345
+			0000000000000000000000000000000000000000000000000000000000054321
+			"
+			)
+			.into(),
+		};
+
+		assert!(wrong_event.parse_log(log.clone()).is_ok());
+		assert!(wrong_event.parse_log_whole(log.clone()).is_err());
+		assert!(correct_event.parse_log_whole(log).is_ok());
 	}
 }
