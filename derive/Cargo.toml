@@ -6,7 +6,7 @@ homepage = "https://github.com/paritytech/ethabi"
 license = "Apache-2.0"
 keywords = ["ethereum", "eth", "abi", "solidity", "derive"]
 description = "Easy to use conversion of ethereum contract calls to bytecode."
-edition = "2018"
+edition = "2021"
 
 [lib]
 proc-macro = true

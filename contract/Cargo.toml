@@ -10,4 +10,4 @@ homepage = "https://github.com/rust-ethereum/ethabi"
 license = "MIT/Apache-2.0"
 keywords = ["ethereum", "eth", "abi", "solidity", "derive"]
 description = "Easy to use conversion of ethereum contract calls to bytecode."
-edition = "2018"
+edition = "2021"
