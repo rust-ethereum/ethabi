@@ -10,7 +10,7 @@ homepage = "https://github.com/rust-ethereum/ethabi"
 keywords = ["ethereum", "eth", "abi", "solidity", "cli"]
 description = "Easy to use cli for conversion of ethereum contract calls to bytecode."
 license = "Apache-2.0"
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 anyhow = "1"

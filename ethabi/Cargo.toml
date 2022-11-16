@@ -10,7 +10,7 @@ homepage = "https://github.com/rust-ethereum/ethabi"
 license = "Apache-2.0"
 keywords = ["ethereum", "eth", "abi", "solidity"]
 description = "Easy to use conversion of ethereum contract calls to bytecode."
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 hex = { version = "0.4", default-features = false, features = ["alloc"] }
