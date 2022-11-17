@@ -10,7 +10,7 @@
 
 #[cfg(not(feature = "std"))]
 use crate::no_std_prelude::*;
-use crate::{Error, ParamType, Token, Word};
+use crate::{encode, Error, ParamType, Token, Word};
 
 #[derive(Debug)]
 struct DecodeResult {
@@ -64,21 +64,18 @@ fn decode_offset(types: &[ParamType], data: &[u8]) -> Result<(Vec<Token>, usize)
 }
 
 /// Decodes ABI compliant vector of bytes into vector of tokens described by types param.
-/// Fails, if some data left to decode
-pub fn decode_whole(types: &[ParamType], data: &[u8]) -> Result<Vec<Token>, Error> {
-	decode_offset(types, data).and_then(
-		|(tokens, offset)| {
-			if offset != data.len() {
-				Err(Error::InvalidData)
-			} else {
-				Ok(tokens)
-			}
-		},
-	)
+/// Checks, that decoded data is exact as input provided
+pub fn decode_verify(types: &[ParamType], data: &[u8]) -> Result<Vec<Token>, Error> {
+	let decoded = decode(types, data)?;
+	let encoded = encode(&decoded);
+	if data != encoded {
+		Err(Error::InvalidData)
+	} else {
+		Ok(decoded)
+	}
 }
 
 /// Decodes ABI compliant vector of bytes into vector of tokens described by types param.
-/// Returns ok, even if some data left to decode
 pub fn decode(types: &[ParamType], data: &[u8]) -> Result<Vec<Token>, Error> {
 	decode_offset(types, data).map(|(tokens, _)| tokens)
 }
@@ -249,7 +246,7 @@ mod tests {
 
 	#[cfg(not(feature = "std"))]
 	use crate::no_std_prelude::*;
-	use crate::{decode, decode_whole, ParamType, Token, Uint};
+	use crate::{decode, decode_verify, ParamType, Token, Uint};
 
 	#[test]
 	fn decode_from_empty_byte_slice() {
@@ -697,7 +694,7 @@ ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 	}
 
 	#[test]
-	fn decode_whole_addresses() {
+	fn decode_verify_addresses() {
 		let input = hex!(
 			"
 		0000000000000000000000000000000000000000000000000000000000012345
@@ -705,7 +702,19 @@ ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 		"
 		);
 		assert!(decode(&[ParamType::Address], &input).is_ok());
-		assert!(decode_whole(&[ParamType::Address], &input).is_err());
-		assert!(decode_whole(&[ParamType::Address, ParamType::Address], &input).is_ok());
+		assert!(decode_verify(&[ParamType::Address], &input).is_err());
+		assert!(decode_verify(&[ParamType::Address, ParamType::Address], &input).is_ok());
+	}
+
+	#[test]
+	fn decode_verify_bytes() {
+		let input = hex!(
+			"
+		0000000000000000000000001234500000000000000000000000000000012345
+		0000000000000000000000005432100000000000000000000000000000054321
+		"
+		);
+		assert!(decode_verify(&[ParamType::Address, ParamType::FixedBytes(20)], &input).is_err());
+		assert!(decode_verify(&[ParamType::Address, ParamType::Address], &input).is_ok());
 	}
 }
