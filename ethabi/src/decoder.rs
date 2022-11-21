@@ -10,7 +10,7 @@
 
 #[cfg(not(feature = "std"))]
 use crate::no_std_prelude::*;
-use crate::{encode, Error, ParamType, Token, Word};
+use crate::{Error, ParamType, Token, Word};
 
 #[derive(Debug)]
 struct DecodeResult {
@@ -32,14 +32,11 @@ fn as_usize(slice: &Word) -> Result<usize, Error> {
 }
 
 fn as_bool(slice: &Word) -> Result<bool, Error> {
-	if !slice[..31].iter().all(|x| *x == 0) {
-		return Err(Error::InvalidData);
-	}
-
+	check_zeroes(&slice[..31])?;
 	Ok(slice[31] == 1)
 }
 
-fn decode_offset(types: &[ParamType], data: &[u8]) -> Result<(Vec<Token>, usize), Error> {
+fn decode_impl(types: &[ParamType], data: &[u8], validate: bool) -> Result<(Vec<Token>, usize), Error> {
 	let is_empty_bytes_valid_encoding = types.iter().all(|t| t.is_empty_bytes_valid_encoding());
 	if !is_empty_bytes_valid_encoding && data.is_empty() {
 		return Err(Error::InvalidName(
@@ -55,9 +52,12 @@ fn decode_offset(types: &[ParamType], data: &[u8]) -> Result<(Vec<Token>, usize)
 	let mut offset = 0;
 
 	for param in types {
-		let res = decode_param(param, data, offset)?;
+		let res = decode_param(param, data, offset, validate)?;
 		offset = res.new_offset;
 		tokens.push(res.token);
+	}
+	if validate && offset != data.len() {
+		return Err(Error::InvalidData);
 	}
 
 	Ok((tokens, offset))
@@ -65,19 +65,13 @@ fn decode_offset(types: &[ParamType], data: &[u8]) -> Result<(Vec<Token>, usize)
 
 /// Decodes ABI compliant vector of bytes into vector of tokens described by types param.
 /// Checks, that decoded data is exact as input provided
-pub fn decode_verify(types: &[ParamType], data: &[u8]) -> Result<Vec<Token>, Error> {
-	let decoded = decode(types, data)?;
-	let encoded = encode(&decoded);
-	if data != encoded {
-		Err(Error::InvalidData)
-	} else {
-		Ok(decoded)
-	}
+pub fn decode_validate(types: &[ParamType], data: &[u8]) -> Result<Vec<Token>, Error> {
+	decode_impl(types, data, true).map(|(tokens, _)| tokens)
 }
 
 /// Decodes ABI compliant vector of bytes into vector of tokens described by types param.
 pub fn decode(types: &[ParamType], data: &[u8]) -> Result<Vec<Token>, Error> {
-	decode_offset(types, data).map(|(tokens, _)| tokens)
+	decode_impl(types, data, false).map(|(tokens, _)| tokens)
 }
 
 fn peek(data: &[u8], offset: usize, len: usize) -> Result<&[u8], Error> {
@@ -96,18 +90,38 @@ fn peek_32_bytes(data: &[u8], offset: usize) -> Result<Word, Error> {
 	})
 }
 
-fn take_bytes(data: &[u8], offset: usize, len: usize) -> Result<Vec<u8>, Error> {
-	if offset + len > data.len() {
-		Err(Error::InvalidData)
+fn round_up_nearest_multiple(value: usize, padding: usize) -> usize {
+	(value + padding - 1) / padding * padding
+}
+
+fn take_bytes(data: &[u8], offset: usize, len: usize, validate: bool) -> Result<Vec<u8>, Error> {
+	if validate {
+		let padded_len = round_up_nearest_multiple(len, 32);
+		if offset + padded_len > data.len() {
+			return Err(Error::InvalidData);
+		}
+		check_zeroes(&data[(offset + len)..(offset + padded_len)])?;
+	} else if offset + len > data.len() {
+		return Err(Error::InvalidData);
+	}
+	Ok(data[offset..(offset + len)].to_vec())
+}
+
+fn check_zeroes(data: &[u8]) -> Result<(), Error> {
+	if data.iter().all(|b| *b == 0) {
+		Ok(())
 	} else {
-		Ok(data[offset..(offset + len)].to_vec())
+		Err(Error::InvalidData)
 	}
 }
 
-fn decode_param(param: &ParamType, data: &[u8], offset: usize) -> Result<DecodeResult, Error> {
+fn decode_param(param: &ParamType, data: &[u8], offset: usize, validate: bool) -> Result<DecodeResult, Error> {
 	match *param {
 		ParamType::Address => {
 			let slice = peek_32_bytes(data, offset)?;
+			if validate {
+				check_zeroes(&slice[..12])?;
+			}
 			let mut address = [0u8; 20];
 			address.copy_from_slice(&slice[12..]);
 			let result = DecodeResult { token: Token::Address(address.into()), new_offset: offset + 32 };
@@ -131,21 +145,21 @@ fn decode_param(param: &ParamType, data: &[u8], offset: usize) -> Result<DecodeR
 		ParamType::FixedBytes(len) => {
 			// FixedBytes is anything from bytes1 to bytes32. These values
 			// are padded with trailing zeros to fill 32 bytes.
-			let bytes = take_bytes(data, offset, len)?;
+			let bytes = take_bytes(data, offset, len, validate)?;
 			let result = DecodeResult { token: Token::FixedBytes(bytes), new_offset: offset + 32 };
 			Ok(result)
 		}
 		ParamType::Bytes => {
 			let dynamic_offset = as_usize(&peek_32_bytes(data, offset)?)?;
 			let len = as_usize(&peek_32_bytes(data, dynamic_offset)?)?;
-			let bytes = take_bytes(data, dynamic_offset + 32, len)?;
+			let bytes = take_bytes(data, dynamic_offset + 32, len, validate)?;
 			let result = DecodeResult { token: Token::Bytes(bytes), new_offset: offset + 32 };
 			Ok(result)
 		}
 		ParamType::String => {
 			let dynamic_offset = as_usize(&peek_32_bytes(data, offset)?)?;
 			let len = as_usize(&peek_32_bytes(data, dynamic_offset)?)?;
-			let bytes = take_bytes(data, dynamic_offset + 32, len)?;
+			let bytes = take_bytes(data, dynamic_offset + 32, len, validate)?;
 			let result = DecodeResult {
 				// NOTE: We're decoding strings using lossy UTF-8 decoding to
 				// prevent invalid strings written into contracts by either users or
@@ -167,7 +181,7 @@ fn decode_param(param: &ParamType, data: &[u8], offset: usize) -> Result<DecodeR
 			let mut new_offset = 0;
 
 			for _ in 0..len {
-				let res = decode_param(t, tail, new_offset)?;
+				let res = decode_param(t, tail, new_offset, validate)?;
 				new_offset = res.new_offset;
 				tokens.push(res.token);
 			}
@@ -192,7 +206,7 @@ fn decode_param(param: &ParamType, data: &[u8], offset: usize) -> Result<DecodeR
 			let mut tokens = vec![];
 
 			for _ in 0..len {
-				let res = decode_param(t, tail, new_offset)?;
+				let res = decode_param(t, tail, new_offset, validate)?;
 				new_offset = res.new_offset;
 				tokens.push(res.token);
 			}
@@ -222,7 +236,7 @@ fn decode_param(param: &ParamType, data: &[u8], offset: usize) -> Result<DecodeR
 			let len = t.len();
 			let mut tokens = Vec::with_capacity(len);
 			for param in t {
-				let res = decode_param(param, tail, new_offset)?;
+				let res = decode_param(param, tail, new_offset, validate)?;
 				new_offset = res.new_offset;
 				tokens.push(res.token);
 			}
@@ -246,7 +260,7 @@ mod tests {
 
 	#[cfg(not(feature = "std"))]
 	use crate::no_std_prelude::*;
-	use crate::{decode, decode_verify, ParamType, Token, Uint};
+	use crate::{decode, decode_validate, ParamType, Token, Uint};
 
 	#[test]
 	fn decode_from_empty_byte_slice() {
@@ -702,8 +716,8 @@ ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 		"
 		);
 		assert!(decode(&[ParamType::Address], &input).is_ok());
-		assert!(decode_verify(&[ParamType::Address], &input).is_err());
-		assert!(decode_verify(&[ParamType::Address, ParamType::Address], &input).is_ok());
+		assert!(decode_validate(&[ParamType::Address], &input).is_err());
+		assert!(decode_validate(&[ParamType::Address, ParamType::Address], &input).is_ok());
 	}
 
 	#[test]
@@ -714,7 +728,7 @@ ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 		0000000000000000000000005432100000000000000000000000000000054321
 		"
 		);
-		assert!(decode_verify(&[ParamType::Address, ParamType::FixedBytes(20)], &input).is_err());
-		assert!(decode_verify(&[ParamType::Address, ParamType::Address], &input).is_ok());
+		assert!(decode_validate(&[ParamType::Address, ParamType::FixedBytes(20)], &input).is_err());
+		assert!(decode_validate(&[ParamType::Address, ParamType::Address], &input).is_ok());
 	}
 }
