@@ -17,8 +17,8 @@ use sha3::{Digest, Keccak256};
 #[cfg(not(feature = "std"))]
 use crate::no_std_prelude::*;
 use crate::{
-	decode, decode_whole, encode, signature::long_signature, Error, EventParam, Hash, Log, LogParam, ParamType, RawLog,
-	RawTopicFilter, Result, Token, Topic, TopicFilter,
+	decode, decode_validate, encode, signature::long_signature, Error, EventParam, Hash, Log, LogParam, ParamType,
+	RawLog, RawTopicFilter, Result, Token, Topic, TopicFilter,
 };
 
 /// Contract event.
@@ -177,13 +177,12 @@ impl Event {
 	}
 
 	/// Parses `RawLog` and retrieves all log params from it.
-	/// Fails, if some data left to decode
-	pub fn parse_log_whole(&self, log: RawLog) -> Result<Log> {
-		self.parse_log_inner(log, decode_whole)
+	/// Checks, that decoded data is exact as input provided
+	pub fn parse_log_validate(&self, log: RawLog) -> Result<Log> {
+		self.parse_log_inner(log, decode_validate)
 	}
 
 	/// Parses `RawLog` and retrieves all log params from it.
-	/// Returns ok, even if some data left to decode
 	pub fn parse_log(&self, log: RawLog) -> Result<Log> {
 		self.parse_log_inner(log, decode)
 	}
@@ -325,7 +324,7 @@ mod tests {
 		};
 
 		assert!(wrong_event.parse_log(log.clone()).is_ok());
-		assert!(wrong_event.parse_log_whole(log.clone()).is_err());
-		assert!(correct_event.parse_log_whole(log).is_ok());
+		assert!(wrong_event.parse_log_validate(log.clone()).is_err());
+		assert!(correct_event.parse_log_validate(log).is_ok());
 	}
 }
