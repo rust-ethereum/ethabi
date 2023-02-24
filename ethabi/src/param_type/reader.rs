@@ -147,6 +147,7 @@ impl Reader {
 			"int" => ParamType::Int(256),
 			"tuple" => ParamType::Tuple(vec![]),
 			"uint" => ParamType::Uint(256),
+			"function" => ParamType::Function,
 			s if s.starts_with("int") => {
 				let len = s[3..].parse().map_err(Error::ParseInt)?;
 				ParamType::Int(len)

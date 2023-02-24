@@ -137,6 +137,11 @@ fn decode_param(param: &ParamType, data: &[u8], offset: usize, validate: bool) -
 			let result = DecodeResult { token: Token::Uint(slice.into()), new_offset: offset + 32 };
 			Ok(result)
 		}
+		ParamType::Function => {
+			let bytes = take_bytes(data, offset, 24, validate)?;
+			let result = DecodeResult { token: Token::FixedBytes(bytes), new_offset: offset + 32 };
+			Ok(result)
+		}
 		ParamType::Bool => {
 			let b = as_bool(&peek_32_bytes(data, offset)?)?;
 			let result = DecodeResult { token: Token::Bool(b), new_offset: offset + 32 };

@@ -30,6 +30,7 @@ impl Writer {
 			ParamType::Int(len) => format!("int{len}"),
 			ParamType::Uint(len) => format!("uint{len}"),
 			ParamType::Bool => "bool".to_owned(),
+			ParamType::Function => "function".to_owned(),
 			ParamType::String => "string".to_owned(),
 			ParamType::FixedArray(ref param, len) => {
 				format!("{}[{len}]", Writer::write_for_abi(param, serialize_tuple_contents))

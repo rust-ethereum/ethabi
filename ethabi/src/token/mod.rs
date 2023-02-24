@@ -49,6 +49,9 @@ pub trait Tokenizer {
 			ParamType::Array(ref p) => Self::tokenize_array(value, p).map(Token::Array),
 			ParamType::FixedArray(ref p, len) => Self::tokenize_fixed_array(value, p, len).map(Token::FixedArray),
 			ParamType::Tuple(ref p) => Self::tokenize_struct(value, p).map(Token::Tuple),
+			ParamType::Function => {
+				Self::tokenize_fixed_bytes(value.strip_prefix("0x").unwrap_or(value), 24).map(Token::FixedBytes)
+			}
 		}
 	}
 
