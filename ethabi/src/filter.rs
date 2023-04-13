@@ -50,9 +50,10 @@ impl Serialize for TopicFilter {
 }
 
 /// Acceptable topic possibilities.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Default, PartialEq, Eq)]
 pub enum Topic<T> {
 	/// Match any.
+	#[default]
 	Any,
 	/// Match any of the hashes.
 	OneOf(Vec<T>),
@@ -79,12 +80,6 @@ impl<T> Topic<T> {
 			Topic::Any => true,
 			Topic::This(_) | Topic::OneOf(_) => false,
 		}
-	}
-}
-
-impl<T> Default for Topic<T> {
-	fn default() -> Self {
-		Topic::Any
 	}
 }
 
