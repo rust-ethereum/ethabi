@@ -50,11 +50,14 @@ fn decode_impl(types: &[ParamType], data: &[u8], validate: bool) -> Result<(Vec<
 
 	let mut offset = 0;
 
-	let tokens = types.iter().map(|param| {
-		let res = decode_param(param, data, offset, validate)?;
-		offset = res.new_offset;
-		Ok(res.token)
-	}).collect::<Result<Vec<Token>, Error>>()?;
+	let tokens = types
+		.iter()
+		.map(|param| {
+			let res = decode_param(param, data, offset, validate)?;
+			offset = res.new_offset;
+			Ok(res.token)
+		})
+		.collect::<Result<Vec<Token>, Error>>()?;
 
 	if validate && offset != data.len() {
 		return Err(Error::InvalidData);
@@ -179,11 +182,13 @@ fn decode_param(param: &ParamType, data: &[u8], offset: usize, validate: bool) -
 
 			let mut new_offset = 0;
 
-			let tokens = (0..len).map(|_| {
-				let res = decode_param(t, tail, new_offset, validate)?;
-				new_offset = res.new_offset;
-				Ok(res.token)
-			}).collect::<Result<Vec<Token>, Error>>()?;
+			let tokens = (0..len)
+				.map(|_| {
+					let res = decode_param(t, tail, new_offset, validate)?;
+					new_offset = res.new_offset;
+					Ok(res.token)
+				})
+				.collect::<Result<Vec<Token>, Error>>()?;
 
 			let result = DecodeResult { token: Token::Array(tokens), new_offset: offset + 32 };
 
@@ -202,11 +207,13 @@ fn decode_param(param: &ParamType, data: &[u8], offset: usize, validate: bool) -
 				(data, offset)
 			};
 
-			let tokens = (0..len).map(|_| {
-				let res = decode_param(t, tail, new_offset, validate)?;
-				new_offset = res.new_offset;
-				Ok(res.token)
-			}).collect::<Result<Vec<Token>, Error>>()?;
+			let tokens = (0..len)
+				.map(|_| {
+					let res = decode_param(t, tail, new_offset, validate)?;
+					new_offset = res.new_offset;
+					Ok(res.token)
+				})
+				.collect::<Result<Vec<Token>, Error>>()?;
 
 			let result = DecodeResult {
 				token: Token::FixedArray(tokens),
