@@ -49,6 +49,8 @@ fn decode_impl(types: &[ParamType], data: &[u8], validate: bool) -> Result<(Vec<
 	}
 
 	let mut tokens = vec![];
+	tokens.try_reserve_exact(types.len()).map_err(|_| Error::InvalidData)?;
+
 	let mut offset = 0;
 
 	for param in types {
@@ -178,6 +180,7 @@ fn decode_param(param: &ParamType, data: &[u8], offset: usize, validate: bool) -
 			let tail = &data[tail_offset..];
 
 			let mut tokens = vec![];
+			tokens.try_reserve_exact(len).map_err(|_| Error::InvalidData)?;
 			let mut new_offset = 0;
 
 			for _ in 0..len {
@@ -204,6 +207,7 @@ fn decode_param(param: &ParamType, data: &[u8], offset: usize, validate: bool) -
 			};
 
 			let mut tokens = vec![];
+			tokens.try_reserve_exact(len).map_err(|_| Error::InvalidData)?;
 
 			for _ in 0..len {
 				let res = decode_param(t, tail, new_offset, validate)?;
