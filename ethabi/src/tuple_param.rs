@@ -12,6 +12,7 @@
 use crate::no_std_prelude::*;
 use crate::{param_type::Writer, ParamType};
 use core::fmt;
+#[cfg(feature = "serde")]
 use serde::{
 	de::{Error, MapAccess, Visitor},
 	ser::SerializeMap,
@@ -37,6 +38,7 @@ impl From<ParamType> for TupleParam {
 	}
 }
 
+#[cfg(feature = "serde")]
 impl<'a> Deserialize<'a> for TupleParam {
 	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
 	where
@@ -46,8 +48,10 @@ impl<'a> Deserialize<'a> for TupleParam {
 	}
 }
 
+#[cfg(feature = "serde")]
 struct TupleParamVisitor;
 
+#[cfg(feature = "serde")]
 impl<'a> Visitor<'a> for TupleParamVisitor {
 	type Value = TupleParam;
 
@@ -101,6 +105,7 @@ impl<'a> Visitor<'a> for TupleParamVisitor {
 	}
 }
 
+#[cfg(feature = "serde")]
 impl Serialize for TupleParam {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
 	where
