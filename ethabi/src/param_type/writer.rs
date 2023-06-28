@@ -41,7 +41,7 @@ impl Writer {
 				if serialize_tuple_contents {
 					let formatted = params
 						.iter()
-						.map(|t| Writer::write_for_abi(t, serialize_tuple_contents))
+						.map(|t| Writer::write_for_abi(&t.kind, serialize_tuple_contents))
 						.collect::<Vec<String>>()
 						.join(",");
 					format!("({formatted})")
@@ -77,8 +77,12 @@ mod tests {
 		);
 		assert_eq!(
 			Writer::write(&ParamType::Array(Box::new(ParamType::Tuple(vec![
-				ParamType::Array(Box::new(ParamType::Tuple(vec![ParamType::Int(256), ParamType::Uint(256)]))),
-				ParamType::FixedBytes(32),
+				ParamType::Array(Box::new(ParamType::Tuple(vec![
+					ParamType::Int(256).into(),
+					ParamType::Uint(256).into()
+				])))
+				.into(),
+				ParamType::FixedBytes(32).into(),
 			])))),
 			"((int256,uint256)[],bytes32)[]".to_owned()
 		);
@@ -86,8 +90,8 @@ mod tests {
 		assert_eq!(
 			Writer::write_for_abi(
 				&ParamType::Array(Box::new(ParamType::Tuple(vec![
-					ParamType::Array(Box::new(ParamType::Int(256))),
-					ParamType::FixedBytes(32),
+					ParamType::Array(Box::new(ParamType::Int(256))).into(),
+					ParamType::FixedBytes(32).into(),
 				]))),
 				false
 			),

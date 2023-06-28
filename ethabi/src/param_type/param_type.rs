@@ -13,6 +13,7 @@ use core::fmt;
 use super::Writer;
 #[cfg(not(feature = "std"))]
 use crate::no_std_prelude::*;
+use crate::TupleParam;
 
 /// Function and event param types.
 #[derive(Debug, Clone, PartialEq)]
@@ -36,7 +37,7 @@ pub enum ParamType {
 	/// Array with fixed size.
 	FixedArray(Box<ParamType>, usize),
 	/// Tuple containing different types
-	Tuple(Vec<ParamType>),
+	Tuple(Vec<TupleParam>),
 }
 
 impl fmt::Display for ParamType {
@@ -62,7 +63,7 @@ impl ParamType {
 		match self {
 			ParamType::Bytes | ParamType::String | ParamType::Array(_) => true,
 			ParamType::FixedArray(elem_type, _) => elem_type.is_dynamic(),
-			ParamType::Tuple(params) => params.iter().any(|param| param.is_dynamic()),
+			ParamType::Tuple(params) => params.iter().any(|param| param.kind.is_dynamic()),
 			_ => false,
 		}
 	}

@@ -123,7 +123,7 @@ impl Serialize for Param {
 }
 
 #[cfg(feature = "serde")]
-pub(crate) fn inner_tuple_mut(mut param: &mut ParamType) -> Option<&mut Vec<ParamType>> {
+pub(crate) fn inner_tuple_mut(mut param: &mut ParamType) -> Option<&mut Vec<TupleParam>> {
 	loop {
 		match param {
 			ParamType::Array(inner) => param = inner.as_mut(),
@@ -135,7 +135,7 @@ pub(crate) fn inner_tuple_mut(mut param: &mut ParamType) -> Option<&mut Vec<Para
 }
 
 #[cfg(feature = "serde")]
-pub(crate) fn inner_tuple(mut param: &ParamType) -> Option<&Vec<ParamType>> {
+pub(crate) fn inner_tuple(mut param: &ParamType) -> Option<&Vec<TupleParam>> {
 	loop {
 		match param {
 			ParamType::Array(inner) => param = inner.as_ref(),
@@ -153,13 +153,13 @@ pub(crate) fn set_tuple_components<Error: serde::de::Error>(
 ) -> Result<(), Error> {
 	if let Some(inner_tuple_mut) = inner_tuple_mut(kind) {
 		let tuple_params = components.ok_or_else(|| Error::missing_field("components"))?;
-		inner_tuple_mut.extend(tuple_params.into_iter().map(|param| param.kind))
+		inner_tuple_mut.extend(tuple_params.into_iter())
 	}
 	Ok(())
 }
 
 #[cfg(feature = "serde")]
-pub(crate) struct SerializeableParamVec<'a>(pub(crate) &'a [ParamType]);
+pub(crate) struct SerializeableParamVec<'a>(pub(crate) &'a [TupleParam]);
 
 #[cfg(feature = "serde")]
 impl Serialize for SerializeableParamVec<'_> {
@@ -176,7 +176,7 @@ impl Serialize for SerializeableParamVec<'_> {
 }
 
 #[cfg(feature = "serde")]
-pub(crate) struct SerializeableParam<'a>(pub(crate) &'a ParamType);
+pub(crate) struct SerializeableParam<'a>(pub(crate) &'a TupleParam);
 
 #[cfg(feature = "serde")]
 impl Serialize for SerializeableParam<'_> {
@@ -185,8 +185,14 @@ impl Serialize for SerializeableParam<'_> {
 		S: Serializer,
 	{
 		let mut map = serializer.serialize_map(None)?;
-		map.serialize_entry("type", &Writer::write_for_abi(self.0, false))?;
-		if let Some(inner_tuple) = inner_tuple(self.0) {
+		map.serialize_entry("type", &Writer::write_for_abi(&self.0.kind, false))?;
+		if let Some(ref name) = self.0.name {
+			map.serialize_entry("name", &name)?;
+		}
+		if let Some(ref internal_type) = self.0.internal_type {
+			map.serialize_entry("internalType", &internal_type)?;
+		}
+		if let Some(inner_tuple) = inner_tuple(&self.0.kind) {
 			map.serialize_key("components")?;
 			map.serialize_value(&SerializeableParamVec(inner_tuple))?;
 		}
@@ -200,7 +206,7 @@ mod tests {
 	use crate::no_std_prelude::*;
 	use crate::{
 		tests::{assert_json_eq, assert_ser_de},
-		Param, ParamType,
+		Param, ParamType, TupleParam,
 	};
 
 	#[test]
@@ -265,7 +271,10 @@ mod tests {
 			deserialized,
 			Param {
 				name: "foo".to_owned(),
-				kind: ParamType::Tuple(vec![ParamType::Uint(48), ParamType::Tuple(vec![ParamType::Address])]),
+				kind: ParamType::Tuple(vec![
+					ParamType::Uint(48).into(),
+					ParamType::Tuple(vec![ParamType::Address.into()]).into()
+				]),
 				internal_type: None
 			}
 		);
@@ -300,7 +309,10 @@ mod tests {
 			deserialized,
 			Param {
 				name: "foo".to_owned(),
-				kind: ParamType::Tuple(vec![ParamType::Uint(48), ParamType::Tuple(vec![ParamType::Address])]),
+				kind: ParamType::Tuple(vec![
+					ParamType::Uint(48).into(),
+					ParamType::Tuple(vec![ParamType::Address.into()]).into()
+				]),
 				internal_type: Some("struct Pairing.G1Point[]".to_string())
 			}
 		);
@@ -337,9 +349,20 @@ mod tests {
 			deserialized,
 			Param {
 				name: "foo".to_owned(),
-				kind: ParamType::Tuple(vec![ParamType::Uint(48), ParamType::Tuple(vec![ParamType::Address])]),
+				kind: ParamType::Tuple(vec![
+					TupleParam { name: Some("amount".into()), kind: ParamType::Uint(48), internal_type: None },
+					TupleParam {
+						name: Some("things".into()),
+						kind: ParamType::Tuple(vec![TupleParam {
+							name: Some("baseTupleParam".into()),
+							kind: ParamType::Address,
+							internal_type: None
+						}]),
+						internal_type: None
+					}
+				]),
 				internal_type: None
-			}
+			},
 		);
 
 		assert_ser_de(&deserialized);
@@ -370,9 +393,9 @@ mod tests {
 			Param {
 				name: "foo".to_owned(),
 				kind: ParamType::Array(Box::new(ParamType::Tuple(vec![
-					ParamType::Uint(48),
-					ParamType::Address,
-					ParamType::Address
+					ParamType::Uint(48).into(),
+					ParamType::Address.into(),
+					ParamType::Address.into()
 				]))),
 				internal_type: None
 			}
@@ -402,8 +425,8 @@ mod tests {
 			Param {
 				name: "foo".to_owned(),
 				kind: ParamType::Array(Box::new(ParamType::Array(Box::new(ParamType::Tuple(vec![
-					ParamType::Uint(8),
-					ParamType::Uint(16),
+					ParamType::Uint(8).into(),
+					ParamType::Uint(16).into(),
 				]))))),
 				internal_type: None
 			}
@@ -437,7 +460,11 @@ mod tests {
 			Param {
 				name: "foo".to_owned(),
 				kind: ParamType::FixedArray(
-					Box::new(ParamType::Tuple(vec![ParamType::Uint(48), ParamType::Address, ParamType::Address])),
+					Box::new(ParamType::Tuple(vec![
+						ParamType::Uint(48).into(),
+						ParamType::Address.into(),
+						ParamType::Address.into()
+					])),
 					2
 				),
 				internal_type: None
@@ -479,8 +506,8 @@ mod tests {
 			Param {
 				name: "foo".to_owned(),
 				kind: ParamType::Tuple(vec![
-					ParamType::Array(Box::new(ParamType::Tuple(vec![ParamType::Address]))),
-					ParamType::FixedArray(Box::new(ParamType::Tuple(vec![ParamType::Address])), 42,)
+					ParamType::Array(Box::new(ParamType::Tuple(vec![ParamType::Address.into()]))).into(),
+					ParamType::FixedArray(Box::new(ParamType::Tuple(vec![ParamType::Address.into()])), 42,).into(),
 				]),
 				internal_type: None
 			}

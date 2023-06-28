@@ -169,7 +169,10 @@ mod tests {
 			deserialized,
 			EventParam {
 				name: "foo".to_owned(),
-				kind: ParamType::Tuple(vec![ParamType::Uint(48), ParamType::Tuple(vec![ParamType::Address])]),
+				kind: ParamType::Tuple(vec![
+					ParamType::Uint(48).into(),
+					ParamType::Tuple(vec![ParamType::Address.into()]).into()
+				]),
 				indexed: true,
 			}
 		);
@@ -225,16 +228,25 @@ mod tests {
 			EventParam {
 				name: "LogTaskSubmitted".to_owned(),
 				kind: ParamType::Tuple(vec![
-					ParamType::Uint(256),
-					ParamType::Address,
-					ParamType::Tuple(vec![ParamType::Address, ParamType::Address]),
-					ParamType::Uint(256),
+					ParamType::Uint(256).into(),
+					ParamType::Address.into(),
+					ParamType::Tuple(vec![ParamType::Address.into(), ParamType::Address.into()]).into(),
+					ParamType::Uint(256).into(),
 					ParamType::Array(Box::new(ParamType::Tuple(vec![
-						ParamType::Array(Box::new(ParamType::Tuple(vec![ParamType::Address, ParamType::Bytes,]))),
-						ParamType::Array(Box::new(ParamType::Tuple(vec![ParamType::Address, ParamType::Uint(256)]))),
-						ParamType::Uint(256),
-					]))),
-					ParamType::Uint(256),
+						ParamType::Array(Box::new(ParamType::Tuple(vec![
+							ParamType::Address.into(),
+							ParamType::Bytes.into(),
+						])))
+						.into(),
+						ParamType::Array(Box::new(ParamType::Tuple(vec![
+							ParamType::Address.into(),
+							ParamType::Uint(256).into()
+						])))
+						.into(),
+						ParamType::Uint(256).into(),
+					])))
+					.into(),
+					ParamType::Uint(256).into(),
 				]),
 				indexed: false,
 			}

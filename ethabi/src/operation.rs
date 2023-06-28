@@ -40,7 +40,7 @@ mod tests {
 	use super::Operation;
 	#[cfg(not(feature = "std"))]
 	use crate::no_std_prelude::*;
-	use crate::{tests::assert_ser_de, Event, EventParam, Function, Param, ParamType, StateMutability};
+	use crate::{tests::assert_ser_de, Event, EventParam, Function, Param, ParamType, StateMutability, TupleParam};
 
 	#[test]
 	fn operation() {
@@ -119,9 +119,21 @@ mod tests {
 					EventParam {
 						name: "b".to_owned(),
 						kind: ParamType::Array(Box::new(ParamType::Tuple(vec![
-							ParamType::Address,
-							ParamType::Uint(256),
-							ParamType::Bytes
+							TupleParam {
+								name: Some("to".into()),
+								kind: ParamType::Address,
+								internal_type: Some("address".into())
+							},
+							TupleParam {
+								name: Some("value".into()),
+								kind: ParamType::Uint(256),
+								internal_type: Some("uint256".into())
+							},
+							TupleParam {
+								name: Some("data".into()),
+								kind: ParamType::Bytes,
+								internal_type: Some("bytes".into())
+							}
 						]))),
 						indexed: false
 					},

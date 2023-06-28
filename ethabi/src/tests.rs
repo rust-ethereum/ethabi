@@ -565,10 +565,10 @@ test_encode_decode! {
 		ParamType::Tuple(vec![
 			ParamType::Array(Box::new(ParamType::Tuple(
 				vec![
-					ParamType::Address,
-					ParamType::Uint(256)
+					ParamType::Address.into(),
+					ParamType::Uint(256).into(),
 				]
-			)))
+			))).into()
 		])
 	],
 	tokens: {

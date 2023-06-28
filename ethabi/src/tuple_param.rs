@@ -31,6 +31,12 @@ pub struct TupleParam {
 	pub internal_type: Option<String>,
 }
 
+impl From<ParamType> for TupleParam {
+	fn from(value: ParamType) -> Self {
+		Self { name: None, kind: value, internal_type: None }
+	}
+}
+
 impl<'a> Deserialize<'a> for TupleParam {
 	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
 	where
@@ -202,7 +208,10 @@ mod tests {
 			deserialized,
 			TupleParam {
 				name: None,
-				kind: ParamType::Tuple(vec![ParamType::Uint(48), ParamType::Tuple(vec![ParamType::Address])]),
+				kind: ParamType::Tuple(vec![
+					ParamType::Uint(48).into(),
+					ParamType::Tuple(vec![ParamType::Address.into()]).into()
+				]),
 				internal_type: None
 			}
 		);
@@ -238,7 +247,18 @@ mod tests {
 			deserialized,
 			TupleParam {
 				name: None,
-				kind: ParamType::Tuple(vec![ParamType::Uint(48), ParamType::Tuple(vec![ParamType::Address])]),
+				kind: ParamType::Tuple(vec![
+					TupleParam { name: Some("amount".into()), kind: ParamType::Uint(48), internal_type: None },
+					TupleParam {
+						name: Some("things".into()),
+						kind: ParamType::Tuple(vec![TupleParam {
+							name: Some("baseTupleParam".into()),
+							kind: ParamType::Address,
+							internal_type: None
+						}]),
+						internal_type: None
+					}
+				]),
 				internal_type: None
 			}
 		);
@@ -270,9 +290,9 @@ mod tests {
 			TupleParam {
 				name: None,
 				kind: ParamType::Array(Box::new(ParamType::Tuple(vec![
-					ParamType::Uint(48),
-					ParamType::Address,
-					ParamType::Address
+					ParamType::Uint(48).into(),
+					ParamType::Address.into(),
+					ParamType::Address.into()
 				]))),
 				internal_type: None
 			}
@@ -301,8 +321,8 @@ mod tests {
 			TupleParam {
 				name: None,
 				kind: ParamType::Array(Box::new(ParamType::Array(Box::new(ParamType::Tuple(vec![
-					ParamType::Uint(8),
-					ParamType::Uint(16),
+					ParamType::Uint(8).into(),
+					ParamType::Uint(16).into(),
 				]))))),
 				internal_type: None
 			}
@@ -335,7 +355,11 @@ mod tests {
 			TupleParam {
 				name: None,
 				kind: ParamType::FixedArray(
-					Box::new(ParamType::Tuple(vec![ParamType::Uint(48), ParamType::Address, ParamType::Address])),
+					Box::new(ParamType::Tuple(vec![
+						ParamType::Uint(48).into(),
+						ParamType::Address.into(),
+						ParamType::Address.into()
+					])),
 					2
 				),
 				internal_type: None
@@ -376,8 +400,8 @@ mod tests {
 			TupleParam {
 				name: None,
 				kind: ParamType::Tuple(vec![
-					ParamType::Array(Box::new(ParamType::Tuple(vec![ParamType::Address]))),
-					ParamType::FixedArray(Box::new(ParamType::Tuple(vec![ParamType::Address])), 42,)
+					ParamType::Array(Box::new(ParamType::Tuple(vec![ParamType::Address.into()]))).into(),
+					ParamType::FixedArray(Box::new(ParamType::Tuple(vec![ParamType::Address.into()])), 42,).into()
 				]),
 				internal_type: None
 			}

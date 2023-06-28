@@ -133,7 +133,7 @@ impl Token {
 			}
 			Token::Tuple(ref tokens) => {
 				if let ParamType::Tuple(ref param_type) = *param_type {
-					tokens.iter().enumerate().all(|(i, t)| t.type_check(&param_type[i]))
+					tokens.iter().enumerate().all(|(i, t)| t.type_check(&param_type[i].kind))
 				} else {
 					false
 				}

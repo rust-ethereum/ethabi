@@ -48,7 +48,7 @@ pub trait Tokenizer {
 			ParamType::Int(_) => Self::tokenize_int(value).map(Into::into).map(Token::Int),
 			ParamType::Array(ref p) => Self::tokenize_array(value, p).map(Token::Array),
 			ParamType::FixedArray(ref p, len) => Self::tokenize_fixed_array(value, p, len).map(Token::FixedArray),
-			ParamType::Tuple(ref p) => Self::tokenize_struct(value, p).map(Token::Tuple),
+			ParamType::Tuple(ref p) => Self::tokenize_struct(value, p.iter().map(|t| &t.kind)).map(Token::Tuple),
 		}
 	}
 
@@ -62,7 +62,7 @@ pub trait Tokenizer {
 	}
 
 	/// Tried to parse a struct as a vector of tokens
-	fn tokenize_struct(value: &str, param: &[ParamType]) -> Result<Vec<Token>, Error> {
+	fn tokenize_struct<'a, I: IntoIterator<Item = &'a ParamType>>(value: &str, param: I) -> Result<Vec<Token>, Error> {
 		if !value.starts_with('(') || !value.ends_with(')') {
 			return Err(Error::InvalidData);
 		}
@@ -80,7 +80,7 @@ pub trait Tokenizer {
 		let mut array_item_start = 1;
 		let mut last_is_array = false;
 
-		let mut params = param.iter();
+		let mut params = param.into_iter();
 		for (pos, ch) in value.chars().enumerate() {
 			match ch {
 				'[' if !ignore => {
@@ -294,8 +294,9 @@ mod test {
 			LenientTokenizer::tokenize_array(
 				"[([(true)],[(false,true)])]",
 				&ParamType::Tuple(vec![
-					ParamType::Array(Box::new(ParamType::Tuple(vec![ParamType::Bool]))),
-					ParamType::Array(Box::new(ParamType::Tuple(vec![ParamType::Bool, ParamType::Bool]))),
+					ParamType::Array(Box::new(ParamType::Tuple(vec![ParamType::Bool.into()]))).into(),
+					ParamType::Array(Box::new(ParamType::Tuple(vec![ParamType::Bool.into(), ParamType::Bool.into()])))
+						.into(),
 				]),
 			)
 			.unwrap(),
@@ -309,8 +310,8 @@ mod test {
 			LenientTokenizer::tokenize_struct(
 				"([(true)],[(false,true)])",
 				&[
-					ParamType::Array(Box::new(ParamType::Tuple(vec![ParamType::Bool]))),
-					ParamType::Array(Box::new(ParamType::Tuple(vec![ParamType::Bool, ParamType::Bool]))),
+					ParamType::Array(Box::new(ParamType::Tuple(vec![ParamType::Bool.into()]))),
+					ParamType::Array(Box::new(ParamType::Tuple(vec![ParamType::Bool.into(), ParamType::Bool.into()]))),
 				]
 			)
 			.unwrap(),
@@ -326,7 +327,10 @@ mod test {
 		assert_eq!(
 			LenientTokenizer::tokenize_struct(
 				"([(5c9d55b78febcc2061715ba4f57ecf8ea2711f2c)],2)",
-				&[ParamType::Array(Box::new(ParamType::Tuple(vec![ParamType::Address,],)),), ParamType::Uint(256,),]
+				&[
+					ParamType::Array(Box::new(ParamType::Tuple(vec![ParamType::Address.into(),],)),),
+					ParamType::Uint(256,),
+				]
 			)
 			.unwrap(),
 			vec![

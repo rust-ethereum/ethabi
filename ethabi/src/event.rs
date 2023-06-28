@@ -297,7 +297,7 @@ mod tests {
 			inputs: vec![
 				EventParam {
 					name: "tuple".into(),
-					kind: ParamType::Tuple(vec![ParamType::Address, ParamType::Address]),
+					kind: ParamType::Tuple(vec![ParamType::Address.into(), ParamType::Address.into()]),
 					indexed: false,
 				},
 				EventParam { name: "addr".into(), kind: ParamType::Address, indexed: true },

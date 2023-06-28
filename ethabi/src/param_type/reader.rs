@@ -8,7 +8,7 @@
 
 #[cfg(not(feature = "std"))]
 use crate::no_std_prelude::*;
-use crate::{Error, ParamType};
+use crate::{Error, ParamType, TupleParam};
 
 /// Used to convert param type represented as a string to rust structure.
 pub struct Reader;
@@ -60,7 +60,7 @@ impl Reader {
 								// check for trailing brackets that indicate array of tuples
 								let sub = &name[last_item..pos];
 								let subtype = Reader::read(sub)?;
-								subtypes.push(subtype);
+								subtypes.push(TupleParam { name: None, kind: subtype, internal_type: None });
 								last_item = pos + 1;
 							}
 							// If the item is in a sublevel of the tuple
@@ -83,10 +83,14 @@ impl Reader {
 
 								if nested > 1 {
 									let mut subtuple = core::mem::take(&mut subtuples[(nested - 2) as usize]);
-									subtuple.push(subtype);
-									subtypes.push(ParamType::Tuple(subtuple));
+									subtuple.push(TupleParam { name: None, kind: subtype, internal_type: None });
+									subtypes.push(TupleParam {
+										name: None,
+										kind: ParamType::Tuple(subtuple),
+										internal_type: None,
+									});
 								} else {
-									subtypes.push(subtype);
+									subtypes.push(TupleParam { name: None, kind: subtype, internal_type: None });
 								}
 								last_item = pos + 1;
 							}
@@ -101,7 +105,7 @@ impl Reader {
 							else if nested == 1 {
 								let sub = &name[last_item..pos];
 								let subtype = Reader::read(sub)?;
-								subtypes.push(subtype);
+								subtypes.push(TupleParam { name: None, kind: subtype, internal_type: None });
 								last_item = pos + 1;
 							}
 							// If the item is in a sublevel of the tuple
@@ -109,7 +113,11 @@ impl Reader {
 							else if nested > 1 {
 								let sub = &name[last_item..pos];
 								let subtype = Reader::read(sub)?;
-								subtuples[(nested - 2) as usize].push(subtype);
+								subtuples[(nested - 2) as usize].push(TupleParam {
+									name: None,
+									kind: subtype,
+									internal_type: None,
+								});
 								last_item = pos + 1;
 							}
 						}
@@ -228,11 +236,14 @@ mod tests {
 	fn test_read_struct_param() {
 		assert_eq!(
 			Reader::read("(address,bool)").unwrap(),
-			ParamType::Tuple(vec![ParamType::Address, ParamType::Bool])
+			ParamType::Tuple(vec![ParamType::Address.into(), ParamType::Bool.into()])
 		);
 		assert_eq!(
 			Reader::read("(bool[3],uint256)").unwrap(),
-			ParamType::Tuple(vec![ParamType::FixedArray(Box::new(ParamType::Bool), 3), ParamType::Uint(256)])
+			ParamType::Tuple(vec![
+				ParamType::FixedArray(Box::new(ParamType::Bool), 3).into(),
+				ParamType::Uint(256).into()
+			])
 		);
 	}
 
@@ -241,9 +252,9 @@ mod tests {
 		assert_eq!(
 			Reader::read("(address,bool,(bool,uint256))").unwrap(),
 			ParamType::Tuple(vec![
-				ParamType::Address,
-				ParamType::Bool,
-				ParamType::Tuple(vec![ParamType::Bool, ParamType::Uint(256)])
+				ParamType::Address.into(),
+				ParamType::Bool.into(),
+				ParamType::Tuple(vec![ParamType::Bool.into(), ParamType::Uint(256).into()]).into()
 			])
 		);
 	}
@@ -253,14 +264,15 @@ mod tests {
 		assert_eq!(
 			Reader::read("(address,bool,(bool,uint256,(bool,uint256)),(bool,uint256))").unwrap(),
 			ParamType::Tuple(vec![
-				ParamType::Address,
-				ParamType::Bool,
+				ParamType::Address.into(),
+				ParamType::Bool.into(),
 				ParamType::Tuple(vec![
-					ParamType::Bool,
-					ParamType::Uint(256),
-					ParamType::Tuple(vec![ParamType::Bool, ParamType::Uint(256)])
-				]),
-				ParamType::Tuple(vec![ParamType::Bool, ParamType::Uint(256)])
+					ParamType::Bool.into(),
+					ParamType::Uint(256).into(),
+					ParamType::Tuple(vec![ParamType::Bool.into(), ParamType::Uint(256).into()]).into()
+				])
+				.into(),
+				ParamType::Tuple(vec![ParamType::Bool.into(), ParamType::Uint(256).into()]).into()
 			])
 		);
 	}
@@ -269,7 +281,10 @@ mod tests {
 	fn test_read_nested_tuple_array_param() {
 		assert_eq!(
 			Reader::read("(uint256,bytes32)[]").unwrap(),
-			ParamType::Array(Box::new(ParamType::Tuple(vec![ParamType::Uint(256), ParamType::FixedBytes(32)])))
+			ParamType::Array(Box::new(ParamType::Tuple(vec![
+				ParamType::Uint(256).into(),
+				ParamType::FixedBytes(32).into()
+			])))
 		)
 	}
 
@@ -280,8 +295,12 @@ mod tests {
 		let read = Reader::read(abi).unwrap();
 
 		let param = ParamType::Tuple(vec![
-			ParamType::Array(Box::new(ParamType::Tuple(vec![ParamType::Uint(256), ParamType::FixedBytes(32)]))),
-			ParamType::Address,
+			ParamType::Array(Box::new(ParamType::Tuple(vec![
+				ParamType::Uint(256).into(),
+				ParamType::FixedBytes(32).into(),
+			])))
+			.into(),
+			ParamType::Address.into(),
 		]);
 
 		assert_eq!(read, param);
