@@ -16,158 +16,97 @@ pub struct Reader;
 impl Reader {
 	/// Converts string to param type.
 	pub fn read(name: &str) -> Result<ParamType, Error> {
-		match name.chars().last() {
-			// check if it is a struct
-			Some(')') => {
-				if !name.starts_with('(') {
-					return Err(Error::InvalidName(name.to_owned()));
-				};
+		let name = name.trim();
+	
+		if name.starts_with('(') && name.ends_with(')') {
+			let r = Reader::read_tuple(&name[1..name.len() - 1]);
+			return r;
+		}
+	
+		if name.ends_with(']') {
+			return Reader::read_array(name);
+		}
+	
+		Reader::read_primitive(name)
+	}
 
-				let mut subtypes = Vec::new();
-				let mut subtuples = Vec::new();
-				let mut nested = 0isize;
-				let mut top_level_paren_open = 0usize;
-				let mut last_item = 1;
-				let mut chars = name.chars().enumerate();
-
-				// Iterate over name and build the nested tuple structure
-				while let Some((mut pos, c)) = chars.next() {
-					match c {
-						'(' => {
-							top_level_paren_open = pos;
-							nested += 1;
-							// If an '(' is encountered within the tuple
-							// insert an empty subtuples vector to be filled
-							if nested > 1 {
-								subtuples.push(vec![]);
-								last_item = pos + 1;
-							}
-						}
-						')' => {
-							nested -= 1;
-
-							// End parsing and return an error if parentheses aren't symmetrical
-							if nested < 0 {
-								return Err(Error::InvalidName(name.to_owned()));
-							}
-							// If there have not been any characters since the last item
-							// increment position without inserting any subtypes
-							else if name[last_item..pos].is_empty() {
-								last_item = pos + 1;
-							}
-							// If the item is in the top level of the tuple insert it into subtypes
-							else if nested == 0 {
-								// check for trailing brackets that indicate array of tuples
-								let sub = &name[last_item..pos];
-								let subtype = Reader::read(sub)?;
-								subtypes.push(subtype);
-								last_item = pos + 1;
-							}
-							// If the item is in a sublevel of the tuple
-							else if nested > 0 {
-								// this makes sure trailing brackets are included for the next step
-								loop {
-									match chars.clone().next() {
-										Some((_, ',')) | Some((_, ')')) | None => break,
-										_ => {
-											// consume the char and shift position
-											chars.next();
-											pos += 1;
-										}
-									}
-								}
-
-								// parse the nested tuple
-								let inner_tuple = &name[top_level_paren_open..=pos];
-								let subtype = Reader::read(inner_tuple)?;
-
-								if nested > 1 {
-									let mut subtuple = core::mem::take(&mut subtuples[(nested - 2) as usize]);
-									subtuple.push(subtype);
-									subtypes.push(ParamType::Tuple(subtuple));
-								} else {
-									subtypes.push(subtype);
-								}
-								last_item = pos + 1;
-							}
-						}
-						',' => {
-							// If there have not been any characters since the last item
-							// increment position without inserting any subtypes
-							if name[last_item..pos].is_empty() {
-								last_item = pos + 1
-							}
-							// If the item is in the top level of the tuple insert it into subtypes
-							else if nested == 1 {
-								let sub = &name[last_item..pos];
-								let subtype = Reader::read(sub)?;
-								subtypes.push(subtype);
-								last_item = pos + 1;
-							}
-							// If the item is in a sublevel of the tuple
-							// insert it into the subtuple vector for the current depth level
-							else if nested > 1 {
-								let sub = &name[last_item..pos];
-								let subtype = Reader::read(sub)?;
-								subtuples[(nested - 2) as usize].push(subtype);
-								last_item = pos + 1;
-							}
-						}
-						_ => (),
+	fn read_tuple(s: &str) -> Result<ParamType, Error> {
+		// println!("read_tuple: {}", s);
+		let mut subtypes = Vec::new();
+		let mut start = 0;
+		let mut parens = 0;
+	
+		for (i, c) in s.chars().enumerate() {
+			match c {
+				'(' => parens += 1,
+				')' => parens -= 1,
+				',' if parens == 0 => {
+					subtypes.push(Reader::read(&s[start..i])?);
+					start = i + 1;
+				}
+				_ => (),
+			}
+		}
+		// Add the last subtype.
+		subtypes.push(Reader::read(&s[start..])?);
+		Ok(ParamType::Tuple(subtypes))
+	}
+	fn read_array(s: &str) -> Result<ParamType, Error> {
+		// find the matching opening bracket
+		let mut brackets = 0;
+		let mut i = s.len() - 1;
+		for c in s.chars().rev() {
+			match c {
+				']' => brackets += 1,
+				'[' => {
+					brackets -= 1;
+					if brackets == 0 {
+						break;
 					}
 				}
-				return Ok(ParamType::Tuple(subtypes));
+				_ => (),
 			}
-			// check if it is a fixed or dynamic array.
-			Some(']') => {
-				// take number part
-				let num: String =
-					name.chars().rev().skip(1).take_while(|c| *c != '[').collect::<String>().chars().rev().collect();
-
-				let count = name.chars().count();
-				return if num.is_empty() {
-					// we already know it's a dynamic array!
-					let subtype = Reader::read(&name[..count - 2])?;
-					Ok(ParamType::Array(Box::new(subtype)))
-				} else {
-					// it's a fixed array.
-					let len = num.parse().map_err(Error::ParseInt)?;
-					let subtype = Reader::read(&name[..count - num.len() - 2])?;
-					Ok(ParamType::FixedArray(Box::new(subtype), len))
-				};
-			}
-			_ => (),
+			i -= 1;
 		}
-
-		let result = match name {
-			"address" => ParamType::Address,
-			"bytes" => ParamType::Bytes,
-			"bool" => ParamType::Bool,
-			"string" => ParamType::String,
-			"int" => ParamType::Int(256),
-			"tuple" => ParamType::Tuple(vec![]),
-			"uint" => ParamType::Uint(256),
-			s if s.starts_with("int") => {
-				let len = s[3..].parse().map_err(Error::ParseInt)?;
-				ParamType::Int(len)
-			}
-			s if s.starts_with("uint") => {
-				let len = s[4..].parse().map_err(Error::ParseInt)?;
-				ParamType::Uint(len)
-			}
-			s if s.starts_with("bytes") => {
-				let len = s[5..].parse().map_err(Error::ParseInt)?;
-				ParamType::FixedBytes(len)
-			}
-			// As discussed in https://github.com/rust-ethereum/ethabi/issues/254,
-			// any type that does not fit the above corresponds to a Solidity
-			// `enum`, and as a result we treat it as a `uint8`. This is a unique
-			// case which occurs in libraries with exported (`public`) Solidity
-			// functions with `enum` parameters.
-			_ => ParamType::Uint(8),
+	
+		let size_str = &s[i + 1..s.len() - 1];
+		let subtype = Reader::read(&s[..i])?;
+		let size = if size_str.is_empty() {
+			None // dynamic array
+		} else {
+			Some(size_str.parse().map_err(Error::ParseInt)?)
 		};
-
-		Ok(result)
+	
+		match size {
+			Some(len) => Ok(ParamType::FixedArray(Box::new(subtype), len)),
+			None => Ok(ParamType::Array(Box::new(subtype))),
+		}
+	}
+	
+	fn read_primitive(s: &str) -> Result<ParamType, Error> {
+		match s {
+			"address" => Ok(ParamType::Address),
+			"bytes" => Ok(ParamType::Bytes),
+			"bool" => Ok(ParamType::Bool),
+			"string" => Ok(ParamType::String),
+			"int" => Ok(ParamType::Int(256)),
+			"tuple" => Ok(ParamType::Tuple(vec![])),
+			"uint" => Ok(ParamType::Uint(256)),
+			_ => {
+				if s.starts_with("int") {
+					let len = s[3..].parse().map_err(Error::ParseInt)?;
+					Ok(ParamType::Int(len))
+				} else if s.starts_with("uint") {
+					let len = s[4..].parse().map_err(Error::ParseInt)?;
+					Ok(ParamType::Uint(len))
+				} else if s.starts_with("bytes") {
+					let len = s[5..].parse().map_err(Error::ParseInt)?;
+					Ok(ParamType::FixedBytes(len))
+				} else {
+					Ok(ParamType::Uint(8)) // fallback
+				}
+			}
+		}
 	}
 }
 
@@ -261,6 +200,20 @@ mod tests {
 					ParamType::Tuple(vec![ParamType::Bool, ParamType::Uint(256)])
 				]),
 				ParamType::Tuple(vec![ParamType::Bool, ParamType::Uint(256)])
+			])
+		);
+	}
+	#[test]
+	fn test_read_complex_nested_struct_param2() {
+		assert_eq!(
+			Reader::read("(((string,uint256),int256),uint256,int256)").unwrap(),
+			ParamType::Tuple(vec![
+				ParamType::Tuple(vec![
+					ParamType::Tuple(vec![ParamType::String, ParamType::Uint(256)]),
+					ParamType::Int(256)
+				]),
+				ParamType::Uint(256),
+				ParamType::Int(256)
 			])
 		);
 	}
