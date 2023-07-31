@@ -29,6 +29,8 @@ pub enum ParamType {
 	Bool,
 	/// String.
 	String,
+	/// Function.
+	Function,
 	/// Array of unknown size.
 	Array(Box<ParamType>),
 	/// Vector of bytes with fixed size.
@@ -81,6 +83,7 @@ mod tests {
 		assert_eq!(format!("{}", ParamType::FixedBytes(32)), "bytes32".to_owned());
 		assert_eq!(format!("{}", ParamType::Uint(256)), "uint256".to_owned());
 		assert_eq!(format!("{}", ParamType::Int(64)), "int64".to_owned());
+		assert_eq!(format!("{}", ParamType::Function), "function".to_owned());
 		assert_eq!(format!("{}", ParamType::Bool), "bool".to_owned());
 		assert_eq!(format!("{}", ParamType::String), "string".to_owned());
 		assert_eq!(format!("{}", ParamType::Array(Box::new(ParamType::Bool))), "bool[]".to_owned());
