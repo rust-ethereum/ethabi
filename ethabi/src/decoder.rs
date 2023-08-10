@@ -240,7 +240,7 @@ fn decode_param(param: &ParamType, data: &[u8], offset: usize, validate: bool) -
 			let len = t.len();
 			let mut tokens = Vec::with_capacity(len);
 			for param in t {
-				let res = decode_param(param, tail, new_offset, validate)?;
+				let res = decode_param(&param.kind, tail, new_offset, validate)?;
 				new_offset = res.new_offset;
 				tokens.push(res.token);
 			}
@@ -300,9 +300,11 @@ mod tests {
 		let uint = Token::Uint([0x11u8; 32].into());
 		let tuple = Token::Tuple(vec![address1, address2, uint]);
 		let expected = vec![tuple];
-		let decoded =
-			decode(&[ParamType::Tuple(vec![ParamType::Address, ParamType::Address, ParamType::Uint(32)])], &encoded)
-				.unwrap();
+		let decoded = decode(
+			&[ParamType::Tuple(vec![ParamType::Address.into(), ParamType::Address.into(), ParamType::Uint(32).into()])],
+			&encoded,
+		)
+		.unwrap();
 		assert_eq!(decoded, expected);
 	}
 
@@ -322,7 +324,8 @@ mod tests {
 		let string1 = Token::String("gavofyork".to_owned());
 		let string2 = Token::String("gavofyork".to_owned());
 		let tuple = Token::Tuple(vec![string1, string2]);
-		let decoded = decode(&[ParamType::Tuple(vec![ParamType::String, ParamType::String])], &encoded).unwrap();
+		let decoded =
+			decode(&[ParamType::Tuple(vec![ParamType::String.into(), ParamType::String.into()])], &encoded).unwrap();
 		let expected = vec![tuple];
 		assert_eq!(decoded, expected);
 	}
@@ -368,14 +371,15 @@ mod tests {
 		let expected = vec![outer_tuple];
 		let decoded = decode(
 			&[ParamType::Tuple(vec![
-				ParamType::String,
-				ParamType::Bool,
-				ParamType::String,
+				ParamType::String.into(),
+				ParamType::Bool.into(),
+				ParamType::String.into(),
 				ParamType::Tuple(vec![
-					ParamType::String,
-					ParamType::String,
-					ParamType::Tuple(vec![ParamType::String, ParamType::String]),
-				]),
+					ParamType::String.into(),
+					ParamType::String.into(),
+					ParamType::Tuple(vec![ParamType::String.into(), ParamType::String.into()]).into(),
+				])
+				.into(),
 			])],
 			&encoded,
 		)
@@ -403,7 +407,12 @@ mod tests {
 		let tuple = Token::Tuple(vec![uint, string, address1, address2]);
 		let expected = vec![tuple];
 		let decoded = decode(
-			&[ParamType::Tuple(vec![ParamType::Uint(32), ParamType::String, ParamType::Address, ParamType::Address])],
+			&[ParamType::Tuple(vec![
+				ParamType::Uint(32).into(),
+				ParamType::String.into(),
+				ParamType::Address.into(),
+				ParamType::Address.into(),
+			])],
 			&encoded,
 		)
 		.unwrap();
@@ -440,7 +449,7 @@ mod tests {
 		let decoded = decode(
 			&[
 				ParamType::Address,
-				ParamType::Tuple(vec![ParamType::Bool, ParamType::String, ParamType::String]),
+				ParamType::Tuple(vec![ParamType::Bool.into(), ParamType::String.into(), ParamType::String.into()]),
 				ParamType::Address,
 				ParamType::Address,
 				ParamType::Bool,
@@ -475,7 +484,7 @@ mod tests {
 		let decoded = decode(
 			&[
 				ParamType::Address,
-				ParamType::Tuple(vec![ParamType::Address, ParamType::Bool, ParamType::Bool]),
+				ParamType::Tuple(vec![ParamType::Address.into(), ParamType::Bool.into(), ParamType::Bool.into()]),
 				ParamType::Address,
 				ParamType::Address,
 			],
@@ -654,14 +663,15 @@ ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 				inputs: vec![
 					Param {
 						name: "c".to_string(),
-						kind: Array(Box::new(Tuple(vec![Uint(256), Uint(256)]))),
+						kind: Array(Box::new(Tuple(vec![Uint(256).into(), Uint(256).into()]))),
 						internal_type: None,
 					},
 					Param {
 						name: "d".to_string(),
 						kind: Array(Box::new(Tuple(vec![
-							Uint(256),
-							Array(Box::new(Tuple(vec![Uint(256), Array(Box::new(ParamType::String))]))),
+							Uint(256).into(),
+							Array(Box::new(Tuple(vec![Uint(256).into(), Array(Box::new(ParamType::String)).into()])))
+								.into(),
 						]))),
 						internal_type: None,
 					},
