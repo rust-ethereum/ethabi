@@ -13,12 +13,15 @@ use crate::no_std_prelude::*;
 use core::num;
 #[cfg(feature = "std")]
 use thiserror::Error;
+#[cfg(not(feature = "std"))]
+use displaydoc::Display;
 
 /// Ethabi result type
 pub type Result<T> = core::result::Result<T, Error>;
 
 /// Ethabi errors
 #[cfg_attr(feature = "std", derive(Error))]
+#[cfg_attr(not(feature = "std"), derive(Display))]
 #[derive(Debug)]
 pub enum Error {
 	/// Invalid entity such as a bad function name.
